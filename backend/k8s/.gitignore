@@ -1,0 +1,23 @@
+# .gitignore for Kubernetes configuration
+
+# Ignore secret files with real credentials
+secret.yaml.local
+*-secret.yaml
+*.secret.yaml
+
+# Ignore environment-specific overrides
+.env.k8s
+.env.*.local
+
+# Ignore generated files
+*.generated.yaml
+
+# Ignore backup files
+*.backup
+*.bak
+*~
+
+# Ignore local development files
+.DS_Store
+Thumbs.db
+

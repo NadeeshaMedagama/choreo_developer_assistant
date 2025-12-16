@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  fastapi:
+    build:
+      context: ../../
+      dockerfile: backend/Dockerfile
+    container_name: choreo-ai-assistant
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+    volumes:
+      - ../../logs:/app/logs
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - fastapi
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana_dashboard.json:/etc/grafana/provisioning/dashboards/choreo-ai-overview.json
+      - ./grafana_datasources.yml:/etc/grafana/provisioning/datasources/prometheus.yml
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Alertmanager (optional)
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: alertmanager
+    ports:
+      - "9093:9093"
+    command:
+      - '--config.file=/etc/alertmanager/config.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/config.yml
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+

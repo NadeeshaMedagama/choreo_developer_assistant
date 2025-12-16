@@ -1,0 +1,37 @@
+# Core dependencies
+python-dotenv==1.0.0
+pymilvus>=2.3.0
+
+# OCR and Image Processing
+pytesseract==0.3.10
+Pillow==10.1.0
+pdf2image==1.16.3
+opencv-python==4.8.1.78
+
+# Google Cloud Vision API
+google-cloud-vision==3.4.5
+
+# Document Processing
+python-docx==1.1.0
+python-pptx==0.6.23
+openpyxl==3.1.2
+PyPDF2==3.0.1
+
+# LLM and Embeddings - Updated versions to resolve conflicts
+openai>=1.6.1
+langchain==0.1.0
+langchain-openai==0.0.2
+
+# Graph and Visualization
+networkx==3.2.1
+matplotlib==3.8.2
+graphviz==0.20.1
+pydot==1.4.2
+
+# XML/SVG Processing
+lxml==4.9.3
+beautifulsoup4==4.12.2
+
+# Utilities
+tqdm==4.66.1
+pyyaml==6.0.1

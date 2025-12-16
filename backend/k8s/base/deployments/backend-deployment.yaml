@@ -1,0 +1,168 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: choreo-ai-backend
+  namespace: choreo-ai-assistant
+  labels:
+    app: choreo-ai-backend
+    component: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: choreo-ai-backend
+  template:
+    metadata:
+      labels:
+        app: choreo-ai-backend
+        component: backend
+    spec:
+      serviceAccountName: choreo-ai-backend-sa
+      containers:
+      - name: backend
+        image: choreo-ai-backend:v2-fixed
+        imagePullPolicy: Never  # Use Never for Minikube to force local images
+        ports:
+        - containerPort: 9090
+          name: http
+          protocol: TCP
+        env:
+        # Environment variables from ConfigMap
+        - name: MILVUS_DIMENSION
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: MILVUS_DIMENSION
+        - name: MILVUS_METRIC
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: MILVUS_METRIC
+        - name: EMBEDDING_MODEL
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: EMBEDDING_MODEL
+        - name: CHUNK_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: CHUNK_SIZE
+        - name: CHUNK_OVERLAP
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: CHUNK_OVERLAP
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: PORT
+        - name: PYTHONUNBUFFERED
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: PYTHONUNBUFFERED
+        - name: AZURE_OPENAI_API_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: choreo-ai-config
+              key: AZURE_OPENAI_API_VERSION
+        # Environment variables from Secrets
+        - name: MILVUS_URI
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: MILVUS_URI
+        - name: MILVUS_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: MILVUS_TOKEN
+        - name: MILVUS_COLLECTION_NAME
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: MILVUS_COLLECTION_NAME
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: GITHUB_TOKEN
+        - name: AZURE_OPENAI_KEY
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: AZURE_OPENAI_KEY
+        - name: AZURE_OPENAI_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: AZURE_OPENAI_ENDPOINT
+        - name: AZURE_OPENAI_DEPLOYMENT
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: AZURE_OPENAI_DEPLOYMENT
+        - name: AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT
+        - name: GOOGLE_VISION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: GOOGLE_VISION_API_KEY
+              optional: true
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: choreo-ai-secrets
+              key: OPENAI_API_KEY
+              optional: true
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs-persistent
+          mountPath: /app/logs
+        - name: diagram-output
+          mountPath: /app/diagram_processor/output
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs-persistent
+        persistentVolumeClaim:
+          claimName: choreo-ai-logs-pvc
+      - name: diagram-output
+        persistentVolumeClaim:
+          claimName: choreo-ai-diagram-output-pvc
+

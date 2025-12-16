@@ -1,0 +1,131 @@
+╔════════════════════════════════════════════════════════════════╗
+║         KUBERNETES DEPLOYMENT - QUICK REFERENCE                ║
+╚════════════════════════════════════════════════════════════════╝
+
+📁 DIRECTORY STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+k8s/
+├── base/                    # All Kubernetes manifests
+│   ├── config/              # Namespace, ConfigMap, Secrets
+│   ├── deployments/         # Backend & Frontend deployments
+│   ├── services/            # Services & Ingress
+│   ├── storage/             # Persistent Volume Claims
+│   ├── security/            # RBAC & Network Policies
+│   ├── policies/            # HPA, PDB, Resource Quotas
+│   └── monitoring/          # Prometheus monitoring
+├── environments/            # Environment-specific configs
+│   ├── dev/                 # Development (1 replica, small)
+│   └── production/          # Production (3 replicas, large)
+├── scripts/                 # Deployment scripts
+├── docs/                    # Documentation
+├── kustomization.yaml       # Main kustomize config
+└── Makefile                 # Make commands
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 QUICK COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Using Make (recommended):
+  make build              Build Docker images
+  make deploy             Deploy to cluster
+  make deploy-dev         Deploy dev environment
+  make deploy-prod        Deploy production
+  make status             Check deployment status
+  make logs               View backend logs
+  make secrets            Update secrets
+  make validate           Validate manifests
+  make port-forward       Port forward services
+  make restart            Restart deployments
+  make clean              Delete all resources
+
+Using Scripts:
+  ./scripts/build-images.sh
+  ./scripts/deploy.sh
+  ./scripts/update-secrets.sh
+  ./scripts/status.sh
+  ./scripts/cleanup.sh
+
+Using kubectl:
+  kubectl apply -k .
+  kubectl apply -k environments/dev/
+  kubectl apply -k environments/production/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📝 COMMON TASKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Update Secrets:
+  vim base/config/secret.yaml
+  make secrets
+
+Modify Backend:
+  vim base/deployments/backend-deployment.yaml
+  make deploy
+
+Change Autoscaling:
+  vim base/policies/hpa.yaml
+  make deploy
+
+View Logs:
+  make logs
+  make logs-backend
+  make logs-frontend
+
+Scale Manually:
+  kubectl scale deployment choreo-ai-backend -n choreo-ai-assistant --replicas=5
+
+Access Application:
+  make port-forward
+  # Then: http://localhost:8080 (frontend)
+  #       http://localhost:9090 (backend)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 FILE LOCATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Secrets:              base/config/secret.yaml
+ConfigMap:            base/config/configmap.yaml
+Backend Deploy:       base/deployments/backend-deployment.yaml
+Frontend Deploy:      base/deployments/frontend-deployment.yaml
+Services:             base/services/
+Ingress:              base/services/ingress.yaml
+Storage:              base/storage/pvc.yaml
+RBAC:                 base/security/rbac.yaml
+Network Policies:     base/security/networkpolicy.yaml
+Autoscaling:          base/policies/hpa.yaml
+Monitoring:           base/monitoring/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+README.md                    New structure overview
+STRUCTURE.md                 Visual directory guide
+REORGANIZATION_SUMMARY.md    Reorganization details
+FINAL_SUMMARY.txt            This summary
+docs/README.md               Full documentation
+docs/QUICKSTART.md           Quick start guide
+docs/DEPLOYMENT_SUMMARY.md   Deployment info
+docs/FILE_INDEX.md           Complete file index
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+All configurations validated and working:
+  ✓ Base configuration
+  ✓ Dev environment
+  ✓ Production environment
+  ✓ All scripts executable
+  ✓ No breaking changes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Ready to deploy! 🚀
+

@@ -1,0 +1,312 @@
+groups:
+  - name: choreo_ai_assistant_alerts
+    interval: 30s
+    rules:
+      # High response time alert
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 2m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s (threshold: 2s)"
+
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: rate(errors_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/sec (threshold: 0.05/sec)"
+
+      # High CPU usage alert
+      - alert: HighCPUUsage
+        expr: cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+
+      # High memory usage alert
+      - alert: HighMemoryUsage
+        expr: memory_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}% (threshold: 85%)"
+
+      # Critical memory usage alert
+      - alert: CriticalMemoryUsage
+        expr: memory_usage_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Critical memory usage detected"
+          description: "Memory usage is {{ $value }}% (threshold: 95%)"
+
+      # High disk usage alert
+      - alert: HighDiskUsage
+        expr: disk_usage_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value }}% (threshold: 80%)"
+
+      # Slow AI inference alert
+      - alert: SlowAIInference
+        expr: histogram_quantile(0.95, rate(ai_inference_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "Slow AI inference detected"
+          description: "95th percentile AI inference time is {{ $value }}s (threshold: 5s)"
+
+      # AI inference failures alert
+      - alert: AIInferenceFailures
+        expr: rate(ai_requests_total{status="error"}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: ai
+        annotations:
+          summary: "AI inference failures detected"
+          description: "AI inference failure rate is {{ $value }}/sec (threshold: 0.1/sec)"
+
+      # Slow vector search alert
+      - alert: SlowVectorSearch
+        expr: histogram_quantile(0.95, rate(vector_search_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+          component: vector_db
+        annotations:
+          summary: "Slow vector search detected"
+          description: "95th percentile vector search time is {{ $value }}s (threshold: 2s)"
+
+      # Scraping: Missed iterations alert
+      - alert: ScrapingMissedIterations
+        expr: rate(scraping_missed_iterations_total[1h]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "Scraping iterations are being missed"
+          description: "{{ $value }} missed iterations per second over the last hour (threshold: 0)"
+
+      # Scraping: Too many skipped iterations
+      - alert: ScrapingTooManySkippedIterations
+        expr: rate(scraping_skipped_iterations_total[1h]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "Too many scraping iterations are being skipped"
+          description: "{{ $value }} skipped iterations per second over the last hour (threshold: 0.5/sec)"
+
+      # Scraping: Tardy scrapes
+      - alert: ScrapingTardyScrapes
+        expr: rate(scraping_tardy_scrapes_total[1h]) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "Scrapes are starting late"
+          description: "{{ $value }} tardy scrapes per second over the last hour (threshold: 0.2/sec)"
+
+      # Scraping: Reload failures
+      - alert: ScrapingReloadFailures
+        expr: rate(scraping_reload_failures_total[1h]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: scraping
+        annotations:
+          summary: "Configuration reload failures detected"
+          description: "{{ $value }} reload failures per second over the last hour (threshold: 0)"
+
+      # Scraping: High skip rate
+      - alert: ScrapingHighSkipRate
+        expr: rate(scraping_skipped_scrapes_total[1h]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "High rate of skipped scrapes"
+          description: "{{ $value }} scrapes skipped per second over the last hour (threshold: 1/sec)"
+
+      # Scraping: Iteration delay too high
+      - alert: ScrapingIterationDelayHigh
+        expr: scraping_iteration_delay_seconds > 7200
+        for: 5m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "Scraping iteration is overdue"
+          description: "Last iteration was {{ $value }}s ago (threshold: 7200s/2h)"
+
+      # Scraping: Iteration delay critical
+      - alert: ScrapingIterationDelayCritical
+        expr: scraping_iteration_delay_seconds > 14400
+        for: 2m
+        labels:
+          severity: critical
+          component: scraping
+        annotations:
+          summary: "Scraping iteration is critically overdue"
+          description: "Last iteration was {{ $value }}s ago (threshold: 14400s/4h)"
+
+      # Scraping: Low success rate
+      - alert: ScrapingLowSuccessRate
+        expr: (rate(scraping_successful_scrapes_total[1h]) / rate(scraping_iterations_total[1h])) < 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: scraping
+        annotations:
+          summary: "Scraping success rate is low"
+          description: "Success rate is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Scraping: Very low success rate
+      - alert: ScrapingVeryLowSuccessRate
+        expr: (rate(scraping_successful_scrapes_total[1h]) / rate(scraping_iterations_total[1h])) < 0.7
+        for: 5m
+        labels:
+          severity: critical
+          component: scraping
+        annotations:
+          summary: "Scraping success rate is critically low"
+          description: "Success rate is {{ $value | humanizePercentage }} (threshold: 70%)"
+
+      # Rule Evaluation: Slow average evaluation
+      - alert: SlowRuleEvaluation
+        expr: rule_evaluation_duration_avg_seconds > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: rule_evaluation
+        annotations:
+          summary: "Rule evaluation is slow"
+          description: "Average rule evaluation duration is {{ $value }}s (threshold: 5s)"
+
+      # Rule Evaluation: Very slow evaluation
+      - alert: VerySlowRuleEvaluation
+        expr: rule_evaluation_duration_avg_seconds > 10
+        for: 2m
+        labels:
+          severity: critical
+          component: rule_evaluation
+        annotations:
+          summary: "Rule evaluation is critically slow"
+          description: "Average rule evaluation duration is {{ $value }}s (threshold: 10s)"
+
+      # HTTP Request: Slow average duration
+      - alert: SlowHTTPRequests
+        expr: http_request_duration_avg_seconds > 3
+        for: 5m
+        labels:
+          severity: warning
+          component: http
+        annotations:
+          summary: "HTTP requests are slow"
+          description: "Average HTTP request duration is {{ $value }}s (threshold: 3s)"
+
+      # HTTP Request: Very slow duration
+      - alert: VerySlowHTTPRequests
+        expr: http_request_duration_avg_seconds > 5
+        for: 2m
+        labels:
+          severity: critical
+          component: http
+        annotations:
+          summary: "HTTP requests are critically slow"
+          description: "Average HTTP request duration is {{ $value }}s (threshold: 5s)"
+
+      # Rule Evaluator: High iteration rate
+      - alert: HighRuleEvaluatorIterationRate
+        expr: rate(rule_evaluator_iterations_total[5m]) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: rule_evaluation
+        annotations:
+          summary: "High rule evaluator iteration rate"
+          description: "Rule evaluator is running {{ $value }} iterations/sec (threshold: 10/sec)"
+
+      # System Status: System down
+      - alert: SystemCurrentlyDown
+        expr: system_currently_down == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "System is currently DOWN"
+          description: "System status indicates the system is down"
+
+      # System Status: System down for extended period
+      - alert: SystemDownExtended
+        expr: system_currently_down == 1
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "System has been DOWN for 5+ minutes"
+          description: "System has been in down state for extended period"
+
+      # Service down alert
+      - alert: ServiceDown
+        expr: health_check_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "Service component is down"
+          description: "Health check failed for {{ $labels.component }}"
+
+      # High active requests alert
+      - alert: HighActiveRequests
+        expr: http_requests_active > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High number of active requests"
+          description: "Active requests: {{ $value }} (threshold: 50)"
+
+      # Request rate spike alert
+      - alert: RequestRateSpike
+        expr: rate(http_requests_total[1m]) > 100
+        for: 2m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "Unusual request rate spike"
+          description: "Request rate is {{ $value }}/sec (threshold: 100/sec)"
+

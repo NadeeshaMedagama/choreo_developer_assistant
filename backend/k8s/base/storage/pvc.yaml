@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: choreo-ai-logs-pvc
+  namespace: choreo-ai-assistant
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard  # Change to your storage class
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: choreo-ai-diagram-output-pvc
+  namespace: choreo-ai-assistant
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard  # Change to your storage class
+

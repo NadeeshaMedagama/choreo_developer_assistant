@@ -1,0 +1,67 @@
+╔════════════════════════════════════════════════════════════════════╗
+║                     BACKEND FIX - QUICK COMMANDS                   ║
+╚════════════════════════════════════════════════════════════════════╝
+
+🔧 THE FIX (Run these 6 commands):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣  Navigate to project:
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+
+2️⃣  Build Docker image (5-10 min):
+docker build -t choreo-ai-backend:v2-fixed -f docker/Dockerfile .
+
+3️⃣  Load into Minikube (30-60 sec):
+minikube image load choreo-ai-backend:v2-fixed
+
+4️⃣  Restart deployment:
+kubectl rollout restart deployment/choreo-ai-backend -n choreo-ai-assistant
+
+5️⃣  Wait for completion (2-3 min):
+kubectl rollout status deployment/choreo-ai-backend -n choreo-ai-assistant
+
+6️⃣  Verify pods are running:
+kubectl get pods -n choreo-ai-assistant
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SUCCESS INDICATORS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• All backend pods show: 1/1 Running (not CrashLoopBackOff)
+• No ImportError or RemoveMessage in logs
+• Health endpoint responds: curl http://localhost:9090/health
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 USEFUL COMMANDS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Watch pods:
+  kubectl get pods -n choreo-ai-assistant -w
+
+Check logs:
+  kubectl logs -n choreo-ai-assistant -l app=choreo-ai-backend -f
+
+Test backend:
+  kubectl port-forward -n choreo-ai-assistant svc/choreo-ai-backend-service 9090:9090
+  curl http://localhost:9090/health
+
+Run diagnostics:
+  cd backend/k8s && ./scripts/diagnose-backend.sh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Full guide:        backend/k8s/README_FIX.md
+Step-by-step:      backend/k8s/STEP_BY_STEP.sh
+Fix summary:       backend/k8s/FIX_SUMMARY.md
+Deployment guide:  backend/k8s/BACKEND_DEPLOYMENT_GUIDE.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️  ESTIMATED TIME: 10-15 minutes total
+🎯  GOAL: Get all backend pods to Running status
+

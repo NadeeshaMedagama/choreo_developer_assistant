@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: choreo-ai-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - choreo-ai.example.com
+    secretName: choreo-ai-tls
+  rules:
+  - host: choreo-ai.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: choreo-ai-backend-service
+            port:
+              number: 9090
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: choreo-ai-frontend-service
+            port:
+              number: 80
+

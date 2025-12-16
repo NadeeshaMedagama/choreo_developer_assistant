@@ -1,0 +1,22 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: choreo-ai-backend-pdb
+  namespace: choreo-ai-assistant
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: choreo-ai-backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: choreo-ai-frontend-pdb
+  namespace: choreo-ai-assistant
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: choreo-ai-frontend
+

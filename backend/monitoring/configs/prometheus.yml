@@ -1,0 +1,38 @@
+# Prometheus configuration for Choreo AI Assistant
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'choreo-ai-assistant'
+    environment: 'development'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - localhost:9093
+
+# Load alert rules
+rule_files:
+  - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Scrape the FastAPI application metrics
+  - job_name: 'choreo-ai-assistant'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  
+  # Scrape node exporter for system metrics (if installed)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+

@@ -1,0 +1,2 @@
+"""Collectors package initialization."""
+

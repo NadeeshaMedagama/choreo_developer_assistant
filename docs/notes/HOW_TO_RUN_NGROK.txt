@@ -1,0 +1,191 @@
+═══════════════════════════════════════════════════════════════
+    HOW TO RUN NGROK - STEP-BY-STEP GUIDE
+═══════════════════════════════════════════════════════════════
+
+STEP 1: INSTALL NGROK (ONE TIME ONLY)
+───────────────────────────────────────────────────────────────
+Copy and paste this command in your terminal:
+
+mkdir -p ~/bin && cd ~/bin && \
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz && \
+tar -xzf ngrok-v3-stable-linux-amd64.tgz && \
+chmod +x ngrok && \
+rm ngrok-v3-stable-linux-amd64.tgz && \
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc && \
+source ~/.bashrc && \
+echo "✓ Ngrok installed successfully!"
+
+
+STEP 2: CONFIGURE AUTHTOKEN (ONE TIME ONLY)
+───────────────────────────────────────────────────────────────
+Copy and paste this command:
+
+~/bin/ngrok config add-authtoken 34j8bmSyKrTNHW3t2X4FNORQPBa_7sqpGbMobVAnTBoaQvGZj
+
+
+STEP 3: RUN NGROK (EVERY TIME YOU NEED IT)
+───────────────────────────────────────────────────────────────
+
+METHOD A: Using Helper Scripts (EASIEST)
+─────────────────────────────────────────
+
+1. Open a terminal
+2. Navigate to your project:
+
+   cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+
+3. Run ONE of these commands based on your needs:
+
+   For Backend (port 9090):
+   ./start_ngrok_backend.sh
+
+   For Frontend (port 5173):
+   ./start_ngrok_frontend.sh
+
+   For Docker Backend (port 8000):
+   ./start_ngrok_docker.sh
+
+   For ANY custom port:
+   ./start_ngrok_custom.sh 8080
+   (replace 8080 with your port number)
+
+
+METHOD B: Direct Command (MANUAL)
+──────────────────────────────────
+
+Run ngrok directly with any port:
+
+~/bin/ngrok http 9090        # For backend
+~/bin/ngrok http 8000        # For docker backend
+~/bin/ngrok http 5173        # For frontend
+~/bin/ngrok http <PORT>      # For any port you choose
+
+
+═══════════════════════════════════════════════════════════════
+    COMPLETE EXAMPLE WORKFLOW
+═══════════════════════════════════════════════════════════════
+
+TERMINAL 1 - Start Your Application
+───────────────────────────────────────────────────────────────
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+
+# Choose one based on what you're running:
+
+# Option A: Start backend directly
+uvicorn backend.app:app --host 0.0.0.0 --port 9090
+
+# Option B: Start with Docker
+docker-compose -f docker/docker-compose.yml up
+
+# Option C: Start frontend
+cd frontend && npm run dev
+
+
+TERMINAL 2 - Start Ngrok Tunnel
+───────────────────────────────────────────────────────────────
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+
+# Use the matching port:
+./start_ngrok_backend.sh     # If you started backend on 9090
+./start_ngrok_docker.sh      # If you started docker on 8000
+./start_ngrok_frontend.sh    # If you started frontend on 5173
+
+
+═══════════════════════════════════════════════════════════════
+    WHAT YOU'LL SEE
+═══════════════════════════════════════════════════════════════
+
+When ngrok starts successfully, you'll see:
+
+    ngrok
+
+    Session Status                online
+    Account                       your-email@example.com
+    Version                       3.x.x
+    Region                        United States (us)
+    Latency                       50ms
+    Web Interface                 http://127.0.0.1:4040
+    Forwarding                    https://abc123.ngrok-free.app -> http://localhost:9090
+
+    Connections                   ttl     opn     rt1     rt5     p50     p90
+                                  0       0       0.00    0.00    0.00    0.00
+
+
+The important line is:
+    Forwarding  https://abc123.ngrok-free.app -> http://localhost:9090
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                THIS IS YOUR PUBLIC URL!
+
+
+═══════════════════════════════════════════════════════════════
+    USING YOUR PUBLIC URL
+═══════════════════════════════════════════════════════════════
+
+1. Copy the https://xxxxx.ngrok-free.app URL
+2. Share it with anyone or use it in your browser
+3. Your local application is now accessible from anywhere!
+
+Example:
+- Local:  http://localhost:9090/api/health
+- Public: https://abc123.ngrok-free.app/api/health
+
+
+═══════════════════════════════════════════════════════════════
+    STOPPING NGROK
+═══════════════════════════════════════════════════════════════
+
+Press Ctrl+C in the terminal where ngrok is running
+
+
+═══════════════════════════════════════════════════════════════
+    TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Problem: "ngrok: command not found"
+Solution: Run STEP 1 again, then restart your terminal or run:
+          source ~/.bashrc
+
+Problem: "ERR_NGROK_108: Invalid authtoken"
+Solution: Run STEP 2 again with the correct authtoken
+
+Problem: "tunnel session failed: failed to connect to ngrok"
+Solution: Check your internet connection
+
+Problem: "bind: address already in use"
+Solution: Another ngrok instance is running. Close it first.
+
+Problem: Can't access the ngrok URL
+Solution: Make sure your application is running BEFORE starting ngrok
+
+
+═══════════════════════════════════════════════════════════════
+    QUICK COMMANDS REFERENCE
+═══════════════════════════════════════════════════════════════
+
+Install:
+  mkdir -p ~/bin && cd ~/bin && wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz && tar -xzf ngrok-v3-stable-linux-amd64.tgz && chmod +x ngrok
+
+Configure:
+  ~/bin/ngrok config add-authtoken 34j8bmSyKrTNHW3t2X4FNORQPBa_7sqpGbMobVAnTBoaQvGZj
+
+Run:
+  ~/bin/ngrok http 9090
+
+Or use scripts:
+  cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+  ./start_ngrok_backend.sh
+
+
+═══════════════════════════════════════════════════════════════
+    READY TO START? 🚀
+═══════════════════════════════════════════════════════════════
+
+1. Run STEP 1 (install) - one time only
+2. Run STEP 2 (configure) - one time only
+3. Start your app in Terminal 1
+4. Run ngrok in Terminal 2
+5. Use the public URL!
+
+Need help? Check NGROK_SETUP.md for more details.
+═══════════════════════════════════════════════════════════════
+

@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: choreo-ai-assistant
+
+resources:
+  # Configuration
+  - base/config/namespace.yaml
+  - base/config/configmap.yaml
+  - base/config/secret.yaml
+
+  # Deployments
+  - base/deployments/backend-deployment.yaml
+  - base/deployments/frontend-deployment.yaml
+
+  # Services
+  - base/services/backend-service.yaml
+  - base/services/frontend-service.yaml
+  - base/services/ingress.yaml
+
+  # Storage
+  - base/storage/pvc.yaml
+
+  # Security
+  - base/security/rbac.yaml
+  - base/security/networkpolicy.yaml
+
+  # Policies
+  - base/policies/hpa.yaml
+  - base/policies/pdb.yaml
+  - base/policies/resource-quota.yaml
+
+  # Monitoring (uncomment if Prometheus Operator is installed)
+  # - base/monitoring/prometheus-servicemonitor.yaml
+
+commonLabels:
+  app.kubernetes.io/name: choreo-ai-assistant
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: choreo-ai-backend
+    newName: choreo-ai-backend
+    newTag: latest
+  - name: choreo-ai-frontend
+    newName: choreo-ai-frontend
+    newTag: latest
+

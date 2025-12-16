@@ -1,0 +1,155 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+#!/bin/bash
+# Load testing script for Choreo AI Assistant monitoring
+
+set -e
+
+echo "🧪 Load Testing Choreo AI Assistant"
+echo ""
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+BASE_URL="${BASE_URL:-http://localhost:8000}"
+NUM_REQUESTS="${NUM_REQUESTS:-100}"
+CONCURRENCY="${CONCURRENCY:-10}"
+
+echo -e "${BLUE}Configuration:${NC}"
+echo "  Base URL: $BASE_URL"
+echo "  Number of requests: $NUM_REQUESTS"
+echo "  Concurrency: $CONCURRENCY"
+echo ""
+
+# Check if the service is running
+echo -e "${BLUE}Checking if service is running...${NC}"
+if ! curl -s "$BASE_URL/api/health" > /dev/null; then
+    echo -e "${YELLOW}⚠️  Service is not running at $BASE_URL${NC}"
+    echo "Please start the service first: ./monitoring/start.sh"
+    exit 1
+fi
+echo -e "${GREEN}✅ Service is running${NC}"
+echo ""
+
+# Function to make a request
+make_request() {
+    local question="$1"
+    curl -s -X POST "$BASE_URL/api/ask?question=$(echo "$question" | jq -sRr @uri)" \
+         -H "Content-Type: application/json" > /dev/null
+}
+
+# Test questions
+questions=(
+    "What is Choreo?"
+    "How do I deploy an application?"
+    "What are the key features?"
+    "How do I connect to GitHub?"
+    "What is the pricing model?"
+    "How do I monitor my application?"
+    "What databases are supported?"
+    "How do I set up authentication?"
+    "What is the developer portal?"
+    "How do I create an API?"
+)
+
+# Normal load test
+echo -e "${BLUE}🔥 Starting normal load test...${NC}"
+echo "Sending $NUM_REQUESTS requests..."
+
+start_time=$(date +%s)
+
+for i in $(seq 1 $NUM_REQUESTS); do
+    # Pick a random question
+    idx=$((i % ${#questions[@]}))
+    question="${questions[$idx]}"
+    
+    # Send request in background
+    make_request "$question" &
+    
+    # Limit concurrency
+    if (( i % CONCURRENCY == 0 )); then
+        wait
+    fi
+    
+    # Progress indicator
+    if (( i % 10 == 0 )); then
+        echo -e "${GREEN}  Progress: $i/$NUM_REQUESTS${NC}"
+    fi
+done
+
+# Wait for all background jobs
+wait
+
+end_time=$(date +%s)
+duration=$((end_time - start_time))
+
+echo -e "${GREEN}✅ Normal load test completed${NC}"
+echo "  Duration: ${duration}s"
+echo "  Requests per second: $((NUM_REQUESTS / duration))"
+echo ""
+
+# Spike test (high load)
+echo -e "${BLUE}⚡ Starting spike test (high load)...${NC}"
+echo "Sending 50 concurrent requests..."
+
+spike_start=$(date +%s)
+
+for i in $(seq 1 50); do
+    idx=$((i % ${#questions[@]}))
+    question="${questions[$idx]}"
+    make_request "$question" &
+done
+
+wait
+
+spike_end=$(date +%s)
+spike_duration=$((spike_end - spike_start))
+
+echo -e "${GREEN}✅ Spike test completed${NC}"
+echo "  Duration: ${spike_duration}s"
+echo ""
+
+# Error test
+echo -e "${BLUE}❌ Testing error handling...${NC}"
+
+# Try to trigger some errors
+curl -s -X POST "$BASE_URL/api/ask?question=" > /dev/null || true
+curl -s -X POST "$BASE_URL/api/invalid-endpoint" > /dev/null || true
+
+echo -e "${GREEN}✅ Error test completed${NC}"
+echo ""
+
+# Health check
+echo -e "${BLUE}💓 Final health check...${NC}"
+health_response=$(curl -s "$BASE_URL/api/health")
+echo "$health_response" | jq . 2>/dev/null || echo "$health_response"
+echo ""
+
+# Metrics summary
+echo -e "${BLUE}📊 Fetching metrics summary...${NC}"
+metrics=$(curl -s "$BASE_URL/metrics")
+
+# Parse key metrics
+echo "Key Metrics:"
+echo "$metrics" | grep -E "^(http_requests_total|http_request_duration_seconds|errors_total|cpu_usage_percent|memory_usage_percent)" | head -20
+
+echo ""
+echo -e "${GREEN}🎉 Load testing completed!${NC}"
+echo ""
+echo "Next steps:"
+echo "  1. Check Prometheus: http://localhost:9090"
+echo "  2. View Grafana dashboards: http://localhost:3000"
+echo "  3. Check logs: tail -f ../logs/app.log"
+echo ""
+

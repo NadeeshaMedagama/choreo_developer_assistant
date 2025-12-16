@@ -1,0 +1,33 @@
+# GitHub Wiki Ingestion Requirements
+
+# Core dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+html2text>=2020.1.16
+python-dotenv>=1.0.0
+
+# Retry logic
+urllib3>=2.0.0
+
+# HTML parsing
+lxml>=4.9.0
+
+# Data handling
+python-dateutil>=2.8.2
+
+# Vector database (optional - if using vector DB integration)
+pymilvus>=2.3.0
+
+# OpenAI (optional - if using embedding integration)
+openai>=1.0.0
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+
+# Development (optional)
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+

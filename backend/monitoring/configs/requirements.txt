@@ -1,0 +1,4 @@
+# Monitoring dependencies for Choreo AI Assistant
+prometheus-client==0.19.0
+psutil==5.9.6
+

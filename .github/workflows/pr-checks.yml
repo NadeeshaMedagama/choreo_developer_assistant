@@ -1,0 +1,191 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+
+jobs:
+  # ============================================
+  # PR Validation
+  # ============================================
+  pr-validate:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $PR_TITLE"
+          
+          # Check if title follows conventional commits
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|perf|test|build|ci|chore)(\(.+\))?: ]]; then
+            echo "⚠️  PR title should follow conventional commits format"
+            echo "Examples: feat: add new feature, fix: resolve bug, docs: update README"
+          fi
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          if ! git merge-tree $(git merge-base HEAD origin/${{ github.base_ref }}) origin/${{ github.base_ref }} HEAD | grep -q "changed in both"; then
+            echo "✅ No merge conflicts detected"
+          else
+            echo "⚠️  Potential merge conflicts detected"
+          fi
+
+  # ============================================
+  # Code Quality Checks
+  # ============================================
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install quality tools
+        run: |
+          pip install black isort flake8 pylint bandit
+
+      - name: Check code formatting with Black
+        run: |
+          black --check --diff backend/ || (echo "Run 'black backend/' to fix formatting" && exit 1)
+        continue-on-error: true
+
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only --diff backend/ || (echo "Run 'isort backend/' to fix imports" && exit 1)
+        continue-on-error: true
+
+      - name: Run Pylint
+        run: |
+          pylint backend/ --exit-zero --output-format=colorized
+        continue-on-error: true
+
+      - name: Run Bandit security linter
+        run: |
+          bandit -r backend/ -f json -o bandit-report.json || true
+          bandit -r backend/ -f screen
+        continue-on-error: true
+
+      - name: Upload Bandit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+        continue-on-error: true
+
+  # ============================================
+  # File Size Check
+  # ============================================
+  file-size-check:
+    name: Check File Sizes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for large files
+        run: |
+          echo "Checking for files larger than 10MB..."
+          find . -type f -size +10M -not -path "./.git/*" -not -path "./node_modules/*" -not -path "./.venv/*" -not -path "./venv/*" | while read file; do
+            size=$(du -h "$file" | cut -f1)
+            echo "⚠️  Large file detected: $file ($size)"
+          done
+
+      - name: Check repository size
+        run: |
+          REPO_SIZE=$(du -sh . | cut -f1)
+          echo "📊 Repository size: $REPO_SIZE"
+
+  # ============================================
+  # Dependency Check
+  # ============================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+        continue-on-error: true
+
+  # ============================================
+  # PR Comment Summary
+  # ============================================
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [pr-validate, code-quality, file-size-check]
+    if: always()
+    
+    steps:
+      - name: Create PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('🤖 PR Check Summary')
+            );
+            
+            const body = `## 🤖 PR Check Summary
+            
+            **PR Validation:** ${{ needs.pr-validate.result }} ${{ needs.pr-validate.result == 'success' && '✅' || '❌' }}
+            **Code Quality:** ${{ needs.code-quality.result }} ${{ needs.code-quality.result == 'success' && '✅' || '⚠️' }}
+            **File Size Check:** ${{ needs.file-size-check.result }} ${{ needs.file-size-check.result == 'success' && '✅' || '⚠️' }}
+            
+            ---
+            
+            ### 📋 Next Steps:
+            - Ensure all checks pass before merging
+            - Review code quality warnings
+            - Address any security concerns
+            
+            _Updated: ${new Date().toISOString()}_
+            `;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+        continue-on-error: true
+

@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: choreo-ai-backend-sa
+  namespace: choreo-ai-assistant
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: choreo-ai-frontend-sa
+  namespace: choreo-ai-assistant
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: choreo-ai-backend-role
+  namespace: choreo-ai-assistant
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: choreo-ai-backend-rolebinding
+  namespace: choreo-ai-assistant
+subjects:
+- kind: ServiceAccount
+  name: choreo-ai-backend-sa
+  namespace: choreo-ai-assistant
+roleRef:
+  kind: Role
+  name: choreo-ai-backend-role
+  apiGroup: rbac.authorization.k8s.io
+

@@ -1,0 +1,167 @@
+╔════════════════════════════════════════════════════════════════╗
+║         NGROK IS WORKING! - API ENDPOINTS GUIDE               ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ GOOD NEWS: Ngrok is working! You're receiving requests.
+
+⚠️  THE ISSUE: You were seeing "405 Method Not Allowed" because:
+   - Requests were coming to POST / (root endpoint)
+   - Your root endpoint only accepted GET requests
+   - This is now FIXED! ✓
+
+═══════════════════════════════════════════════════════════════
+
+📋 YOUR AVAILABLE API ENDPOINTS
+
+After starting your app with ngrok, use your ngrok URL:
+Example: https://abc123.ngrok-free.app
+
+GET Endpoints (use in browser or GET requests):
+───────────────────────────────────────────────────────────────
+✓ GET  /                    - Welcome message
+✓ GET  /api/health          - Health check
+✓ GET  /health              - Health check (legacy)
+
+POST Endpoints (use with curl, Postman, or code):
+───────────────────────────────────────────────────────────────
+✓ POST /                    - Root POST handler (for webhooks)
+✓ POST /api/ask             - Ask AI a question
+✓ POST /ask                 - Ask AI (legacy)
+✓ POST /api/ask_graph       - Ask AI with graph RAG
+✓ POST /ask_graph           - Ask AI graph (legacy)
+✓ POST /api/ingest/github   - Ingest GitHub repository
+✓ POST /ingest/github       - Ingest GitHub (legacy)
+✓ POST /api/ingest/org      - Ingest organization repos
+✓ POST /api/webhook/github  - GitHub webhook handler
+
+═══════════════════════════════════════════════════════════════
+
+🧪 HOW TO TEST YOUR NGROK SETUP
+
+1. GET YOUR NGROK URL
+   When you run ngrok, you'll see:
+   Forwarding  https://abc123.ngrok-free.app -> http://localhost:9090
+
+   Copy: https://abc123.ngrok-free.app
+
+2. TEST IN BROWSER
+   Open: https://abc123.ngrok-free.app
+   You should see: {"message": "Choreo AI Assistant..."}
+
+3. TEST HEALTH CHECK
+   Open: https://abc123.ngrok-free.app/api/health
+   You should see: {"status": "healthy", "pinecone": "connected"}
+
+4. TEST AI QUERY (use curl or Postman)
+
+   Using curl:
+   curl -X POST "https://abc123.ngrok-free.app/api/ask?question=What%20is%20Choreo?"
+
+   Or with JSON body:
+   curl -X POST "https://abc123.ngrok-free.app/api/ask" \
+     -H "Content-Type: application/json" \
+     -d '{"question": "What is Choreo?"}'
+
+═══════════════════════════════════════════════════════════════
+
+🔧 EXAMPLE COMMANDS WITH YOUR NGROK URL
+
+Replace YOUR_NGROK_URL with your actual ngrok URL:
+
+# Health Check
+curl https://YOUR_NGROK_URL/api/health
+
+# Ask AI a Question
+curl -X POST "https://YOUR_NGROK_URL/api/ask?question=How%20do%20I%20deploy%20to%20Choreo?"
+
+# Ingest GitHub Repo
+curl -X POST "https://YOUR_NGROK_URL/api/ingest/github?repo_url=https://github.com/wso2/docs-choreo-dev.git&branch=main"
+
+# Ingest Organization Repos
+curl -X POST "https://YOUR_NGROK_URL/api/ingest/org?org=wso2-enterprise&keyword=choreo&max_repos=5"
+
+═══════════════════════════════════════════════════════════════
+
+🌐 USING WITH GITHUB WEBHOOKS
+
+If you want to set up GitHub webhooks:
+
+1. Go to your GitHub repository → Settings → Webhooks
+2. Click "Add webhook"
+3. Payload URL: https://YOUR_NGROK_URL/api/webhook/github
+4. Content type: application/json
+5. Events: Just the push event
+6. Click "Add webhook"
+
+Now when you push to the repo, it will auto-ingest changes!
+
+═══════════════════════════════════════════════════════════════
+
+📝 USING WITH FRONTEND
+
+If you're running the frontend, update the API URL:
+
+1. Open your frontend code
+2. Change the API_URL to your ngrok URL:
+   const API_URL = "https://YOUR_NGROK_URL";
+
+3. Make requests like:
+   fetch(`${API_URL}/api/ask?question=${encodeURIComponent(question)}`, {
+     method: 'POST'
+   })
+
+═══════════════════════════════════════════════════════════════
+
+🔍 UNDERSTANDING THE 405 ERROR YOU SAW
+
+The error "405 Method Not Allowed" means:
+- Someone sent a POST request to /
+- Your endpoint only accepted GET
+- This is now fixed - POST / is now handled
+
+The IPs you saw (140.82.115.x) are GitHub's IP addresses, which means:
+- Either a webhook was configured
+- Or GitHub was testing the endpoint
+- This is normal and now handled correctly
+
+═══════════════════════════════════════════════════════════════
+
+✅ WHAT WAS FIXED
+
+1. ✓ Added POST handler for root endpoint (/)
+2. ✓ Added CORS support for ngrok URLs
+3. ✓ Added support for all origins (for development)
+4. ✓ Proper response for webhook POSTs
+
+═══════════════════════════════════════════════════════════════
+
+🚀 NEXT STEPS
+
+1. Restart your backend if it's running:
+   Ctrl+C (stop)
+   uvicorn backend.app:app --host 0.0.0.0 --port 9090 (start)
+
+2. Ngrok should still be running in the other terminal
+
+3. Test the endpoints using the examples above
+
+4. Share your ngrok URL with others or use it in your frontend
+
+═══════════════════════════════════════════════════════════════
+
+💡 PRO TIPS
+
+• Ngrok free tier gives you a random URL each time
+• The URL changes when you restart ngrok
+• For a permanent URL, upgrade to ngrok paid plan
+• Always restart your backend after code changes
+
+═══════════════════════════════════════════════════════════════
+
+Need help? Check:
+- Backend logs for detailed error messages
+- Ngrok web interface at http://localhost:4040
+- This file: NGROK_ENDPOINTS_GUIDE.txt
+
+═══════════════════════════════════════════════════════════════
+

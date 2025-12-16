@@ -1,0 +1,149 @@
+name: Auto-assign and Label
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  # ============================================
+  # Auto-assign issues and PRs
+  # ============================================
+  auto-assign:
+    name: Auto Assign
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Auto-assign issue
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [context.payload.issue.user.login]
+            });
+
+      - name: Auto-assign PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [context.payload.pull_request.user.login]
+            });
+
+  # ============================================
+  # Auto-label based on content
+  # ============================================
+  auto-label:
+    name: Auto Label
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Label based on title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue?.title || context.payload.pull_request?.title || '';
+            const body = context.payload.issue?.body || context.payload.pull_request?.body || '';
+            const labels = [];
+            
+            // Check title for keywords
+            if (title.toLowerCase().includes('bug') || body.toLowerCase().includes('bug')) {
+              labels.push('bug');
+            }
+            if (title.toLowerCase().includes('feat') || title.toLowerCase().includes('feature')) {
+              labels.push('enhancement');
+            }
+            if (title.toLowerCase().includes('docs') || title.toLowerCase().includes('documentation')) {
+              labels.push('documentation');
+            }
+            if (title.toLowerCase().includes('fix')) {
+              labels.push('bug');
+            }
+            if (title.toLowerCase().includes('security') || body.toLowerCase().includes('security')) {
+              labels.push('security');
+            }
+            if (title.toLowerCase().includes('test')) {
+              labels.push('testing');
+            }
+            if (title.toLowerCase().includes('ci') || title.toLowerCase().includes('cd')) {
+              labels.push('ci/cd');
+            }
+            if (title.toLowerCase().includes('frontend')) {
+              labels.push('frontend');
+            }
+            if (title.toLowerCase().includes('backend')) {
+              labels.push('backend');
+            }
+            
+            // Add labels if any were found
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
+
+  # ============================================
+  # Welcome message for first-time contributors
+  # ============================================
+  welcome:
+    name: Welcome Contributors
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Welcome first-time contributors
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.issue.number;
+            const is_pr = !!context.payload.pull_request;
+            const author = context.payload.issue?.user.login || context.payload.pull_request?.user.login;
+            
+            // Check if this is the user's first contribution
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: author,
+              state: 'all'
+            });
+            
+            if (issues.length === 1) {
+              const message = is_pr 
+                ? `👋 Thanks for opening your first pull request, @${author}! We appreciate your contribution to the Choreo AI Assistant project.
+                
+                  A maintainer will review your PR soon. In the meantime:
+                  - Make sure all CI checks pass ✅
+                  - Keep your PR focused and well-documented 📝
+                  - Be responsive to feedback 💬
+                  
+                  Welcome to the community! 🎉`
+                : `👋 Thanks for opening your first issue, @${author}! 
+                
+                  We appreciate you taking the time to contribute. A maintainer will look into this soon.
+                  
+                  To help us process this faster:
+                  - Provide as much detail as possible 📝
+                  - Include steps to reproduce (if it's a bug) 🐛
+                  - Add relevant logs or screenshots 📸
+                  
+                  Welcome to the Choreo AI Assistant community! 🎉`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue_number,
+                body: message
+              });
+            }
+

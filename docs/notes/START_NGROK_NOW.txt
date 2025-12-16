@@ -1,0 +1,138 @@
+╔════════════════════════════════════════════════════════════════╗
+║   YOUR BACKEND IS ON PORT 8000 - NGROK QUICK GUIDE           ║
+╚════════════════════════════════════════════════════════════════╝
+
+✅ YOUR CURRENT SETUP:
+  - Backend running on: http://0.0.0.0:8000
+  - Command: python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
+
+═══════════════════════════════════════════════════════════════
+
+🚀 HOW TO START NGROK (2 OPTIONS)
+
+OPTION 1: EASIEST - Use the Helper Script
+───────────────────────────────────────────────────────────────
+Open a NEW terminal (keep backend running in the first one):
+
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+./start_ngrok_backend.sh
+
+OPTION 2: Manual Command
+───────────────────────────────────────────────────────────────
+~/bin/ngrok http 8000
+
+═══════════════════════════════════════════════════════════════
+
+📋 COMPLETE STEP-BY-STEP WORKFLOW
+
+TERMINAL 1 - Backend (Already Running ✓)
+───────────────────────────────────────────────────────────────
+You already have this running:
+
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000 --reload
+
+✓ Keep this terminal running!
+
+
+TERMINAL 2 - Start Ngrok (Do this now)
+───────────────────────────────────────────────────────────────
+Open a NEW terminal and run:
+
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+chmod +x start_ngrok_backend.sh
+./start_ngrok_backend.sh
+
+OR directly:
+
+~/bin/ngrok http 8000
+
+═══════════════════════════════════════════════════════════════
+
+🎯 WHAT YOU'LL SEE IN NGROK
+
+When ngrok starts, you'll see:
+
+    ngrok
+
+    Session Status                online
+    Region                        United States (us)
+    Forwarding                    https://abc123.ngrok-free.app -> http://localhost:8000
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                  👆 THIS IS YOUR PUBLIC URL!
+
+    Web Interface                 http://127.0.0.1:4040
+
+
+═══════════════════════════════════════════════════════════════
+
+✅ TEST YOUR SETUP
+
+Once ngrok is running, test these URLs (replace with YOUR ngrok URL):
+
+1. Welcome Message:
+   https://YOUR-URL.ngrok-free.app/
+
+2. Health Check:
+   https://YOUR-URL.ngrok-free.app/api/health
+
+3. AI Query (in browser):
+   https://YOUR-URL.ngrok-free.app/api/ask?question=Hello
+
+4. With curl:
+   curl https://YOUR-URL.ngrok-free.app/api/health
+
+═══════════════════════════════════════════════════════════════
+
+🔧 IMPORTANT PORTS
+
+Your Application Ports:
+  ✓ Backend:  8000  (what you're using NOW)
+  - Frontend: 5173  (if you start it)
+  - Docker:   9090  (alternative setup)
+
+Ngrok Ports:
+  • Point ngrok to port 8000 (your backend port)
+
+═══════════════════════════════════════════════════════════════
+
+📊 MONITORING
+
+View ngrok requests in real-time:
+  • Open browser: http://localhost:4040
+  • See all incoming requests and responses
+  • Very useful for debugging!
+
+═══════════════════════════════════════════════════════════════
+
+🛑 TO STOP
+
+Backend:
+  • In Terminal 1: Press Ctrl+C
+
+Ngrok:
+  • In Terminal 2: Press Ctrl+C
+
+═══════════════════════════════════════════════════════════════
+
+💡 QUICK TIPS
+
+1. Your backend is already running ✓
+2. Just open a new terminal for ngrok
+3. Use port 8000 for ngrok (not 9090)
+4. Keep both terminals open
+5. The ngrok URL changes each time you restart ngrok
+
+═══════════════════════════════════════════════════════════════
+
+🎬 READY TO GO!
+
+Just run this in a NEW terminal:
+
+cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
+./start_ngrok_backend.sh
+
+That's it! Your backend will be accessible from anywhere! 🌐
+
+═══════════════════════════════════════════════════════════════
+

@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: choreo-ai-backend-policy
+  namespace: choreo-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: choreo-ai-backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: choreo-ai-frontend
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 9090
+  egress:
+  - {}  # Allow all outbound traffic for external API calls
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: choreo-ai-frontend-policy
+  namespace: choreo-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: choreo-ai-frontend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: choreo-ai-backend
+    ports:
+    - protocol: TCP
+      port: 9090
+

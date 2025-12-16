@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: choreo-ai-ingress
+spec:
+  rules:
+  - host: choreo-ai-dev.local
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: choreo-ai-backend-service
+            port:
+              number: 9090
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: choreo-ai-frontend-service
+            port:
+              number: 80
+

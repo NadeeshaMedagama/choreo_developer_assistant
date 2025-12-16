@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: choreo-ai-backend-monitor
+  namespace: choreo-ai-assistant
+  labels:
+    app: choreo-ai-backend
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: choreo-ai-backend
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+

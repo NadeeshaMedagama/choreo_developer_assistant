@@ -1,0 +1,159 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  # ============================================
+  # Check for Python dependency updates
+  # ============================================
+  python-dependencies:
+    name: Check Python Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pip-audit
+        run: pip install pip-audit pip-review
+
+      - name: Check for security vulnerabilities
+        run: |
+          echo "🔍 Checking Python dependencies for security vulnerabilities..."
+          if [ -f choreo-ai-assistant/requirements.txt ]; then
+            pip-audit -r choreo-ai-assistant/requirements.txt || true
+          fi
+          if [ -f diagram_processor/requirements.txt ]; then
+            pip-audit -r diagram_processor/requirements.txt || true
+          fi
+
+      - name: Check for outdated packages
+        run: |
+          echo "📦 Checking for outdated Python packages..."
+          if [ -f choreo-ai-assistant/requirements.txt ]; then
+            pip install -r choreo-ai-assistant/requirements.txt
+            pip list --outdated
+          fi
+
+  # ============================================
+  # Check for npm dependency updates
+  # ============================================
+  npm-dependencies:
+    name: Check NPM Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check for outdated npm packages
+        working-directory: ./frontend
+        run: |
+          npm ci
+          echo "📦 Checking for outdated NPM packages..."
+          npm outdated || true
+
+      - name: Check for security vulnerabilities
+        working-directory: ./frontend
+        run: |
+          echo "🔍 Checking NPM dependencies for security vulnerabilities..."
+          npm audit || true
+
+      - name: Check for available updates
+        working-directory: ./frontend
+        run: |
+          npx npm-check-updates || true
+
+  # ============================================
+  # Create issue for updates
+  # ============================================
+  create-update-issue:
+    name: Create Update Issue
+    runs-on: ubuntu-latest
+    needs: [python-dependencies, npm-dependencies]
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Create or update issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = '📦 Weekly Dependency Update Check';
+            const body = `## Automated Dependency Check
+            
+            This issue is automatically created weekly to track dependency updates.
+            
+            ### 🔍 What to check:
+            
+            #### Python Dependencies
+            - [ ] Review \`choreo-ai-assistant/requirements.txt\`
+            - [ ] Review \`diagram_processor/requirements.txt\`
+            - [ ] Check for security vulnerabilities with \`pip-audit\`
+            - [ ] Update outdated packages where appropriate
+            
+            #### NPM Dependencies
+            - [ ] Review \`frontend/package.json\`
+            - [ ] Run \`npm outdated\` to check for updates
+            - [ ] Run \`npm audit\` to check for vulnerabilities
+            - [ ] Update dependencies and test thoroughly
+            
+            ### 📋 Update Process:
+            1. Create a new branch: \`git checkout -b chore/update-dependencies\`
+            2. Update dependencies carefully
+            3. Test all functionality
+            4. Create a PR with the updates
+            
+            ### ⚠️ Important:
+            - Always test after updating dependencies
+            - Review breaking changes in package changelogs
+            - Update lockfiles (\`package-lock.json\`, etc.)
+            
+            ---
+            
+            **Created:** ${new Date().toISOString()}
+            **Workflow Run:** https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            `;
+            
+            // Check if issue already exists
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: ['dependencies', 'automated']
+            });
+            
+            const existingIssue = issues.find(issue => issue.title === title);
+            
+            if (existingIssue) {
+              // Update existing issue
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `🔄 Weekly check completed: ${new Date().toISOString()}\n\nSee workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['dependencies', 'automated', 'maintenance']
+              });
+            }
+

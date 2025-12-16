@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: choreo-ai-assistant
+  labels:
+    name: choreo-ai-assistant
+    environment: production
+

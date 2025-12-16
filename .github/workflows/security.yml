@@ -1,0 +1,184 @@
+name: CodeQL Security Analysis
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  schedule:
+    # Run every day at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  # ============================================
+  # CodeQL Analysis
+  # ============================================
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python', 'javascript' ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+        continue-on-error: true
+
+  # ============================================
+  # Secret Scanning
+  # ============================================
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+        continue-on-error: true
+
+  # ============================================
+  # OWASP Dependency Check
+  # ============================================
+  dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install safety pip-audit
+
+      - name: Run Safety check
+        run: |
+          if [ -f choreo-ai-assistant/requirements.txt ]; then
+            safety check -r choreo-ai-assistant/requirements.txt --json > safety-report.json || true
+            safety check -r choreo-ai-assistant/requirements.txt || true
+          fi
+        continue-on-error: true
+
+      - name: Run pip-audit
+        run: |
+          if [ -f choreo-ai-assistant/requirements.txt ]; then
+            pip-audit -r choreo-ai-assistant/requirements.txt || true
+          fi
+        continue-on-error: true
+
+      - name: Upload Safety report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: safety-report
+          path: safety-report.json
+        continue-on-error: true
+
+  # ============================================
+  # Container Scanning
+  # ============================================
+  container-scan:
+    name: Container Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for scanning
+        run: |
+          docker build -t choreo-ai-assistant:scan -f Dockerfile .
+
+      - name: Run Trivy vulnerability scanner (SARIF)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'choreo-ai-assistant:scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner (Table)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'choreo-ai-assistant:scan'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+  # ============================================
+  # Summary Report
+  # ============================================
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, secret-scan, dependency-check, container-scan]
+    if: always()
+    
+    steps:
+      - name: Create Summary
+        run: |
+          echo "## 🔐 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scan Results:" >> $GITHUB_STEP_SUMMARY
+          echo "- **CodeQL Analysis:** ${{ needs.codeql-analysis.result }} ${{ needs.codeql-analysis.result == 'success' && '✅' || '⚠️' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Secret Scanning:** ${{ needs.secret-scan.result }} ${{ needs.secret-scan.result == 'success' && '✅' || '⚠️' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dependency Check:** ${{ needs.dependency-check.result }} ${{ needs.dependency-check.result == 'success' && '✅' || '⚠️' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Container Scanning:** ${{ needs.container-scan.result }} ${{ needs.container-scan.result == 'success' && '✅' || '⚠️' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Action Items:" >> $GITHUB_STEP_SUMMARY
+          echo "- Review Security tab for detailed findings" >> $GITHUB_STEP_SUMMARY
+          echo "- Address any critical or high severity issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Update vulnerable dependencies" >> $GITHUB_STEP_SUMMARY
+
