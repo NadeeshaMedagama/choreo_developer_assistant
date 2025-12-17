@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file (from nested directory)
-COPY choreo-ai-assistant/requirements.txt .
+COPY backend/choreo-ai-assistant/requirements.txt .
 
 # Install Python dependencies using standard pip
 RUN pip install --no-cache-dir --user -r requirements.txt

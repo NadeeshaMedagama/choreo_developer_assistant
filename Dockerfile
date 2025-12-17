@@ -21,9 +21,9 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt || \
-    pip install --no-cache-dir -r choreo-ai-assistant/requirements.txt
+    pip install --no-cache-dir -r backend/choreo-ai-assistant/requirements.txt
 
-RUN pip install --no-cache-dir -r diagram_processor/requirements.txt
+RUN pip install --no-cache-dir -r backend/diagram_processor/requirements.txt
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -31,9 +31,9 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=9090
 
 # Create necessary directories and set permissions
-RUN mkdir -p /app/diagram_processor/output/summaries \
-    /app/diagram_processor/output/graphs \
-    /app/diagram_processor/output/extracted_text \
+RUN mkdir -p /app/backend/diagram_processor/output/summaries \
+    /app/backend/diagram_processor/output/graphs \
+    /app/backend/diagram_processor/output/extracted_text \
     /app/credentials \
     /tmp \
     && chown -R 10014:users /app /tmp
