@@ -48,7 +48,7 @@ Comprehensive feature documentation:
 
 **👉 Learn about powerful features!**
 
-### 🚀 [03-deployment/](./03-deployment/)
+### 🚀 [03-deployment/](../scripts/03-deployment/)
 Deploy DevChoreo to various environments:
 - Choreo Platform deployment
 - Docker deployment
@@ -128,7 +128,7 @@ Version history:
 |------|--------------|
 | **Set up the project** | [Setup Guide](./01-getting-started/SETUP_GUIDE.md) |
 | **Run the application** | [Run Project](./01-getting-started/RUN_PROJECT.md) |
-| **Deploy to Choreo** | [Choreo Deployment](./03-deployment/CHOREO_DEPLOYMENT.md) |
+| **Deploy to Choreo** | [Choreo Deployment](../scripts/03-deployment/CHOREO_DEPLOYMENT.md) |
 | **Use conversation memory** | [Conversation Memory](./02-features/CONVERSATION_MEMORY_IMPLEMENTATION.md) |
 | **Enable streaming** | [Streaming Implementation](./02-features/STREAMING_IMPLEMENTATION.md) |
 | **Validate URLs** | [URL Validation](./07-url-validation/URL_VALIDATION.md) |
@@ -186,7 +186,7 @@ When adding new documentation:
 - **General Questions**: Start with [Getting Started](./01-getting-started/)
 - **Technical Issues**: Check [Troubleshooting](./04-troubleshooting/)
 - **Feature Documentation**: Browse [Features](./02-features/)
-- **Deployment Help**: See [Deployment](./03-deployment/)
+- **Deployment Help**: See [Deployment](../scripts/03-deployment/)
 
 ## 🔄 Keeping Documentation Updated
 

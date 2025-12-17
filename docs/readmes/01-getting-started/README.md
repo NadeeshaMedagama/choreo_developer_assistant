@@ -41,7 +41,7 @@ For returning users:
 ## 🔗 Related Documentation
 
 - **Features**: See [../02-features/](../02-features/) for detailed feature documentation
-- **Deployment**: See [../03-deployment/](../03-deployment/) for deployment guides
+- **Deployment**: See [../03-deployment/](../../scripts/03-deployment/) for deployment guides
 - **Troubleshooting**: See [../04-troubleshooting/](../04-troubleshooting/) for common issues
 
 ---

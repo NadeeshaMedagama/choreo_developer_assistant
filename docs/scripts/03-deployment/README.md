@@ -5,16 +5,16 @@ This directory contains all documentation related to deploying DevChoreo in vari
 ## 🚀 Deployment Guides
 
 ### Platform Deployment
-- **[CHOREO_DEPLOYMENT.md](./CHOREO_DEPLOYMENT.md)** - Deploy to WSO2 Choreo platform
-- **[CHOREO_RUN_COMMAND.md](./CHOREO_RUN_COMMAND.md)** - Running on Choreo with proper commands
+- **[CHOREO_DEPLOYMENT.md](CHOREO_DEPLOYMENT.md)** - Deploy to WSO2 Choreo platform
+- **[CHOREO_RUN_COMMAND.md](CHOREO_RUN_COMMAND.md)** - Running on Choreo with proper commands
 
 ### Docker Deployment
-- **[DOCKER_README.md](./DOCKER_README.md)** - Complete Docker setup and deployment guide
-- **[DOCKER_QUICK_REFERENCE.md](./DOCKER_QUICK_REFERENCE.md)** - Quick Docker commands reference
+- **[DOCKER_README.md](DOCKER_README.md)** - Complete Docker setup and deployment guide
+- **[DOCKER_QUICK_REFERENCE.md](DOCKER_QUICK_REFERENCE.md)** - Quick Docker commands reference
 
 ### Frontend Deployment
-- **[FRONTEND_DIST_DEPLOYMENT.md](./FRONTEND_DIST_DEPLOYMENT.md)** - Building and deploying frontend distribution
-- **[FRONTEND_BACKEND_CONNECTION.md](./FRONTEND_BACKEND_CONNECTION.md)** - Connecting frontend to backend
+- **[FRONTEND_DIST_DEPLOYMENT.md](FRONTEND_DIST_DEPLOYMENT.md)** - Building and deploying frontend distribution
+- **[FRONTEND_BACKEND_CONNECTION.md](FRONTEND_BACKEND_CONNECTION.md)** - Connecting frontend to backend
 
 ## 📦 Deployment Options
 
@@ -28,18 +28,18 @@ uvicorn app:app --reload
 cd frontend
 npm run dev
 ```
-See: [RUN_PROJECT.md](../01-getting-started/RUN_PROJECT.md)
+See: [RUN_PROJECT.md](../../readmes/01-getting-started/RUN_PROJECT.md)
 
 ### 2. Docker Compose
 ```bash
 cd docker
 docker-compose up
 ```
-See: [DOCKER_README.md](./DOCKER_README.md)
+See: [DOCKER_README.md](DOCKER_README.md)
 
 ### 3. Choreo Platform
 Deploy to WSO2 Choreo using `.choreo/component.yaml`
-See: [CHOREO_DEPLOYMENT.md](./CHOREO_DEPLOYMENT.md)
+See: [CHOREO_DEPLOYMENT.md](CHOREO_DEPLOYMENT.md)
 
 ### 4. Production
 - Build frontend: `npm run build`
@@ -49,7 +49,7 @@ See: [CHOREO_DEPLOYMENT.md](./CHOREO_DEPLOYMENT.md)
 ## 🔧 Configuration for Deployment
 
 ### Environment Variables
-See: [ENV_FILE_LOCATION.md](../01-getting-started/ENV_FILE_LOCATION.md)
+See: [ENV_FILE_LOCATION.md](../../readmes/01-getting-started/ENV_FILE_LOCATION.md)
 
 Required:
 - `AZURE_OPENAI_ENDPOINT`
@@ -68,7 +68,7 @@ Optional:
 - Development: `http://localhost:8000`
 - Production: Configure in `vite.config.js` and environment variables
 
-See: [FRONTEND_BACKEND_CONNECTION.md](./FRONTEND_BACKEND_CONNECTION.md)
+See: [FRONTEND_BACKEND_CONNECTION.md](FRONTEND_BACKEND_CONNECTION.md)
 
 ## 📋 Deployment Checklist
 
@@ -109,11 +109,11 @@ See: [FRONTEND_BACKEND_CONNECTION.md](./FRONTEND_BACKEND_CONNECTION.md)
 - **Alertmanager**: Alert notifications
 - **Logs**: Structured JSON logging
 
-See: [MONITORING.md](../02-features/MONITORING.md)
+See: [MONITORING.md](../../readmes/02-features/MONITORING.md)
 
 ## ✅ Ready to Deploy
 
-- **[READY_TO_PUSH.md](./READY_TO_PUSH.md)** - Pre-deployment verification checklist
+- **[READY_TO_PUSH.md](READY_TO_PUSH.md)** - Pre-deployment verification checklist
 
 ## 🔗 Related Documentation
 

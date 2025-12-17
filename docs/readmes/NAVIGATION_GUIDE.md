@@ -147,7 +147,7 @@ Location: `06-migration-history/`, `10-changelog/`
 | Run Project | [`01-getting-started/RUN_PROJECT.md`](./01-getting-started/RUN_PROJECT.md) |
 | Conversation Memory | [`02-features/CONVERSATION_MEMORY_IMPLEMENTATION.md`](./02-features/CONVERSATION_MEMORY_IMPLEMENTATION.md) |
 | Streaming | [`02-features/STREAMING_IMPLEMENTATION.md`](./02-features/STREAMING_IMPLEMENTATION.md) |
-| Deploy to Choreo | [`03-deployment/CHOREO_DEPLOYMENT.md`](./03-deployment/CHOREO_DEPLOYMENT.md) |
+| Deploy to Choreo | [`03-deployment/CHOREO_DEPLOYMENT.md`](../scripts/03-deployment/CHOREO_DEPLOYMENT.md) |
 | Fix 429 Errors | [`04-troubleshooting/TROUBLESHOOTING_429_ERRORS.md`](./04-troubleshooting/TROUBLESHOOTING_429_ERRORS.md) |
 | URL Validation | [`07-url-validation/URL_VALIDATION.md`](./07-url-validation/URL_VALIDATION.md) |
 | AI Models | [`08-ai-models/MODELS_DOCUMENTATION.md`](./08-ai-models/MODELS_DOCUMENTATION.md) |

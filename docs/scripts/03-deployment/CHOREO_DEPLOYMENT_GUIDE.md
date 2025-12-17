@@ -92,7 +92,7 @@ This is already correct in your project! ✅
 WORKDIR /app
 
 # 2. Copy ENTIRE project (this needs project root as context!)
-COPY . .
+COPY ../../.. .
 
 # 3. Install dependencies (tries both locations)
 RUN pip install --no-cache-dir -r requirements.txt || \
@@ -201,7 +201,7 @@ npm error npm-shrinkwrap.json with lockfileVersion >= 1.
 
 ```gitignore
 # Credentials and API Keys
-credentials/
+../../../credentials/
 *.json
 !package.json
 !package-lock.json  # ← Add this line

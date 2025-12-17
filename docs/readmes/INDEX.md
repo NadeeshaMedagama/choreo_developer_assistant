@@ -23,7 +23,7 @@ Detailed documentation for all DevChoreo features.
 
 **Explore features in depth.**
 
-### **[03-deployment/](./03-deployment/)**
+### **[03-deployment/](../scripts/03-deployment/)**
 Guides for deploying DevChoreo in various environments.
 - Choreo Platform deployment
 - Docker deployment
@@ -115,7 +115,7 @@ Version history and feature additions.
 → [02-features/STREAMING_IMPLEMENTATION.md](./02-features/STREAMING_IMPLEMENTATION.md)
 
 **Deploy to production**
-→ [03-deployment/CHOREO_DEPLOYMENT.md](./03-deployment/CHOREO_DEPLOYMENT.md)
+→ [03-deployment/CHOREO_DEPLOYMENT.md](../scripts/03-deployment/CHOREO_DEPLOYMENT.md)
 
 **Fix 429 errors**
 → [04-troubleshooting/TROUBLESHOOTING_429_ERRORS.md](./04-troubleshooting/TROUBLESHOOTING_429_ERRORS.md)
@@ -254,8 +254,8 @@ Version history and feature additions.
 4. [Implementation Notes/FRONTEND_README.md](./05-implementation-notes/FRONTEND_README.md)
 
 ### For DevOps/Operators
-1. [Deployment/CHOREO_DEPLOYMENT.md](./03-deployment/CHOREO_DEPLOYMENT.md)
-2. [Deployment/DOCKER_README.md](./03-deployment/DOCKER_README.md)
+1. [Deployment/CHOREO_DEPLOYMENT.md](../scripts/03-deployment/CHOREO_DEPLOYMENT.md)
+2. [Deployment/DOCKER_README.md](../scripts/03-deployment/DOCKER_README.md)
 3. [Features/MONITORING.md](./02-features/MONITORING.md)
 4. [Troubleshooting/](./04-troubleshooting/)
 
