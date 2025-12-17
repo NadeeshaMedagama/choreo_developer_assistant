@@ -45,7 +45,7 @@ export PINECONE_INDEX_NAME="choreo-assistant-index"
 ```bash
 cd "choreo-ai-assistant"
 python -m pip install --upgrade pip
-python -m pip install -r choreo-ai-assistant/requirements.txt
+python -m pip install -r backend/choreo-ai-assistant/requirements.txt
 uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
