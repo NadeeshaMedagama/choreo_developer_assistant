@@ -155,7 +155,7 @@ spec:
         - name: logs-persistent
           mountPath: /app/logs
         - name: diagram-output
-          mountPath: /app/diagram_processor/output
+          mountPath: /app/backend/diagram_processor/output
       volumes:
       - name: tmp
         emptyDir: {}
