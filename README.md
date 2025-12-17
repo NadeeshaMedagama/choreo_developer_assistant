@@ -496,6 +496,8 @@ choreo-ai-assistant/
 │   ├── db/                    # Database clients
 │   │   └── vector_client.py   # Milvus client
 │   ├── utils/                 # Utilities
+│   ├── diagram_processor/     # Diagram/image processing
+│   ├── choreo-ai-assistant/   # Additional requirements
 │   ├── monitoring/            # Monitoring system ⭐
 │   │   ├── metrics.py         # Prometheus metrics
 │   │   ├── logging_config.py  # Logging setup
@@ -517,7 +519,6 @@ choreo-ai-assistant/
 │   │   ├── App.jsx            # Main app with streaming support
 │   │   └── components/        # UI components
 │   └── public/                # Static assets
-├── diagram_processor/         # Diagram/image processing
 ├── data/                      # Data files
 ├── docs/                      # Documentation
 │   └── readmes/               # ⭐ Detailed guides
@@ -1120,7 +1121,7 @@ export MILVUS_DB_NAME="default"
 ```bash
 cd "choreo-ai-assistant"
 python -m pip install --upgrade pip
-python -m pip install -r choreo-ai-assistant/requirements.txt
+python -m pip install -r backend/choreo-ai-assistant/requirements.txt
 uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
