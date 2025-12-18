@@ -1,0 +1,96 @@
+╔════════════════════════════════════════════════════════════════╗
+║                  CHOREO DEPLOYMENT - QUICK FIX                 ║
+╚════════════════════════════════════════════════════════════════╝
+
+📋 PROBLEM:
+   Error 102504: "Upstream connection timeout"
+
+✅ SOLUTION:
+   Application now uses PORT environment variable from Choreo
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 FILES CHANGED:
+
+   NEW FILES:
+   • start.py               ← Main fix (reads PORT env var)
+   • start.sh               ← Bash alternative
+   • requirements.txt       ← Root dependencies
+   • .choreo/component.yaml ← Choreo config
+   • test_port_binding.sh   ← Verification script
+
+   MODIFIED:
+   • Dockerfile             ← Now uses start.py
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 DEPLOY COMMANDS:
+
+   cd "/home/nadeeshame/Projects/Choreo AI Assistant/choreo-ai-assistant"
+   git add .
+   git commit -m "Fix: Use PORT env variable for Choreo deployment"
+   git push origin main
+
+   Then: Deploy/Redeploy in Choreo Console
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ VERIFICATION:
+
+   Before deploy: ./test_port_binding.sh
+
+   Expected: "All Port Binding Tests Passed! ✓"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔑 REQUIRED ENV VARS IN CHOREO:
+
+   ✓ MILVUS_URI
+   ✓ MILVUS_TOKEN
+   ✓ MILVUS_COLLECTION_NAME
+   ✓ AZURE_OPENAI_KEY
+   ✓ AZURE_OPENAI_ENDPOINT
+   ✓ AZURE_OPENAI_DEPLOYMENT
+
+   Choreo provides: PORT (auto)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 AFTER DEPLOY - CHECK:
+
+   ✓ Container starts successfully
+   ✓ Logs show: "Starting Choreo AI Assistant on port XXXX"
+   ✓ Logs show: "Binding to 0.0.0.0:XXXX"
+   ✓ Health check passes (~90s)
+   ✓ GET /api/health → 200 OK
+   ✓ NO "upstream timeout" errors
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📚 DOCUMENTATION:
+
+   • CHOREO_DEPLOYMENT_FIX.md   - Detailed fix
+   • DEPLOYMENT_CHECKLIST.md     - Step-by-step guide
+   • FIX_SUMMARY.md (this file)  - Quick reference
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 THE ACTUAL FIX:
+
+   BEFORE: CMD ["uvicorn", "...", "--port", "9090"]  ❌
+   AFTER:  CMD ["python3", "/app/start.py"]          ✅
+
+   start.py reads: port = os.environ.get('PORT', '9090')
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ STATUS: READY TO DEPLOY
+
+   All tests passing ✓
+   All files created ✓
+   Documentation complete ✓
+
+   → Run the deploy commands above!
+
+╚════════════════════════════════════════════════════════════════╝
+

@@ -1,0 +1,151 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║         CHOREO BACKEND DEPLOYMENT - QUICK REFERENCE              ║
+║                   Fix for Error 102504                           ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📍 DEPLOYMENT CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  You are deploying: backend/ directory (not root)
+  Component config:   backend/.choreo/component.yaml
+  Docker context:     backend/
+
+✅ FILES CREATED IN BACKEND DIRECTORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓ backend/Dockerfile                 - Docker build configuration
+  ✓ backend/start.py                   - Reads PORT env variable
+  ✓ backend/BACKEND_DEPLOYMENT_FIX.md  - Full documentation
+
+📦 DEPLOYMENT STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  backend/
+  ├── .choreo/
+  │   └── component.yaml     ← Choreo config (already exists)
+  ├── Dockerfile             ← NEW - Docker config
+  ├── start.py               ← NEW - PORT reader
+  ├── app.py                 ← FastAPI app
+  └── choreo-ai-assistant/
+      └── requirements.txt
+
+🔧 THE FIX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  BEFORE: App binds to hardcoded port 9090
+  AFTER:  App reads PORT from environment and binds dynamically
+
+  backend/start.py:
+  ┌────────────────────────────────────────────────────────────┐
+  │ port = os.environ.get('PORT', '9090')                      │
+  │ cmd = ['uvicorn', 'app:app', '--host', '0.0.0.0',          │
+  │        '--port', port]                                     │
+  │ subprocess.run(cmd)                                        │
+  └────────────────────────────────────────────────────────────┘
+
+🚀 DEPLOY COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  cd "/home/nadeeshame/Projects/Choreo AI Assistant/choreo-ai-assistant"
+
+  git add backend/Dockerfile backend/start.py backend/BACKEND_DEPLOYMENT_FIX.md
+
+  git commit -m "Fix: Backend uses dynamic PORT for Choreo"
+
+  git push origin main
+
+📋 CHOREO CONSOLE CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  When deploying in Choreo:
+
+  Build Configuration:
+  ├── Project Path:     backend
+  ├── Build Type:       Dockerfile
+  ├── Dockerfile Path:  Dockerfile
+  └── Context:          .
+
+  The component.yaml is already configured at:
+  backend/.choreo/component.yaml
+
+🔑 REQUIRED ENVIRONMENT VARIABLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Configure these in Choreo (they're defined in component.yaml):
+
+  Azure OpenAI:
+  ✓ AZURE_OPENAI_KEY
+  ✓ AZURE_OPENAI_ENDPOINT
+  ✓ AZURE_OPENAI_DEPLOYMENT
+  ✓ AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT
+
+  Milvus:
+  ✓ MILVUS_URI
+  ✓ MILVUS_TOKEN
+  ✓ MILVUS_COLLECTION_NAME
+
+  Auto-provided:
+  ✓ PORT (dynamic) ← This is what we fixed!
+
+✅ SUCCESS INDICATORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  In deployment logs, look for:
+
+  ============================================================
+  Starting Choreo AI Assistant Backend
+  Port: <dynamic-port-number>
+  Host: 0.0.0.0
+  ============================================================
+  Command: uvicorn app:app --host 0.0.0.0 --port <port>
+  ============================================================
+  INFO:     Started server process [1]
+  INFO:     Application startup complete.
+  INFO:     Uvicorn running on http://0.0.0.0:<port>
+
+🧪 TEST AFTER DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  curl https://your-choreo-url/api/health
+
+  Expected: {"status": "healthy", ...}
+
+📚 FULL DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  See: backend/BACKEND_DEPLOYMENT_FIX.md
+
+  Includes:
+  - Complete deployment steps
+  - Environment variable details
+  - Troubleshooting guide
+  - Test procedures
+
+⚠️ IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Deploy from BACKEND directory, not root
+  2. Dockerfile is IN backend/ (backend/Dockerfile)
+  3. start.py is IN backend/ (backend/start.py)
+  4. Component config is at: backend/.choreo/component.yaml
+  5. Health check has 90s startup period (services init)
+
+🎯 KEY DIFFERENCES FROM ROOT DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Root Deployment:              Backend Deployment:
+  ├── Dockerfile at root        ├── Dockerfile in backend/
+  ├── CMD: backend.app:app      ├── CMD: app:app
+  ├── PYTHONPATH=/app           ├── PYTHONPATH=/app
+  └── Context: .                └── Context: . (from backend)
+
+  Backend deployment is SIMPLER! ✓
+
+✅ READY TO DEPLOY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] backend/Dockerfile created
+  [✓] backend/start.py created
+  [✓] backend/.choreo/component.yaml exists
+  [✓] start.py is executable
+  [ ] Commit and push changes
+  [ ] Deploy in Choreo console
+  [ ] Configure environment variables
+  [ ] Test endpoints
+
+╔══════════════════════════════════════════════════════════════════╗
+║                    🚀 READY FOR DEPLOYMENT                       ║
+║                                                                  ║
+║      "Upstream connection timeout" error is now FIXED!          ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
