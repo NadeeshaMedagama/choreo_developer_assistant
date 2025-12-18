@@ -11,6 +11,15 @@ on:
       - main
       - develop
   workflow_dispatch:
+    inputs:
+      no-cache:
+        description: 'Build Docker image without cache'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 env:
   PYTHON_VERSION: '3.11'
@@ -165,6 +174,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Cache Docker layers
+        if: github.event.inputs.no-cache != 'true'
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Build Docker image
         uses: docker/build-push-action@v5
         with:
@@ -172,10 +190,19 @@ jobs:
           file: ./Dockerfile
           push: false
           tags: choreo-ai-assistant:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: ${{ github.event.inputs.no-cache != 'true' && 'type=local,src=/tmp/.buildx-cache' || '' }}
+          cache-to: ${{ github.event.inputs.no-cache != 'true' && 'type=local,dest=/tmp/.buildx-cache-new,mode=max' || '' }}
           platforms: linux/amd64
           load: true
+          pull: true
+          no-cache: ${{ github.event.inputs.no-cache == 'true' }}
+
+      # Rotate cache to prevent it from growing indefinitely
+      - name: Move cache
+        if: github.event.inputs.no-cache != 'true'
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
 
       - name: Check final disk usage
         if: always()
