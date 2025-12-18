@@ -126,7 +126,7 @@ This directory contains technical implementation details, checklists, and notes 
 
 - **Getting Started**: See [../01-getting-started/](../01-getting-started/)
 - **Features**: See [../02-features/](../02-features/)
-- **Deployment**: See [../03-deployment/](../../scripts/03-deployment/)
+- **Deployment**: See [../03-deployment/](../03-deployment/)
 - **Migration History**: See [../06-migration-history/](../06-migration-history/)
 
 ---

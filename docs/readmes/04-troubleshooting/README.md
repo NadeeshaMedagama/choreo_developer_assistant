@@ -108,7 +108,7 @@ npm list react vite
 | 429 | Rate limit / NoCapacity | [TROUBLESHOOTING_429_ERRORS.md](./TROUBLESHOOTING_429_ERRORS.md) |
 | 422 | Validation error | [FIX_422_ERROR.md](./FIX_422_ERROR.md) |
 | 500 | Server error | Check logs, [CRASH_ANALYSIS_AND_FIXES.md](./CRASH_ANALYSIS_AND_FIXES.md) |
-| CORS | CORS error | Check [FRONTEND_BACKEND_CONNECTION.md](../../scripts/03-deployment/FRONTEND_BACKEND_CONNECTION.md) |
+| CORS | CORS error | Check [FRONTEND_BACKEND_CONNECTION.md](../03-deployment/FRONTEND_BACKEND_CONNECTION.md) |
 
 ## 🔧 Performance Issues
 
@@ -154,7 +154,7 @@ Include:
 
 - **Getting Started**: See [../01-getting-started/](../01-getting-started/)
 - **Features**: See [../02-features/](../02-features/)
-- **Deployment**: See [../03-deployment/](../../scripts/03-deployment/)
+- **Deployment**: See [../03-deployment/](../03-deployment/)
 - **Implementation Notes**: See [../05-implementation-notes/](../05-implementation-notes/)
 
 ---
