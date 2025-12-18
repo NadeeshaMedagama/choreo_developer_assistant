@@ -41,9 +41,9 @@ RUN mkdir -p /app/backend/diagram_processor/output/summaries \
 # Switch to non-root user
 USER 10014
 
-# Health check for Choreo
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9090/health || exit 1
+# Health check for Choreo - use basic endpoint with longer timeout
+HEALTHCHECK --interval=30s --timeout=30s --start-period=90s --retries=5 \
+    CMD curl -f http://localhost:9090/ || exit 1
 
 # Expose port
 EXPOSE 9090
