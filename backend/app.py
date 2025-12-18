@@ -3,6 +3,7 @@ import time
 import json
 import asyncio
 from typing import List, Dict, Optional
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,10 +40,146 @@ class AskRequest(BaseModel):
 
 # Get monitoring service (Singleton)
 monitoring = get_monitoring_service()
-monitoring.log_info("Starting Choreo AI Assistant...", logger_type='app')
 
-config = load_config()
-app = FastAPI(title="Choreo AI Assistant", version="1.0.0")
+# Global service instances (lazy-initialized)
+config = None
+vector_client = None
+llm_service = None
+github_service = None
+image_service = None
+context_manager = None
+ingestion_service = None
+rag = None
+conversation_memory_manager = None
+url_validator = None
+services_initialized = False
+
+def initialize_services():
+    """Initialize all services lazily to speed up startup time."""
+    global config, vector_client, llm_service, github_service, image_service
+    global context_manager, ingestion_service, rag, conversation_memory_manager
+    global url_validator, services_initialized
+
+    if services_initialized:
+        return
+
+    monitoring.log_info("Starting Choreo AI Assistant service initialization...", logger_type='app')
+
+    # Load configuration
+    config = load_config()
+
+    # Initialize services with timeout handling
+    try:
+        # Initialize vector client with connection retry
+        monitoring.log_info("Initializing Milvus vector client...", logger_type='app')
+        vector_client = VectorClient(
+            uri=config["MILVUS_URI"],
+            token=config["MILVUS_TOKEN"],
+            collection_name=config["MILVUS_COLLECTION_NAME"],
+            dimension=config.get("MILVUS_DIMENSION", 1536),
+            metric=config.get("MILVUS_METRIC", "COSINE")
+        )
+        monitoring.log_info("Milvus vector client initialized", logger_type='app')
+    except Exception as e:
+        monitoring.log_error(f"Failed to initialize Milvus: {e}", logger_type='app')
+        # Continue without Milvus for basic health checks
+
+    try:
+        monitoring.log_info("Initializing Azure OpenAI LLM service...", logger_type='app')
+        llm_service = LLMService(
+            endpoint=config["AZURE_OPENAI_ENDPOINT"],
+            api_key=config["AZURE_OPENAI_KEY"],
+            deployment=config["AZURE_OPENAI_DEPLOYMENT"],
+            api_version=config.get("AZURE_OPENAI_API_VERSION") or "2024-02-15-preview",
+        )
+
+        # Allow separate embeddings deployment if provided
+        if config.get("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT"):
+            llm_service.set_embeddings_deployment(config["AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT"])
+
+        monitoring.log_info("LLM service initialized", logger_type='app')
+    except Exception as e:
+        monitoring.log_error(f"Failed to initialize LLM service: {e}", logger_type='app')
+
+    try:
+        github_service = GitHubService(token=config.get("GITHUB_TOKEN"))
+
+        # Initialize image processing service (optional)
+        if config.get("GOOGLE_VISION_API_KEY"):
+            image_service = ImageProcessingService(api_key=config["GOOGLE_VISION_API_KEY"])
+
+        if vector_client and llm_service:
+            context_manager = ContextManager(vector_client, llm_service)
+            ingestion_service = IngestionService(github_service, llm_service, vector_client, image_service)
+            rag = build_graph(llm_service, vector_client)
+
+        # Initialize conversation memory manager
+        enable_llm_summarization = os.getenv("ENABLE_LLM_SUMMARIZATION", "true").lower() == "true"
+        max_summarization_retries = int(os.getenv("MAX_SUMMARIZATION_RETRIES", "2"))
+
+        if llm_service:
+            conversation_memory_manager = ConversationMemoryManager(
+                llm_service=llm_service,
+                max_total_tokens=8000,
+                max_history_tokens=4000,
+                recent_window_size=6,
+                summarization_trigger_ratio=0.75,
+                enable_llm_summarization=enable_llm_summarization,
+                max_summarization_retries=max_summarization_retries
+            )
+
+            if not enable_llm_summarization:
+                monitoring.log_info("LLM summarization disabled - using simple fallback summaries", logger_type='ai')
+
+        # Initialize URL validator
+        enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
+        url_validation_timeout = int(os.getenv("URL_VALIDATION_TIMEOUT", "5"))
+
+        trusted_domains_env = os.getenv("URL_VALIDATION_TRUSTED_DOMAINS", "")
+        trusted_domains = [d.strip() for d in trusted_domains_env.split(",") if d.strip()] if trusted_domains_env else None
+
+        url_validator = get_url_validator(
+            timeout=url_validation_timeout,
+            max_concurrent=10,
+            enable_validation=enable_url_validation,
+            trusted_domains=trusted_domains
+        )
+
+        if enable_url_validation:
+            monitoring.log_info(f"URL validation enabled (timeout: {url_validation_timeout}s)", logger_type='app')
+        else:
+            monitoring.log_info("URL validation disabled", logger_type='app')
+
+        # Register health checkers
+        if vector_client:
+            monitoring.register_health_checker(MilvusHealthChecker(vector_client))
+        monitoring.register_health_checker(ApplicationHealthChecker())
+        monitoring.log_info("Health checkers registered", logger_type='app')
+
+        services_initialized = True
+        monitoring.log_info("All services initialized successfully", logger_type='app')
+
+    except Exception as e:
+        monitoring.log_error(f"Error during service initialization: {e}", logger_type='app', exc_info=True)
+        # Mark as initialized anyway to allow basic operations
+        services_initialized = True
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    # Startup
+    monitoring.log_info("FastAPI application starting up...", logger_type='app')
+    # Don't initialize services here - let them initialize lazily on first request
+    yield
+    # Shutdown
+    monitoring.log_info("FastAPI application shutting down...", logger_type='app')
+
+# Create FastAPI app with lifespan
+app = FastAPI(
+    title="Choreo AI Assistant",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 # Add CORS middleware to allow frontend to connect
 app.add_middleware(
@@ -64,93 +201,9 @@ app.add_middleware(
 app.add_middleware(MetricsMiddleware, monitoring_service=monitoring)
 monitoring.log_info("Metrics middleware added", logger_type='app')
 
-# Initialize services
-vector_client = VectorClient(
-    uri=config["MILVUS_URI"],
-    token=config["MILVUS_TOKEN"],
-    collection_name=config["MILVUS_COLLECTION_NAME"],
-    dimension=config.get("MILVUS_DIMENSION", 1536),
-    metric=config.get("MILVUS_METRIC", "COSINE")
-)
-
-llm_service = LLMService(
-    endpoint=config["AZURE_OPENAI_ENDPOINT"],
-    api_key=config["AZURE_OPENAI_KEY"],
-    deployment=config["AZURE_OPENAI_DEPLOYMENT"],
-    api_version=config.get("AZURE_OPENAI_API_VERSION") or "2024-02-15-preview",
-)
-
-# Allow separate embeddings deployment if provided
-if config.get("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT"):
-    llm_service.set_embeddings_deployment(config["AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT"])
-
-github_service = GitHubService(token=config.get("GITHUB_TOKEN"))
-
-# Initialize image processing service (optional)
-image_service = None
-if config.get("GOOGLE_VISION_API_KEY"):
-    image_service = ImageProcessingService(api_key=config["GOOGLE_VISION_API_KEY"])
-
-context_manager = ContextManager(vector_client, llm_service)
-ingestion_service = IngestionService(github_service, llm_service, vector_client, image_service)
-rag = build_graph(llm_service, vector_client)
-
-# Initialize conversation memory manager
-# Control LLM summarization via environment variable (useful during peak times)
-enable_llm_summarization = os.getenv("ENABLE_LLM_SUMMARIZATION", "true").lower() == "true"
-max_summarization_retries = int(os.getenv("MAX_SUMMARIZATION_RETRIES", "2"))
-
-conversation_memory_manager = ConversationMemoryManager(
-    llm_service=llm_service,
-    max_total_tokens=8000,
-    max_history_tokens=4000,
-    recent_window_size=6,
-    summarization_trigger_ratio=0.75,
-    enable_llm_summarization=enable_llm_summarization,
-    max_summarization_retries=max_summarization_retries
-)
-
-if not enable_llm_summarization:
-    monitoring.log_info("LLM summarization disabled - using simple fallback summaries", logger_type='ai')
-
-# Initialize URL validator
-# Control URL validation via environment variable
-enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
-url_validation_timeout = int(os.getenv("URL_VALIDATION_TIMEOUT", "5"))
-
-# Parse trusted domains from environment (comma-separated list)
-trusted_domains_env = os.getenv("URL_VALIDATION_TRUSTED_DOMAINS", "")
-trusted_domains = [d.strip() for d in trusted_domains_env.split(",") if d.strip()] if trusted_domains_env else None
-
-url_validator = get_url_validator(
-    timeout=url_validation_timeout,
-    max_concurrent=10,
-    enable_validation=enable_url_validation,
-    trusted_domains=trusted_domains
-)
-
-if enable_url_validation:
-    monitoring.log_info(
-        f"URL validation enabled (timeout: {url_validation_timeout}s)",
-        logger_type='app'
-    )
-    # Log trusted domains info
-    default_trusted = ['github.com/wso2-enterprise', 'github.com/wso2', 'wso2.com', 'console.choreo.dev', 'docs.choreo.dev']
-    monitoring.log_info(
-        f"Trusted domains (bypass validation): {', '.join(default_trusted)}",
-        logger_type='app'
-    )
-else:
-    monitoring.log_info("URL validation disabled", logger_type='app')
-
-# Register health checkers
-monitoring.register_health_checker(MilvusHealthChecker(vector_client))
-monitoring.register_health_checker(ApplicationHealthChecker())
-monitoring.log_info("Health checkers registered", logger_type='app')
-
 @app.get("/")
 def read_root():
-    return {"message": "Choreo AI Assistant (Azure LLM + Milvus) is running."}
+    return {"message": "Choreo AI Assistant (Azure LLM + Milvus) is running.", "status": "ok"}
 
 @app.post("/")
 async def root_post(request: Request):
@@ -171,8 +224,13 @@ async def root_post(request: Request):
 
 @app.get("/api/health")
 def health_check():
-    """Health check endpoint that tests all components."""
+    """Health check endpoint that tests all components. Initializes services on first call."""
     try:
+        # Initialize services on first health check if not already initialized
+        if not services_initialized:
+            monitoring.log_info("Health check triggered, initializing services...", logger_type='app')
+            initialize_services()
+
         health_status = monitoring.check_health()
         monitoring.log_info(
             f"Health check completed: {health_status['status']}",
@@ -187,13 +245,20 @@ def health_check():
         )
         return {
             "status": "unhealthy",
-            "error": str(e)
+            "error": str(e),
+            "services_initialized": services_initialized
         }
 
 # Keep old endpoint for backward compatibility
 @app.get("/health")
 def health_check_legacy():
-    return health_check()
+    """Legacy health check endpoint - returns basic status immediately."""
+    # For Choreo quick health checks, return OK immediately without initializing services
+    return {
+        "status": "healthy",
+        "message": "Service is running",
+        "services_initialized": services_initialized
+    }
 
 @app.get("/metrics")
 def metrics():
@@ -203,6 +268,11 @@ def metrics():
 
 @app.post("/api/ask")
 async def ask_ai(request: AskRequest):
+    # Ensure services are initialized before processing requests
+    if not services_initialized:
+        monitoring.log_info("Request received, initializing services...", logger_type='app')
+        initialize_services()
+
     start_time = time.time()
     try:
         question = request.question
@@ -454,6 +524,7 @@ Always provide complete, accurate answers based on ALL available context."""
 
         # Add URL validation info if validation was performed
         if url_validation_map:
+            enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
             response_data["url_validation"] = {
                 "total_urls": len(url_validation_map),
                 "valid_urls": sum(1 for v in url_validation_map.values() if v),
@@ -717,6 +788,7 @@ Always provide complete, accurate answers based on ALL available context."""
 
                 # Add URL validation info if validation was performed
                 if url_validation_map:
+                    enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
                     metadata["url_validation"] = {
                         "total_urls": len(url_validation_map),
                         "valid_urls": sum(1 for v in url_validation_map.values() if v),
@@ -765,6 +837,10 @@ Always provide complete, accurate answers based on ALL available context."""
 
 @app.post("/api/ask_graph")
 def ask_ai_graph(question: str):
+    # Ensure services are initialized
+    if not services_initialized:
+        initialize_services()
+
     start_time = time.time()
     try:
         monitoring.log_info(
@@ -814,6 +890,10 @@ def ask_ai_graph_legacy(question: str):
 
 @app.post("/api/ingest/github")
 def ingest_github(repo_url: str = "https://github.com/wso2/docs-choreo-dev.git", branch: str = "main"):
+    # Ensure services are initialized
+    if not services_initialized:
+        initialize_services()
+
     start_time = time.time()
     try:
         monitoring.log_info(
@@ -852,6 +932,10 @@ def ingest_github(repo_url: str = "https://github.com/wso2/docs-choreo-dev.git",
 @app.post("/api/ingest/github/with-images")
 def ingest_github_with_images(repo_url: str = "https://github.com/wso2/docs-choreo-dev.git", branch: str = "main"):
     """Ingest both markdown files and images from a GitHub repository."""
+    # Ensure services are initialized
+    if not services_initialized:
+        initialize_services()
+
     if not image_service:
         return {
             "status": "error",
@@ -873,6 +957,10 @@ def ingest_organization_repos(org: str, keyword: str = "", max_repos: int = None
     Returns:
         Summary statistics of the bulk ingestion process
     """
+    # Ensure services are initialized
+    if not services_initialized:
+        initialize_services()
+
     result = ingestion_service.ingest_org_repositories(org, keyword, max_repos)
     return result
 
