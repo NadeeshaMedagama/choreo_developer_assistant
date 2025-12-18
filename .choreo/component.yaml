@@ -2,7 +2,6 @@
 schemaVersion: 1.2
 
 # +required Choreo component implementation type
-# Allowed values: Service, Scheduled Task, Manual Task, Test Runner
 implementation: Service
 
 # +optional Build configuration
@@ -13,46 +12,25 @@ build:
 
 # +optional Incoming connection details for the component
 endpoints:
-  # +required Unique name for the endpoint
-  # This name will be used when generating the managed API
   - name: choreo-ai-api
-    # +optional Display name for the endpoint
     displayName: Choreo AI Assistant API
-    # +required Service section has the user service endpoint details
     service:
-      # +optional Context (base path) of the API that gets exposed via the endpoint
       basePath: /
-      # +required Numeric port value that gets exposed via the endpoint
       port: 9090
-    # +required Type of traffic that the endpoint is accepting
-    # Allowed values: REST, GraphQL, WS, GRPC, TCP, UDP
     type: REST
-    # +optional Network level visibilities of the endpoint
-    # Accepted values: Project|Organization|Public(Default)
     networkVisibilities:
       - Public
-    # +optional Path to the schema definition file
-    # This is only applicable to REST or WS endpoint types
-    # The path should be relative to the docker context
     schemaFilePath: .choreo/openapi.yaml
 
 # +optional Defines runtime configurations
 configurations:
-  # +optional List of environment variables to be injected into the component
   env:
-    # +required Name of the environment variable
+    # Azure OpenAI Configuration
     - name: AZURE_OPENAI_KEY
-      # +required value source
-      # Allowed value sources: connectionRef, configForm
       valueFrom:
-        # +required config form value source
         configForm:
-          # +optional display name inside the config form, name will be shown in config form if not specified
           displayName: Azure OpenAI API Key
-          # +optional default value is true if not specified
           required: true
-          # +optional default value is string if not specified
-          # Allowed types - string, number, boolean, secret
           type: secret
 
     - name: AZURE_OPENAI_ENDPOINT
@@ -84,13 +62,13 @@ configurations:
           type: string
           default: "2024-02-15-preview"
 
+    # Milvus Configuration
     - name: MILVUS_URI
       valueFrom:
         configForm:
           displayName: Milvus URI
           required: true
           type: string
-          default: "https://your-milvus-endpoint.zillizcloud.com:19530"
 
     - name: MILVUS_TOKEN
       valueFrom:
@@ -123,44 +101,48 @@ configurations:
           type: string
           default: "COSINE"
 
+    # GitHub Configuration
     - name: GITHUB_TOKEN
       valueFrom:
         configForm:
           displayName: GitHub Personal Access Token
-          required: true
+          required: false
           type: secret
 
+    # Optional Services
     - name: GOOGLE_VISION_API_KEY
       valueFrom:
         configForm:
-          displayName: Google Vision API Key
+          displayName: Google Vision API Key (Optional)
           required: false
           type: secret
 
-    - name: EMBEDDING_MODEL
+    # Performance Tuning
+    - name: ENABLE_LLM_SUMMARIZATION
       valueFrom:
         configForm:
-          displayName: Embedding Model
+          displayName: Enable LLM Summarization
           required: false
           type: string
-          default: "sentence-transformers/all-MiniLM-L6-v2"
+          default: "true"
 
-    - name: CHUNK_SIZE
+    - name: ENABLE_URL_VALIDATION
       valueFrom:
         configForm:
-          displayName: Text Chunk Size
+          displayName: Enable URL Validation
           required: false
-          type: number
-          default: 1000
+          type: string
+          default: "true"
 
-    - name: CHUNK_OVERLAP
+    - name: URL_VALIDATION_TIMEOUT
       valueFrom:
         configForm:
-          displayName: Text Chunk Overlap
+          displayName: URL Validation Timeout (seconds)
           required: false
           type: number
-          default: 200
+          default: 5
 
+    # Python Configuration
     - name: PYTHONPATH
       valueFrom:
         configForm:
