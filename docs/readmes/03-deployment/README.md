@@ -28,7 +28,7 @@ uvicorn app:app --reload
 cd frontend
 npm run dev
 ```
-See: [RUN_PROJECT.md](../../readmes/01-getting-started/RUN_PROJECT.md)
+See: [RUN_PROJECT.md](../01-getting-started/RUN_PROJECT.md)
 
 ### 2. Docker Compose
 ```bash
@@ -49,7 +49,7 @@ See: [CHOREO_DEPLOYMENT.md](CHOREO_DEPLOYMENT.md)
 ## 🔧 Configuration for Deployment
 
 ### Environment Variables
-See: [ENV_FILE_LOCATION.md](../../readmes/01-getting-started/ENV_FILE_LOCATION.md)
+See: [ENV_FILE_LOCATION.md](../01-getting-started/ENV_FILE_LOCATION.md)
 
 Required:
 - `AZURE_OPENAI_ENDPOINT`
@@ -109,7 +109,7 @@ See: [FRONTEND_BACKEND_CONNECTION.md](FRONTEND_BACKEND_CONNECTION.md)
 - **Alertmanager**: Alert notifications
 - **Logs**: Structured JSON logging
 
-See: [MONITORING.md](../../readmes/02-features/MONITORING.md)
+See: [MONITORING.md](../02-features/MONITORING.md)
 
 ## ✅ Ready to Deploy
 
