@@ -159,3 +159,13 @@ configurations:
           type: string
           default: "1"
 
+    # Port Configuration (Choreo will inject this dynamically)
+    # This is read by start.py to bind to the correct port
+    - name: PORT
+      valueFrom:
+        configForm:
+          displayName: Application Port
+          required: false
+          type: string
+          default: "9090"
+
