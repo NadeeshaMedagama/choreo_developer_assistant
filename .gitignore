@@ -45,6 +45,7 @@ env/
 # Logs
 *.log
 logs/
+.git.backup.20251216_142556
 
 # Output files
 output/
