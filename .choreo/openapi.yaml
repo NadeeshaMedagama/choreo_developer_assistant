@@ -1,40 +1,20 @@
 openapi: 3.0.3
 info:
   title: Choreo AI Assistant API
-  description: |
-    RAG-based AI Assistant for Choreo documentation and architecture queries.
-    
-    This API provides intelligent question-answering capabilities using:
-    - Azure OpenAI for language processing
-    - Milvus vector database for context retrieval
-    - LangChain/LangGraph for orchestration
-    
-    Features:
-    - Natural language Q&A about Choreo
-    - Context-aware responses using RAG (Retrieval Augmented Generation)
-    - GitHub repository ingestion
-    - Organization-wide documentation ingestion
-    - Image and diagram processing (with Google Vision)
+  description: RAG-based AI Assistant for Choreo documentation and architecture queries
   version: 1.0.0
   contact:
     name: Choreo AI Assistant Support
-    email: support@choreo.dev
 
 servers:
-  - url: https://your-component-url.choreo.dev
-    description: Choreo Production Environment
-  - url: http://localhost:9090
-    description: Local Development Environment
+  - url: /
+    description: Base path
 
 tags:
   - name: Health
     description: Health check and status endpoints
   - name: Query
     description: AI-powered question answering endpoints
-  - name: Ingestion
-    description: Data ingestion and indexing endpoints
-  - name: Webhooks
-    description: GitHub webhook integration
 
 paths:
   /:
@@ -53,250 +33,18 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Choreo AI Assistant (Azure LLM + Milvus) is running."
+                  status:
+                    type: string
 
   /health:
     get:
-      summary: Health check (legacy endpoint)
-      description: Check API health and Milvus connectivity
+      summary: Basic health check
+      description: Returns health status without initializing all services
       tags:
         - Health
       responses:
         '200':
-          description: Health status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResponse'
-
-  /api/health:
-    get:
-      summary: Health check
-      description: Check API health and Pinecone vector database connectivity
-      tags:
-        - Health
-      responses:
-        '200':
-          description: Health status with Pinecone connection status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResponse'
-              examples:
-                healthy:
-                  value:
-                    status: healthy
-                    pinecone: connected
-                unhealthy:
-                  value:
-                    status: unhealthy
-                    pinecone: disconnected
-
-  /api/ask:
-    post:
-      summary: Ask a question (standard RAG)
-      description: |
-        Ask a question about Choreo using standard RAG (Retrieval Augmented Generation).
-        
-        This endpoint:
-        1. Retrieves relevant context from Milvus vector database
-        2. Sends context + question to Azure OpenAI
-        3. Returns AI-generated answer with context count
-      tags:
-        - Query
-      parameters:
-        - name: question
-          in: query
-          required: true
-          description: The question to ask about Choreo
-          schema:
-            type: string
-            example: "What is Choreo?"
-      responses:
-        '200':
-          description: Successful response with answer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AskResponse'
-              examples:
-                example1:
-                  value:
-                    answer: "Choreo is an internal developer platform that enables developers to build, deploy, and manage cloud-native applications with ease."
-                    context_count: 5
-
-  /ask:
-    post:
-      summary: Ask a question (legacy endpoint)
-      description: Legacy endpoint for asking questions. Use /api/ask instead.
-      deprecated: true
-      tags:
-        - Query
-      parameters:
-        - name: question
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AskResponse'
-
-  /api/ask_graph:
-    post:
-      summary: Ask a question (LangGraph RAG)
-      description: |
-        Ask a question using LangGraph-based RAG for more sophisticated query processing.
-        
-        This endpoint uses LangGraph for:
-        - Multi-step reasoning
-        - Advanced context retrieval
-        - Graph-based query processing
-      tags:
-        - Query
-      parameters:
-        - name: question
-          in: query
-          required: true
-          description: The question to ask about Choreo
-          schema:
-            type: string
-            example: "How do I deploy a microservice in Choreo?"
-      responses:
-        '200':
-          description: Successful response with answer
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AskResponse'
-
-  /ask_graph:
-    post:
-      summary: Ask a question with LangGraph (legacy endpoint)
-      description: Legacy endpoint. Use /api/ask_graph instead.
-      deprecated: true
-      tags:
-        - Query
-      parameters:
-        - name: question
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AskResponse'
-
-  /api/ingest/github:
-    post:
-      summary: Ingest GitHub repository
-      description: |
-        Ingest markdown documentation from a GitHub repository into the vector database.
-        
-        Process:
-        1. Clones the repository
-        2. Finds all .md files
-        3. Chunks the content
-        4. Generates embeddings
-        5. Stores in Milvus
-      tags:
-        - Ingestion
-      parameters:
-        - name: repo_url
-          in: query
-          required: false
-          description: GitHub repository URL
-          schema:
-            type: string
-            default: "https://github.com/wso2/docs-choreo-dev.git"
-            example: "https://github.com/wso2/docs-choreo-dev.git"
-        - name: branch
-          in: query
-          required: false
-          description: Branch name to ingest
-          schema:
-            type: string
-            default: "main"
-            example: "main"
-      responses:
-        '200':
-          description: Ingestion completed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IngestionResponse'
-
-  /ingest/github:
-    post:
-      summary: Ingest GitHub repository (legacy endpoint)
-      description: Legacy endpoint. Use /api/ingest/github instead.
-      deprecated: true
-      tags:
-        - Ingestion
-      parameters:
-        - name: repo_url
-          in: query
-          schema:
-            type: string
-        - name: branch
-          in: query
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Ingestion completed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IngestionResponse'
-
-  /api/ingest/github/with-images:
-    post:
-      summary: Ingest GitHub repository with images
-      description: |
-        Ingest both markdown files and images from a GitHub repository.
-        
-        Requires Google Vision API configuration.
-        
-        Process:
-        1. Ingests markdown files (same as /api/ingest/github)
-        2. Processes images with Google Vision OCR
-        3. Extracts text from diagrams and screenshots
-        4. Indexes image content alongside markdown
-      tags:
-        - Ingestion
-      parameters:
-        - name: repo_url
-          in: query
-          required: false
-          description: GitHub repository URL
-          schema:
-            type: string
-            default: "https://github.com/wso2/docs-choreo-dev.git"
-        - name: branch
-          in: query
-          required: false
-          description: Branch name to ingest
-          schema:
-            type: string
-            default: "main"
-      responses:
-        '200':
-          description: Ingestion completed with images
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IngestionResponse'
-        '500':
-          description: Google Vision API not configured
+          description: Service is healthy
           content:
             application/json:
               schema:
@@ -304,204 +52,99 @@ paths:
                 properties:
                   status:
                     type: string
-                    example: "error"
                   message:
                     type: string
-                    example: "Google Vision API is not configured. Please add GOOGLE_VISION_API_KEY to your .env file."
+                  services_initialized:
+                    type: boolean
 
-  /api/ingest/org:
-    post:
-      summary: Ingest organization repositories
-      description: |
-        Bulk ingest markdown files from all repositories in a GitHub organization.
-        
-        Features:
-        - Filter repositories by keyword
-        - Limit number of repositories to process
-        - Batch processing with progress tracking
-        - Incremental updates (skips already processed files)
+  /api/health:
+    get:
+      summary: Detailed health check
+      description: Returns detailed health status and initializes services if needed
       tags:
-        - Ingestion
-      parameters:
-        - name: org
-          in: query
-          required: true
-          description: GitHub organization name
-          schema:
-            type: string
-            example: "wso2-enterprise"
-        - name: keyword
-          in: query
-          required: false
-          description: Keyword to filter repositories (e.g., 'choreo')
-          schema:
-            type: string
-            default: ""
-            example: "choreo"
-        - name: max_repos
-          in: query
-          required: false
-          description: Maximum number of repositories to process
-          schema:
-            type: integer
-            minimum: 1
-            example: 10
+        - Health
       responses:
         '200':
-          description: Bulk ingestion completed
+          description: Detailed health information
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BulkIngestionResponse'
-              examples:
-                success:
-                  value:
-                    status: "completed"
-                    total_repos: 15
-                    processed_repos: 15
-                    total_files: 234
-                    total_chunks: 1567
-                    total_embeddings: 1567
-                    duration_seconds: 180
+                type: object
 
-  /api/webhook/github:
-    post:
-      summary: GitHub webhook handler
-      description: |
-        Handles GitHub webhooks to automatically re-ingest repositories on push events.
-        
-        When a push event is received:
-        1. Extracts repository URL and branch from payload
-        2. Triggers automatic re-ingestion
-        3. Updates the vector database with latest content
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: Returns Prometheus-compatible metrics
       tags:
-        - Webhooks
+        - Health
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/ask:
+    post:
+      summary: Ask AI a question
+      description: Submit a question to the AI assistant
+      tags:
+        - Query
       requestBody:
-        description: GitHub webhook payload
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - question
               properties:
-                repository:
-                  type: object
-                  properties:
-                    html_url:
-                      type: string
-                      example: "https://github.com/wso2/docs-choreo-dev"
-                ref:
+                question:
                   type: string
-                  example: "refs/heads/main"
+                  description: The question to ask
+                conversation_history:
+                  type: array
+                  description: Previous conversation messages
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                      content:
+                        type: string
+                summary:
+                  type: object
+                  description: Conversation summary from previous interactions
+                max_history_tokens:
+                  type: integer
+                  description: Maximum tokens for history
+                  default: 4000
+                enable_summarization:
+                  type: boolean
+                  description: Enable/disable auto-summarization
+                  default: true
       responses:
         '200':
-          description: Webhook processed
+          description: AI response
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
+                  answer:
                     type: string
-                    enum: [ok, error, ignored]
-                  ingested:
-                    type: object
-                  message:
+                  sources:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
                     type: string
-
-components:
-  schemas:
-    HealthResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [healthy, unhealthy]
-          description: Overall API health status
-        milvus:
-          type: string
-          enum: [connected, disconnected]
-          description: Milvus vector database connection status
-
-    AskResponse:
-      type: object
-      properties:
-        answer:
-          type: string
-          description: AI-generated answer to the question
-          example: "Choreo is an internal developer platform that enables developers to build, deploy, and manage cloud-native applications."
-        context_count:
-          type: integer
-          description: Number of context chunks used to generate the answer
-          example: 5
-
-    IngestionResponse:
-      type: object
-      properties:
-        repo_url:
-          type: string
-          description: GitHub repository URL that was ingested
-        branch:
-          type: string
-          description: Branch name that was ingested
-        status:
-          type: string
-          description: Ingestion status
-          example: "completed"
-        files_processed:
-          type: integer
-          description: Number of files processed
-          example: 42
-        chunks_created:
-          type: integer
-          description: Number of text chunks created
-          example: 315
-        embeddings_stored:
-          type: integer
-          description: Number of embeddings stored in vector database
-          example: 315
-
-    BulkIngestionResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          description: Overall ingestion status
-          example: "completed"
-        total_repos:
-          type: integer
-          description: Total number of repositories found
-          example: 15
-        processed_repos:
-          type: integer
-          description: Number of repositories successfully processed
-          example: 15
-        total_files:
-          type: integer
-          description: Total markdown files processed across all repositories
-          example: 234
-        total_chunks:
-          type: integer
-          description: Total text chunks created
-          example: 1567
-        total_embeddings:
-          type: integer
-          description: Total embeddings stored
-          example: 1567
-        duration_seconds:
-          type: number
-          format: float
-          description: Total processing time in seconds
-          example: 180.5
-
-  securitySchemes:
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-API-Key
-      description: Optional API key for rate limiting and access control
-
-# Apply security globally (optional)
-# security:
-#   - ApiKeyAuth: []
 
