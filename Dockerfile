@@ -38,15 +38,18 @@ RUN mkdir -p /app/backend/diagram_processor/output/summaries \
     /tmp \
     && chown -R 10014:users /app /tmp
 
+# Make start scripts executable
+RUN chmod +x /app/start.sh /app/start.py
+
 # Switch to non-root user
 USER 10014
 
-# Health check for Choreo - use basic endpoint with longer timeout
+# Health check for Choreo - use PORT environment variable with fallback
 HEALTHCHECK --interval=30s --timeout=30s --start-period=90s --retries=5 \
-    CMD curl -f http://localhost:9090/ || exit 1
+    CMD curl -f http://localhost:${PORT:-9090}/ || exit 1
 
-# Expose port
-EXPOSE 9090
+# Expose port (Choreo will override with actual port)
+EXPOSE ${PORT:-9090}
 
-# Start the backend server
-CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "9090"]
+# Start the backend server using Python startup script that reads PORT env var
+CMD ["python3", "/app/start.py"]
