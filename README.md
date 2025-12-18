@@ -1,14 +1,18 @@
 # DevChoreo (Choreo AI Assistant)
 
 Minimal RAG assistant that ingests a GitHub repo into Milvus and answers with Azure OpenAI. Frontend is a ChatGPT-like UI built with React + Vite + Tailwind.
-> See [Documentation Index](./docs/readmes/INDEX.md) for complete guides on setup, features, and deployment.
+
 > 📚 **All documentation is now centralized in [`docs/readmes/`](./docs/readmes/INDEX.md)**  
 > See [Documentation Index](./docs/readmes/INDEX.md) for complete guides on setup, features, and deployment.
-- Frontend: React, Vite, Tailwind CSS
+
+> 🚀 **NEW: Choreo Platform Support**  
+> Now fully optimized for Choreo deployment! See [CHOREO_DEPLOYMENT.md](./CHOREO_DEPLOYMENT.md) for deployment guide.
+
 ## Stack
 - Backend: FastAPI, Azure OpenAI, Milvus, LangChain, LangGraph
 - Frontend: React, Vite, Tailwind CSS
 - Monitoring: Prometheus, Grafana, Alertmanager, Structured Logging
+- Deployment: Docker, Choreo Platform
 - Advanced Features: Conversation Memory with Smart Summarization, Progressive Streaming Responses, Context-Aware Retrieval
 
 ## ✨ Key Features
@@ -128,23 +132,44 @@ docker-compose up -d
 
 ## 🚢 Choreo Platform Deployment
 
-This project is ready for deployment to WSO2 Choreo platform:
-#### Features & Capabilities
-- **[Conversation Memory](./docs/readmes/CONVERSATION_MEMORY_IMPLEMENTATION.md)** - Smart summarization for long conversations
-- **[Streaming Responses](./docs/readmes/STREAMING_IMPLEMENTATION.md)** - Progressive ChatGPT-like streaming
-- **[Incremental Ingestion](./docs/readmes/INCREMENTAL_INGESTION.md)** - Smart chunking feature
-- **[Content Filtering](./docs/readmes/FIX_OPENCHOREO_FILTERING.md)** - Excludes non-Choreo content
-- **[429 Error Handling](./docs/readmes/TROUBLESHOOTING_429_ERRORS.md)** - Azure OpenAI rate limit solutions
-# 1. Review deployment configuration
+**✅ Fully optimized for Choreo with no gateway timeouts!**
+
+### Quick Deploy to Choreo
+
+```bash
+# 1. Test locally first
+./test-choreo-deployment.sh
+
+# 2. Review deployment configuration
 cat .choreo/component.yaml
 cat .choreo/openapi.yaml
 
-# 2. Commit and push to GitHub
+# 3. Commit and push to GitHub
 git add .
 git commit -m "Deploy to Choreo"
 git push origin main
 
-# 3. Deploy in Choreo Console
+# 4. Deploy in Choreo Console
+# - Create Service component
+# - Connect to GitHub
+# - Configure environment variables
+# - Deploy!
+```
+
+### Documentation
+
+- 📖 **[Complete Deployment Guide](./CHOREO_DEPLOYMENT.md)** - Step-by-step instructions
+- 📋 **[Deployment Checklist](docs/readmes/12-choreo-deployment/CHOREO_CHECKLIST.md)** - Ensure nothing is missed
+- 🔧 **[Technical Fix Details](docs/readmes/12-choreo-deployment/CHOREO_DEPLOYMENT_FIX.md)** - How we solved 504 errors
+- 📝 **[Environment Variables](./.env.choreo.example)** - Configuration reference
+
+### Key Features for Choreo
+
+- ⚡ **Fast Startup**: < 5 seconds (no gateway timeouts)
+- 🔄 **Lazy Initialization**: Services initialize on first request
+- 💚 **Quick Health Checks**: Immediate response for platform probes
+- 📊 **Production Ready**: Prometheus metrics, structured logging
+- 🔒 **Secure**: Environment-based secrets management
 # - Create new component
 # - Connect GitHub repository
 # - Component Directory: . (root)
