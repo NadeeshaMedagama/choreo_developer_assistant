@@ -38,8 +38,8 @@ RUN mkdir -p /app/backend/diagram_processor/output/summaries \
     /tmp \
     && chown -R 10014:users /app /tmp
 
-# Make start scripts executable
-RUN chmod +x /app/start.sh /app/start.py
+# Make start script executable
+RUN chmod +x /app/start.py
 
 # Switch to non-root user
 USER 10014
