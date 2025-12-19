@@ -14,12 +14,17 @@ jobs:
   pr-validate:
     name: Validate PR
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
         with:
           fetch-depth: 0
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Check PR title
         run: |
@@ -47,8 +52,17 @@ jobs:
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
       - name: Checkout code
         uses: actions/checkout@v4
 

@@ -32,10 +32,17 @@ jobs:
   backend-test:
     name: Backend Tests
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -90,10 +97,17 @@ jobs:
   frontend-test:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -139,12 +153,19 @@ jobs:
   docker-build:
     name: Build Docker Image
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [backend-test, frontend-test]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Free up disk space
         run: |
@@ -216,10 +237,17 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -249,6 +277,7 @@ jobs:
   deploy-choreo:
     name: Deploy to Choreo
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: [docker-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
@@ -258,6 +287,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Choreo deployment notification
         run: |

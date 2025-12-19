@@ -18,12 +18,17 @@ jobs:
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
         with:
           fetch-depth: 0
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Get version
         id: get_version

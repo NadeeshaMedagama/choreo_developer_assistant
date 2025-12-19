@@ -13,10 +13,17 @@ jobs:
   python-dependencies:
     name: Check Python Dependencies
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -50,10 +57,17 @@ jobs:
   npm-dependencies:
     name: Check NPM Dependencies
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -84,6 +98,7 @@ jobs:
   create-update-issue:
     name: Create Update Issue
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [python-dependencies, npm-dependencies]
     if: github.event_name == 'schedule'
     

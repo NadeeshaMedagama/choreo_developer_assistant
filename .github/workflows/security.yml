@@ -17,6 +17,7 @@ jobs:
   codeql-analysis:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       actions: read
       contents: read
@@ -30,6 +31,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -52,12 +59,17 @@ jobs:
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
         with:
           fetch-depth: 0
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
@@ -80,10 +92,17 @@ jobs:
   dependency-check:
     name: OWASP Dependency Check
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 30
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        timeout-minutes: 10
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+        env:
+          GIT_TERMINAL_PROMPT: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
