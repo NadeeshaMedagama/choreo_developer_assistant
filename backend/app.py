@@ -252,13 +252,34 @@ def health_check():
 # Keep old endpoint for backward compatibility
 @app.get("/health")
 def health_check_legacy():
-    """Legacy health check endpoint - returns basic status immediately."""
-    # For Choreo quick health checks, return OK immediately without initializing services
-    return {
-        "status": "healthy",
-        "message": "Service is running",
-        "services_initialized": services_initialized
-    }
+    """Simplified health check endpoint for Choreo - returns basic Milvus status."""
+    try:
+        # Check if services are initialized and Milvus is available
+        if services_initialized and vector_client:
+            try:
+                is_connected = vector_client.test_connection()
+                return {
+                    "status": "healthy" if is_connected else "unhealthy",
+                    "milvus": "connected" if is_connected else "disconnected"
+                }
+            except Exception as e:
+                monitoring.log_error(f"Milvus health check failed: {str(e)}", logger_type='app')
+                return {
+                    "status": "unhealthy",
+                    "milvus": "disconnected"
+                }
+        else:
+            # Services not initialized yet - return healthy but indicate not ready
+            return {
+                "status": "healthy",
+                "milvus": "initializing"
+            }
+    except Exception as e:
+        monitoring.log_error(f"Health check failed: {str(e)}", logger_type='app')
+        return {
+            "status": "unhealthy",
+            "milvus": "error"
+        }
 
 @app.get("/metrics")
 def metrics():
