@@ -57,8 +57,8 @@ paths:
 
   /health:
     get:
-      summary: Health check (legacy endpoint)
-      description: Check API health and Milvus connectivity
+      summary: Health check (simplified)
+      description: Simplified health check showing Milvus connectivity status (used by Choreo deployment)
       tags:
         - Health
       responses:
@@ -67,17 +67,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, unhealthy]
+                    description: Overall API health status
+                  milvus:
+                    type: string
+                    enum: [connected, disconnected]
+                    description: Milvus vector database connection status
+              examples:
+                healthy:
+                  value:
+                    status: healthy
+                    milvus: connected
+                unhealthy:
+                  value:
+                    status: unhealthy
+                    milvus: disconnected
 
   /api/health:
     get:
       summary: Health check
-      description: Check API health and Pinecone vector database connectivity
+      description: Check API health and Milvus vector database connectivity
       tags:
         - Health
       responses:
         '200':
-          description: Health status with Pinecone connection status
+          description: Health status with Milvus connection status
           content:
             application/json:
               schema:
@@ -86,11 +104,29 @@ paths:
                 healthy:
                   value:
                     status: healthy
-                    pinecone: connected
+                    components:
+                      milvus:
+                        status: healthy
+                        message: Milvus connected
+                        details: {}
+                      application:
+                        status: healthy
+                        message: Application running
+                        details: {}
+                    timestamp: "2024-12-19T10:30:00.000000"
                 unhealthy:
                   value:
                     status: unhealthy
-                    pinecone: disconnected
+                    components:
+                      milvus:
+                        status: unhealthy
+                        message: Milvus disconnected
+                        details: {}
+                      application:
+                        status: healthy
+                        message: Application running
+                        details: {}
+                    timestamp: "2024-12-19T10:30:00.000000"
 
   /api/ask:
     post:
@@ -418,10 +454,34 @@ components:
           type: string
           enum: [healthy, unhealthy]
           description: Overall API health status
-        milvus:
+        components:
+          type: object
+          description: Health status of individual components
+          properties:
+            milvus:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                message:
+                  type: string
+                details:
+                  type: object
+            application:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                message:
+                  type: string
+                details:
+                  type: object
+        timestamp:
           type: string
-          enum: [connected, disconnected]
-          description: Milvus vector database connection status
+          format: date-time
+          description: Timestamp of the health check
 
     AskResponse:
       type: object
