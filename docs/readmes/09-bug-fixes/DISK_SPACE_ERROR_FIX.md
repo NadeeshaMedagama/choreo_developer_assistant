@@ -61,7 +61,7 @@ For the smallest possible image, use multi-stage builds:
 # Stage 1: Builder
 FROM python:3.11-slim as builder
 WORKDIR /tmp
-COPY backend/requirements-docker.txt .
+COPY ../../../backend/requirements-docker.txt .
 RUN pip install --user --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --user --no-cache-dir -r requirements-docker.txt
 

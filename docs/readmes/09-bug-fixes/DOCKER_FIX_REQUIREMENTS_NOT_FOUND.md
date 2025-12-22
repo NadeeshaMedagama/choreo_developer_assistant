@@ -1,6 +1,13 @@
 # Docker Build Error Fix - requirements-docker.txt Not Found
 
-## ❌ Error Encountered
+## ✅ **UPDATED - Dec 22, 2025**
+
+This issue has been superseded by a more comprehensive disk space fix. See:
+- **[DOCKER_DISK_SPACE_FIX_2025.md](./DOCKER_DISK_SPACE_FIX_2025.md)** - Complete solution with aggressive cleanup
+
+---
+
+## ❌ Original Error Encountered
 
 ```
 ERROR: failed to compute cache key: "/backend/requirements-docker.txt": not found
