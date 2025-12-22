@@ -62,7 +62,7 @@ echo ""
 echo -e "${BLUE}Checking Python dependencies...${NC}"
 if ! $PYTHON_CMD -c "import fastapi" 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Installing Python dependencies (this may take a few minutes)...${NC}"
-    $PYTHON_CMD -m pip install -q -r backend/choreo-ai-assistant/requirements.txt
+    $PYTHON_CMD -m pip install -q -r backend/requirements.txt
     echo -e "${GREEN}✓${NC} Python dependencies installed"
 else
     echo -e "${GREEN}✓${NC} Python dependencies already installed"
