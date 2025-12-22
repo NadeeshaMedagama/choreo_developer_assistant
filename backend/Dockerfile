@@ -20,7 +20,7 @@ RUN useradd -r -u 10014 -g users choreouser
 COPY . .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r choreo-ai-assistant/requirements.txt && \
+RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r diagram_processor/requirements.txt
 
 # Set environment variables
