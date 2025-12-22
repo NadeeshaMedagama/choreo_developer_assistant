@@ -7,7 +7,7 @@ implementation: Service
 # +optional Build configuration
 build:
   buildType: dockerfile
-  dockerfilePath: ../Dockerfile
+  dockerfilePath: Dockerfile
   dockerContext: .
 
 # +optional Incoming connection details for the component

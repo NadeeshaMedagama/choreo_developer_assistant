@@ -23,13 +23,14 @@ COPY choreo-ai-assistant/requirements.txt /tmp/backend-requirements.txt
 COPY diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # AGGRESSIVE DISK SPACE OPTIMIZATION
-# Step 1: Install PyTorch CPU-only FIRST (saves ~2GB vs CUDA version)
+# Step 1: Install PyTorch CPU-only FIRST (saves ~2.8GB vs CUDA version)
 RUN pip install --no-cache-dir \
-    'torch>=2.0.0' \
+    torch==2.2.0+cpu \
     --index-url https://download.pytorch.org/whl/cpu && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \
-    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /usr/local/lib/python3.11 -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true
 
 # Step 2: Install numpy and core scientific packages
 RUN pip install --no-cache-dir \

@@ -28,6 +28,7 @@ diagram_processor/docs/
 diagram_processor/repositories/
 wiki_ingestion/
 github_issues_ingestion/
+run_ingestion.py
 *.json
 !choreo-ai-assistant/*.json
 !package*.json
