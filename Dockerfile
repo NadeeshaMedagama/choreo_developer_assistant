@@ -3,7 +3,7 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and clean up in same layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gcc \
@@ -12,28 +12,62 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     tesseract-ocr \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && rm -rf /var/cache/apt/*
 
 # Create non-root user
 RUN useradd -r -u 10014 -g users appuser
 
-# Copy requirements files first (for better layer caching)
-COPY backend/requirements.txt /tmp/backend-requirements.txt
+# Copy lightweight requirements files (requirements-docker.txt uses CPU-only versions)
+COPY backend/requirements-docker.txt /tmp/backend-requirements.txt
 COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
-# Install PyTorch CPU-only version first (much smaller than CUDA version - ~200MB vs 2GB+)
+# AGGRESSIVE DISK SPACE OPTIMIZATION:
+# Install dependencies in chunks with immediate cleanup to avoid disk space issues
+# This prevents pip from downloading everything at once
+
+# Step 1: Install PyTorch CPU-only (saves ~2GB vs CUDA version)
 RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
-    pip cache purge
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Install backend dependencies (excluding torch since we installed CPU version above)
-RUN grep -v "^torch" /tmp/backend-requirements.txt > /tmp/backend-requirements-no-torch.txt && \
-    pip install --no-cache-dir -r /tmp/backend-requirements-no-torch.txt && \
-    pip cache purge
+# Step 2: Install core dependencies (lightweight packages first)
+RUN grep -v "^torch\|^scipy\|^scikit-learn\|^sentence-transformers" /tmp/backend-requirements.txt > /tmp/core-requirements.txt && \
+    pip install --no-cache-dir -r /tmp/core-requirements.txt && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Install diagram processor dependencies
+# Step 3: Install scipy separately (large package ~35MB)
+RUN if grep -q "scipy" /tmp/backend-requirements.txt; then \
+        pip install --no-cache-dir scipy && \
+        pip cache purge && \
+        rm -rf /root/.cache/pip/* /tmp/pip-*; \
+    fi && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Step 4: Install scikit-learn separately (large package ~9MB)
+RUN if grep -q "scikit-learn" /tmp/backend-requirements.txt; then \
+        pip install --no-cache-dir scikit-learn && \
+        pip cache purge && \
+        rm -rf /root/.cache/pip/* /tmp/pip-*; \
+    fi && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Step 5: Install sentence-transformers last (if needed)
+RUN if grep -q "sentence-transformers" /tmp/backend-requirements.txt; then \
+        pip install --no-cache-dir sentence-transformers && \
+        pip cache purge && \
+        rm -rf /root/.cache/pip/* /tmp/pip-*; \
+    fi && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Step 6: Install diagram processor dependencies
 RUN pip install --no-cache-dir -r /tmp/diagram-requirements.txt && \
     pip cache purge && \
-    rm -rf /tmp/*.txt /root/.cache
+    rm -rf /tmp/*.txt /root/.cache/pip/* /tmp/pip-* && \
+    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Copy entire project structure
 COPY . .
