@@ -18,15 +18,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN useradd -r -u 10014 -g users appuser
 
 # Copy requirements files first (for better layer caching)
-COPY backend/requirements-docker.txt /tmp/backend-requirements.txt
+COPY backend/requirements.txt /tmp/backend-requirements.txt
 COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # Install PyTorch CPU-only version first (much smaller than CUDA version - ~200MB vs 2GB+)
 RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
     pip cache purge
 
-# Install backend dependencies
-RUN pip install --no-cache-dir -r /tmp/backend-requirements.txt && \
+# Install backend dependencies (excluding torch since we installed CPU version above)
+RUN grep -v "^torch" /tmp/backend-requirements.txt > /tmp/backend-requirements-no-torch.txt && \
+    pip install --no-cache-dir -r /tmp/backend-requirements-no-torch.txt && \
     pip cache purge
 
 # Install diagram processor dependencies
