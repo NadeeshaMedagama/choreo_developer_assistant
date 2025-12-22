@@ -23,51 +23,90 @@ COPY backend/choreo-ai-assistant/requirements.txt /tmp/backend-requirements.txt
 COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # AGGRESSIVE DISK SPACE OPTIMIZATION:
-# Install dependencies in chunks with immediate cleanup to avoid disk space issues
-# This prevents pip from downloading everything at once
+# Install dependencies strategically to minimize disk usage
 
-# Step 1: Install PyTorch CPU-only (saves ~2GB vs CUDA version)
-RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
+# Step 1: Install PyTorch CPU-only FIRST (saves ~2GB vs CUDA version)
+RUN pip install --no-cache-dir \
+    torch==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cpu && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Step 2: Install numpy and core scientific packages
+RUN pip install --no-cache-dir \
+    numpy==1.24.0 \
+    scipy \
+    scikit-learn && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Step 2: Install core dependencies (lightweight packages first)
-RUN grep -v "^torch\|^scipy\|^scikit-learn\|^sentence-transformers" /tmp/backend-requirements.txt > /tmp/core-requirements.txt && \
-    pip install --no-cache-dir -r /tmp/core-requirements.txt && \
+# Step 3: Install sentence-transformers (depends on torch, numpy)
+RUN pip install --no-cache-dir \
+    sentence-transformers==2.2.2 && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Step 4: Install fastapi and web framework dependencies
+RUN pip install --no-cache-dir \
+    fastapi==0.118.0 \
+    uvicorn[standard]==0.37.0 \
+    httpx==0.28.1 \
+    aiohttp==3.9.0 \
+    requests==2.31.0 \
+    python-dotenv==1.0.0 \
+    psutil==5.9.0 && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Step 3: Install scipy separately (large package ~35MB)
-RUN if grep -q "scipy" /tmp/backend-requirements.txt; then \
-        pip install --no-cache-dir scipy && \
-        pip cache purge && \
-        rm -rf /root/.cache/pip/* /tmp/pip-*; \
-    fi && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+# Step 5: Install LangChain ecosystem (larger packages)
+RUN pip install --no-cache-dir \
+    langchain==0.3.0 \
+    langchain-core==0.3.0 \
+    langchain-community==0.3.0 \
+    langchain-openai==0.2.0 \
+    langgraph==0.2.0 \
+    openai==2.2.0 && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* && \
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Step 4: Install scikit-learn separately (large package ~9MB)
-RUN if grep -q "scikit-learn" /tmp/backend-requirements.txt; then \
-        pip install --no-cache-dir scikit-learn && \
-        pip cache purge && \
-        rm -rf /root/.cache/pip/* /tmp/pip-*; \
-    fi && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+# Step 6: Install remaining backend dependencies
+RUN pip install --no-cache-dir \
+    pymilvus==2.3.0 \
+    google-cloud-vision==3.4.5 \
+    Pillow==10.1.0 && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* && \
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Step 5: Install sentence-transformers last (if needed)
-RUN if grep -q "sentence-transformers" /tmp/backend-requirements.txt; then \
-        pip install --no-cache-dir sentence-transformers && \
-        pip cache purge && \
-        rm -rf /root/.cache/pip/* /tmp/pip-*; \
-    fi && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-
-# Step 6: Install diagram processor dependencies
-RUN pip install --no-cache-dir -r /tmp/diagram-requirements.txt && \
+# Step 7: Install diagram processor dependencies (lightweight)
+RUN pip install --no-cache-dir \
+    pytesseract==0.3.10 \
+    pdf2image==1.16.3 \
+    opencv-python-headless==4.8.1.78 \
+    python-docx==1.1.0 \
+    python-pptx==0.6.23 \
+    openpyxl==3.1.2 \
+    PyPDF2==3.0.1 \
+    networkx==3.2.1 \
+    pydot==1.4.2 \
+    lxml==4.9.3 \
+    beautifulsoup4==4.12.2 \
+    tqdm==4.66.1 \
+    pyyaml==6.0.1 && \
     pip cache purge && \
     rm -rf /tmp/*.txt /root/.cache/pip/* /tmp/pip-* && \
-    find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+    find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+# Final cleanup - remove build artifacts and unnecessary files
+RUN find /usr/local/lib/python3.11 -type f -name '*.pyc' -delete && \
+    find /usr/local/lib/python3.11 -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /usr/local/lib/python3.11 -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
+    rm -rf /root/.cache/* /tmp/*
 
 # Copy entire project structure
 COPY . .
