@@ -20,10 +20,8 @@ RUN useradd -r -u 10014 -g users appuser
 COPY . .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt || \
-    pip install --no-cache-dir -r backend/requirements.txt
-
-RUN pip install --no-cache-dir -r backend/diagram_processor/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt && \
+    pip install --no-cache-dir -r backend/diagram_processor/requirements.txt
 
 # Set environment variables
 ENV PYTHONPATH=/app
