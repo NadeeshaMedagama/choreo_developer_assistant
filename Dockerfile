@@ -21,7 +21,7 @@ COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt || \
-    pip install --no-cache-dir -r backend/choreo-ai-assistant/requirements.txt
+    pip install --no-cache-dir -r backend/requirements.txt
 
 RUN pip install --no-cache-dir -r backend/diagram_processor/requirements.txt
 
