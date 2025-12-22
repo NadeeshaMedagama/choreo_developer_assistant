@@ -1,3 +1,12 @@
+# IMPORTANT: Do NOT ignore requirements files (must be first!)
+!requirements*.txt
+!backend/requirements.txt
+!backend/requirements-docker.txt
+!backend/choreo-ai-assistant/requirements.txt
+!backend/diagram_processor/requirements.txt
+!backend/github_issues_ingestion/requirements.txt
+!backend/wiki_ingestion/requirements.txt
+
 # Python
 __pycache__/
 *.py[cod]
@@ -68,10 +77,6 @@ credentials/
 *.pem
 *.key
 *.json
-!backend/requirements*.txt
-!backend/diagram_processor/requirements.txt
-!backend/github_issues_ingestion/requirements.txt
-!backend/wiki_ingestion/requirements.txt
 
 # CI/CD
 .github/
