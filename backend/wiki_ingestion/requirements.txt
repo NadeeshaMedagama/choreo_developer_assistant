@@ -1,4 +1,4 @@
-# GitHub Wiki Ingestion Requirements
+# GitHub Wiki Ingestion Requirements - Production Only
 
 # Core dependencies
 requests>=2.31.0
@@ -15,19 +15,9 @@ lxml>=4.9.0
 # Data handling
 python-dateutil>=2.8.2
 
-# Vector database (optional - if using vector DB integration)
+# Vector database
 pymilvus>=2.3.0
 
-# OpenAI (optional - if using embedding integration)
+# OpenAI
 openai>=1.0.0
-
-# Testing (optional)
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-mock>=3.11.0
-
-# Development (optional)
-black>=23.0.0
-flake8>=6.0.0
-mypy>=1.5.0
 

@@ -27,7 +27,7 @@ COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # Step 1: Install PyTorch CPU-only FIRST (saves ~2GB vs CUDA version)
 RUN pip install --no-cache-dir \
-    'torch>=2.0.0' \
+    torch==2.2.0 torchvision==0.17.0 torchaudio==2.2.0 \
     --index-url https://download.pytorch.org/whl/cpu && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \

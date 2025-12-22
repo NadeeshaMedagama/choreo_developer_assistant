@@ -1,25 +1,20 @@
-# This file specifies files that are *not* uploaded to Google Cloud Platform
-# using gcloud. It follows the same syntax as .gitignore, with the addition of
-# "#!include" directives (which insert the entries of the given .gitignore-style
-# file at that point).
-#
-# For more information, run:
-#   $ gcloud topic gcloudignore
+# .gcloudignore - Exclude files from Google Cloud builds
+# This helps reduce build context size and disk usage
 
-.gcloudignore
-.git
+# Git
+.git/
 .gitignore
+.github/
 
-# Python pycache
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
-# Build artifacts
-build/
-dist/
+.Python
 *.egg-info/
+dist/
+build/
 
 # Virtual environments
 venv/
@@ -32,69 +27,94 @@ ENV/
 .idea/
 *.swp
 *.swo
+*~
 
 # Logs
 *.log
 logs/
 
-# Data and large files
-data/diagrams/
+# Data and outputs
+data/
 backend/diagram_processor/output/
 backend/diagram_processor/docs/
 backend/diagram_processor/repositories/
+
+# Notebooks
 notebooks/
-*.bin
-*.pt
-*.pth
-*.onnx
-*.h5
-backend/wiki_ingestion_*.json
-backend/*.json
-!backend/package*.json
+*.ipynb
 
 # Tests
 tests/
 *_test.py
 test_*.py
 
-# Documentation
+# Documentation - KEEP requirements.txt files
 docs/
 *.md
 !README.md
+*.txt
+!requirements.txt
+!**/requirements.txt
 
 # Backup files
 *.backup
 *.bak
+*.backup.*
 Dockerfile.backup
 Dockerfile.optimized
 Dockerfile.minimal
 
-# Frontend build artifacts
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
+# Scripts (except start scripts)
+*.sh
+!start.sh
 
-# Docker
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large model files
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pkl
+*.pickle
+
+# Frontend build artifacts (if not needed for backend)
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/
+
+# Docker files (not needed in cloud build)
 docker/
 docker-compose.yml
+.dockerignore
 
 # Kubernetes
 k8s/
+*.yaml
+!component.yaml
 
 # Monitoring
 monitoring/
 
-# Wiki/GitHub ingestion
-wiki_ingestion_*.json
+# Credentials (should use secrets)
+credentials/
+*.json
+!package*.json
+!tsconfig*.json
+
+# Large ingestion modules (if not needed)
 backend/wiki_ingestion/
 backend/github_issues_ingestion/
+backend/run_ingestion.py
 
-# Scripts
-*.sh
-!start.sh
-
-# Temp
-tmp/
-temp/
-*.tmp
+# CSV files
+*.csv
 

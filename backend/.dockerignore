@@ -41,6 +41,10 @@ test_*.py
 # Documentation
 *.md
 !README.md
+*.txt
+!requirements.txt
+!choreo-ai-assistant/requirements.txt
+!diagram_processor/requirements.txt
 
 # Backup files
 *.backup

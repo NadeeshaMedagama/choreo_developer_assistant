@@ -53,6 +53,9 @@ jobs:
     name: Code Quality
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ./backend
 
     steps:
       - name: Checkout code
@@ -63,13 +66,15 @@ jobs:
           persist-credentials: false
         env:
           GIT_TERMINAL_PROMPT: 0
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: |
+            backend/choreo-ai-assistant/requirements.txt
+            backend/diagram_processor/requirements.txt
 
       - name: Install quality tools
         run: |
@@ -77,23 +82,23 @@ jobs:
 
       - name: Check code formatting with Black
         run: |
-          black --check --diff backend/ || (echo "Run 'black backend/' to fix formatting" && exit 1)
+          black --check --diff . || (echo "Run 'black backend/' to fix formatting" && exit 1)
         continue-on-error: true
 
       - name: Check import sorting with isort
         run: |
-          isort --check-only --diff backend/ || (echo "Run 'isort backend/' to fix imports" && exit 1)
+          isort --check-only --diff . || (echo "Run 'isort backend/' to fix imports" && exit 1)
         continue-on-error: true
 
       - name: Run Pylint
         run: |
-          pylint backend/ --exit-zero --output-format=colorized
+          pylint . --exit-zero --output-format=colorized
         continue-on-error: true
 
       - name: Run Bandit security linter
         run: |
-          bandit -r backend/ -f json -o bandit-report.json || true
-          bandit -r backend/ -f screen
+          bandit -r . -f json -o bandit-report.json || true
+          bandit -r . -f screen
         continue-on-error: true
 
       - name: Upload Bandit report

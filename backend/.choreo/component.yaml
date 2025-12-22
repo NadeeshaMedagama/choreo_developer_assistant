@@ -9,6 +9,18 @@ build:
   buildType: dockerfile
   dockerfilePath: Dockerfile
   dockerContext: .
+  buildArgs:
+    - name: BUILDKIT_INLINE_CACHE
+      value: "1"
+
+# +optional Resource configuration
+resources:
+  limits:
+    memory: 2Gi
+    cpu: 1000m
+  requests:
+    memory: 1Gi
+    cpu: 500m
 
 # +optional Incoming connection details for the component
 endpoints:

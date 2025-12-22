@@ -65,41 +65,67 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+
+      - name: Free up disk space
+        run: |
+          # Remove unnecessary packages to free up space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
 
       - name: Build Python package
+        working-directory: ./backend
         run: |
-          pip install build
-          # Create a simple setup.py if it doesn't exist
-          if [ ! -f setup.py ]; then
-            cat > setup.py << EOF
-          from setuptools import setup, find_packages
+          # Install build tools only
+          pip install --no-cache-dir build wheel setuptools
           
-          setup(
-              name="choreo-ai-assistant",
-              version="${{ steps.get_version.outputs.version_number }}",
-              packages=find_packages(),
-              install_requires=[
-                  line.strip()
-                  for line in open('choreo-ai-assistant/requirements.txt')
-                  if line.strip() and not line.startswith('#')
-              ],
-          )
-          EOF
-          fi
-          python -m build
+          # Create a minimal setup.py
+          cat > setup.py << 'EOF'
+from setuptools import setup, find_packages
+
+setup(
+    name="choreo-ai-assistant",
+    version="${{ steps.get_version.outputs.version_number }}",
+    packages=find_packages(exclude=["tests*", "docs*", "logs*"]),
+    python_requires=">=3.11",
+    install_requires=[
+        "fastapi>=0.100.0,<1.0.0",
+        "uvicorn[standard]>=0.25.0",
+        "python-dotenv>=1.0.0",
+        "requests>=2.31.0",
+        "httpx>=0.25.0",
+    ],
+)
+EOF
+          
+          # Build without installing dependencies
+          python -m build --no-isolation
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
 
       - name: Build frontend
         working-directory: ./frontend
         run: |
-          npm ci
+          npm ci --prefer-offline
           npm run build
+          
+          # Clean up node_modules to save space
+          rm -rf node_modules
+          
+          # Create tarball
           cd dist
           tar -czf ../../frontend-dist.tar.gz .
+          
+          # Report disk usage
+          df -h
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -138,6 +164,17 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Free up disk space
+        run: |
+          # Remove unnecessary packages to free up space
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo apt-get clean
+          docker system prune -a -f
+          df -h
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -156,9 +193,11 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/choreo-ai-assistant:${{ steps.get_version.outputs.version }}
             ${{ secrets.DOCKER_USERNAME }}/choreo-ai-assistant:latest
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
   # ============================================
   # Notify Release

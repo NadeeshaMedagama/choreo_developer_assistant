@@ -52,6 +52,8 @@ test_*.py
 docs/
 *.md
 !README.md
+*.txt
+!requirements.txt
 
 # Backup files
 *.backup
