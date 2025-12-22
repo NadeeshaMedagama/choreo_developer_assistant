@@ -1,0 +1,71 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Data and outputs
+diagram_processor/output/
+diagram_processor/docs/
+diagram_processor/repositories/
+wiki_ingestion/
+github_issues_ingestion/
+*.json
+!choreo-ai-assistant/*.json
+!package*.json
+
+# Tests
+tests/
+*_test.py
+test_*.py
+
+# Documentation
+*.md
+!README.md
+
+# Backup files
+*.backup
+*.bak
+Dockerfile.backup
+Dockerfile.minimal
+
+# Scripts
+*.sh
+!start.sh
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Large model files
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+
+# Kubernetes
+k8s/
+
+# Monitoring
+monitoring/
+

@@ -1,0 +1,30 @@
+[[build.env]]
+name = "GOOGLE_RUNTIME_VERSION"
+value = "3.11"
+
+[[build.env]]
+name = "GOOGLE_ENTRYPOINT"
+value = "python3 start.py"
+
+[[build.env]]
+name = "PIP_NO_COMPILE"
+value = "1"
+
+[[build.env]]
+name = "PIP_DISABLE_PIP_VERSION_CHECK"
+value = "1"
+
+# Reduce build size
+[[build.env]]
+name = "PYTHONDONTWRITEBYTECODE"
+value = "1"
+
+[[build.env]]
+name = "PYTHONUNBUFFERED"
+value = "1"
+
+# Install dependencies with minimal caching
+[[build.env]]
+name = "PIP_NO_CACHE_DIR"
+value = "true"
+
