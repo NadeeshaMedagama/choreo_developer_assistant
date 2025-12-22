@@ -1,42 +1,99 @@
-# Add .env files (contains secrets)
-backend/.env
-.env
-
-# Add Python cache
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+*.egg-info/
+dist/
+build/
+*.egg
 
 # Virtual environments
-venv/
 .venv/
-env/
+venv/
 ENV/
+env/
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Data and outputs
+data/diagrams/
+backend/diagram_processor/output/
+backend/diagram_processor/repositories/
+*.json.gz
+*.json.bz2
+
+# Node modules
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Test files
+tests/
+*.test.py
+*_test.py
+
+# Documentation (not needed in container)
+docs/
+README.md
+*.md
+!requirements*.txt
+
+# Jupyter notebooks
+notebooks/
+*.ipynb
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Credentials (should be mounted at runtime)
+credentials/
+*.pem
+*.key
+*.json
+!backend/requirements*.txt
+!backend/diagram_processor/requirements.txt
+!backend/github_issues_ingestion/requirements.txt
+!backend/wiki_ingestion/requirements.txt
 
-# Model cache (sentence-transformers downloads models here)
-.cache/
-models/
+# CI/CD
+.github/
+.gitlab-ci.yml
 
-# Jupyter
-.ipynb_checkpoints/
+# Docker
+Dockerfile.original
+Dockerfile.optimized
+docker-compose*.yml
+.dockerignore
 
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Large model files
+*.bin
+*.h5
+*.onnx
+*.pt
+*.pth
 
