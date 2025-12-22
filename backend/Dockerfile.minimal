@@ -18,7 +18,7 @@ COPY . .
 
 # ULTRA-MINIMAL INSTALLATION FOR CHOREO
 # Install ONLY what's absolutely necessary
-RUN pip install --no-cache-dir -r requirements-minimal.txt && \
+RUN pip install --no-cache-dir -r choreo-ai-assistant/requirements.txt && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* /tmp/* && \
     find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

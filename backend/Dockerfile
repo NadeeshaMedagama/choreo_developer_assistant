@@ -29,18 +29,10 @@ RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch
     find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Install backend dependencies in chunks to avoid disk space issues
-# Use requirements-docker.txt (lighter CPU-only versions)
-RUN if [ -f requirements-docker.txt ]; then \
-        grep -v "^torch\|^sentence-transformers" requirements-docker.txt > /tmp/core-requirements.txt && \
-        pip install --no-cache-dir -r /tmp/core-requirements.txt && \
-        pip cache purge && \
-        rm -rf /root/.cache/pip/* /tmp/pip-* /tmp/core-requirements.txt; \
-    else \
-        grep -v "^torch\|^sentence-transformers" requirements.txt > /tmp/core-requirements.txt && \
-        pip install --no-cache-dir -r /tmp/core-requirements.txt && \
-        pip cache purge && \
-        rm -rf /root/.cache/pip/* /tmp/pip-* /tmp/core-requirements.txt; \
-    fi && \
+RUN grep -v "^torch\|^sentence-transformers" choreo-ai-assistant/requirements.txt > /tmp/core-requirements.txt && \
+    pip install --no-cache-dir -r /tmp/core-requirements.txt && \
+    pip cache purge && \
+    rm -rf /root/.cache/pip/* /tmp/pip-* /tmp/core-requirements.txt && \
     find / -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Install sentence-transformers separately with cleanup

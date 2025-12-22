@@ -18,8 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create non-root user
 RUN useradd -r -u 10014 -g users appuser
 
-# Copy lightweight requirements files (requirements-docker.txt uses CPU-only versions)
-COPY backend/requirements-docker.txt /tmp/backend-requirements.txt
+# Copy lightweight requirements files
+COPY backend/choreo-ai-assistant/requirements.txt /tmp/backend-requirements.txt
 COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # AGGRESSIVE DISK SPACE OPTIMIZATION:
