@@ -1,0 +1,32 @@
+# ULTRA-MINIMAL requirements for Choreo deployment
+# This file contains ONLY essential packages to minimize disk usage
+# Removes unused heavy packages: sentence-transformers (~500MB), google-cloud-vision (~100MB)
+
+# Core API dependencies (REQUIRED)
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+python-dotenv==1.0.0
+requests==2.31.0
+httpx==0.28.1
+aiohttp>=3.9.0
+openai==2.2.0
+
+# Vector DB (REQUIRED)
+pymilvus==2.3.0
+
+# LangChain essentials (REQUIRED)
+langchain==0.3.0
+langchain-core==0.3.0
+langchain-community==0.3.0
+langgraph==0.2.0
+
+# Basic data processing (REQUIRED)
+numpy>=1.24.0
+Pillow>=10.0.0
+psutil>=5.9.0
+
+# NOTE: sentence-transformers and google-cloud-vision are NOT included
+# because the app uses Azure OpenAI embeddings instead of local models
+# This saves ~600MB of dependencies!
+
+
