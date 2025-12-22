@@ -27,7 +27,7 @@ COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # Step 1: Install PyTorch CPU-only FIRST (saves ~2GB vs CUDA version)
 RUN pip install --no-cache-dir \
-    torch==2.5.1 \
+    'torch>=2.0.0' \
     --index-url https://download.pytorch.org/whl/cpu && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \
@@ -35,7 +35,7 @@ RUN pip install --no-cache-dir \
 
 # Step 2: Install numpy and core scientific packages
 RUN pip install --no-cache-dir \
-    numpy==1.24.0 \
+    'numpy>=1.24.0,<2.0.0' \
     scipy \
     scikit-learn && \
     pip cache purge && \
@@ -44,60 +44,60 @@ RUN pip install --no-cache-dir \
 
 # Step 3: Install sentence-transformers (depends on torch, numpy)
 RUN pip install --no-cache-dir \
-    sentence-transformers==2.2.2 && \
+    'sentence-transformers>=2.2.0' && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* /root/.cache/huggingface && \
     find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Step 4: Install fastapi and web framework dependencies
 RUN pip install --no-cache-dir \
-    fastapi==0.118.0 \
-    uvicorn[standard]==0.37.0 \
-    httpx==0.28.1 \
-    aiohttp==3.9.0 \
-    requests==2.31.0 \
-    python-dotenv==1.0.0 \
-    psutil==5.9.0 && \
+    'fastapi>=0.100.0,<1.0.0' \
+    'uvicorn[standard]>=0.25.0' \
+    'httpx>=0.25.0' \
+    'aiohttp>=3.9.0' \
+    'requests>=2.31.0' \
+    'python-dotenv>=1.0.0' \
+    'psutil>=5.9.0' && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* && \
     find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
-# Step 5: Install LangChain ecosystem (larger packages)
+# Step 5: Install LangChain ecosystem (larger packages) - let pip resolve versions
 RUN pip install --no-cache-dir \
-    langchain==0.3.0 \
-    langchain-core==0.3.0 \
-    langchain-community==0.3.0 \
-    langchain-openai==0.2.0 \
-    langgraph==0.2.0 \
-    openai==2.2.0 && \
+    'langchain>=0.1.0' \
+    'langchain-core>=0.1.0' \
+    'langchain-community>=0.0.20' \
+    'langchain-openai>=0.0.5' \
+    'langgraph>=0.0.20' \
+    'openai>=1.0.0' && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* && \
     find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Step 6: Install remaining backend dependencies
 RUN pip install --no-cache-dir \
-    pymilvus==2.3.0 \
-    google-cloud-vision==3.4.5 \
-    Pillow==10.1.0 && \
+    'pymilvus>=2.3.0' \
+    'google-cloud-vision>=3.4.0' \
+    'Pillow>=10.0.0' && \
     pip cache purge && \
     rm -rf /root/.cache/pip/* /tmp/pip-* && \
     find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 
 # Step 7: Install diagram processor dependencies (lightweight)
 RUN pip install --no-cache-dir \
-    pytesseract==0.3.10 \
-    pdf2image==1.16.3 \
-    opencv-python-headless==4.8.1.78 \
-    python-docx==1.1.0 \
-    python-pptx==0.6.23 \
-    openpyxl==3.1.2 \
-    PyPDF2==3.0.1 \
-    networkx==3.2.1 \
-    pydot==1.4.2 \
-    lxml==4.9.3 \
-    beautifulsoup4==4.12.2 \
-    tqdm==4.66.1 \
-    pyyaml==6.0.1 && \
+    'pytesseract>=0.3.10' \
+    'pdf2image>=1.16.0' \
+    'opencv-python-headless>=4.8.0' \
+    'python-docx>=1.0.0' \
+    'python-pptx>=0.6.21' \
+    'openpyxl>=3.0.0' \
+    'PyPDF2>=3.0.0' \
+    'networkx>=3.0.0' \
+    'pydot>=1.4.0' \
+    'lxml>=4.9.0' \
+    'beautifulsoup4>=4.12.0' \
+    'tqdm>=4.65.0' \
+    'pyyaml>=6.0.0' && \
     pip cache purge && \
     rm -rf /tmp/*.txt /root/.cache/pip/* /tmp/pip-* && \
     find /usr/local/lib/python3.11 -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true

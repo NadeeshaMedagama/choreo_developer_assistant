@@ -1,22 +1,22 @@
 # OCR and Image Processing (minimal set)
-pytesseract==0.3.10
-pdf2image==1.16.3
-opencv-python-headless==4.8.1.78
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+opencv-python-headless>=4.8.0
 
 # Document Processing
-python-docx==1.1.0
-python-pptx==0.6.23
-openpyxl==3.1.2
-PyPDF2==3.0.1
+python-docx>=1.0.0
+python-pptx>=0.6.21
+openpyxl>=3.0.0
+PyPDF2>=3.0.0
 
 # Graph and Visualization (lightweight)
-networkx==3.2.1
-pydot==1.4.2
+networkx>=3.0.0
+pydot>=1.4.0
 
 # XML/SVG Processing
-lxml==4.9.3
-beautifulsoup4==4.12.2
+lxml>=4.9.0
+beautifulsoup4>=4.12.0
 
 # Utilities
-tqdm==4.66.1
-pyyaml==6.0.1
+tqdm>=4.65.0
+pyyaml>=6.0.0

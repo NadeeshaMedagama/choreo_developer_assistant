@@ -1,47 +1,56 @@
-# Python cache
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+# "#!include" directives (which insert the entries of the given .gitignore-style
+# file at that point).
+#
+# For more information, run:
+#   $ gcloud topic gcloudignore
+
+.gcloudignore
+.git
+.gitignore
+
+# Python pycache
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-*.egg-info/
-dist/
+
+# Build artifacts
 build/
+dist/
+*.egg-info/
 
 # Virtual environments
 venv/
 env/
 ENV/
+.venv/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-
-# Git
-.git/
-.gitignore
 
 # Logs
 *.log
 logs/
 
-# Data and outputs
+# Data and large files
 data/diagrams/
 backend/diagram_processor/output/
 backend/diagram_processor/docs/
 backend/diagram_processor/repositories/
-*.json
-!package*.json
-!tsconfig*.json
-!credentials/*.json
-*.csv
-
-# Notebooks
 notebooks/
-*.ipynb
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+backend/wiki_ingestion_*.json
+backend/*.json
+!backend/package*.json
 
 # Tests
 tests/
@@ -60,27 +69,7 @@ Dockerfile.backup
 Dockerfile.optimized
 Dockerfile.minimal
 
-# Scripts
-*.sh
-!start.sh
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Large model files
-*.bin
-*.pt
-*.pth
-*.onnx
-*.h5
-
-# Frontend (if separate build)
+# Frontend build artifacts
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
@@ -95,13 +84,17 @@ k8s/
 # Monitoring
 monitoring/
 
-# Wiki ingestion files
+# Wiki/GitHub ingestion
 wiki_ingestion_*.json
 backend/wiki_ingestion/
 backend/github_issues_ingestion/
 
-# Root level files to exclude
-CHOREO_RUN_COMMAND.md
-POSTMAN_COLLECTION.md
-START_FRESH_REPO.sh
+# Scripts
+*.sh
+!start.sh
+
+# Temp
+tmp/
+temp/
+*.tmp
 
