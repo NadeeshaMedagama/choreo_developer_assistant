@@ -46,10 +46,10 @@ echo ""
 
 # Test 3: Check requirements.txt files
 echo "Test 3: Checking requirements.txt files..."
-if [ -f "backend/choreo-ai-assistant/requirements.txt" ]; then
-    echo -e "${GREEN}✅ backend/choreo-ai-assistant/requirements.txt exists${NC}"
+if [ -f "backend/requirements.txt" ]; then
+    echo -e "${GREEN}✅ backend/requirements.txt exists${NC}"
 else
-    echo -e "${RED}❌ backend/choreo-ai-assistant/requirements.txt missing${NC}"
+    echo -e "${RED}❌ backend/requirements.txt missing${NC}"
 fi
 
 if [ -f "backend/diagram_processor/requirements.txt" ]; then
