@@ -102,6 +102,6 @@ backend/github_issues_ingestion/
 
 # Root level files to exclude
 CHOREO_RUN_COMMAND.md
-POSTMAN_COLLECTION.md
+docs/readmes/12-choreo-deployment/POSTMAN_COLLECTION.md
 START_FRESH_REPO.sh
 
