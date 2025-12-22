@@ -1,6 +1,6 @@
 # Root level requirements - delegates to backend requirements
 # This file ensures Docker build can find dependencies
 
--r backend/choreo-ai-assistant/requirements.txt
+-r backend/requirements.txt
 -r backend/diagram_processor/requirements.txt
 
