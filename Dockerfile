@@ -11,17 +11,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     libgomp1 \
     tesseract-ocr \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Create non-root user
 RUN useradd -r -u 10014 -g users appuser
 
+# Copy requirements files first (for better layer caching)
+COPY backend/requirements-docker.txt /tmp/backend-requirements.txt
+COPY backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
+
+# Install PyTorch CPU-only version first (much smaller than CUDA version - ~200MB vs 2GB+)
+RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu && \
+    pip cache purge
+
+# Install backend dependencies
+RUN pip install --no-cache-dir -r /tmp/backend-requirements.txt && \
+    pip cache purge
+
+# Install diagram processor dependencies
+RUN pip install --no-cache-dir -r /tmp/diagram-requirements.txt && \
+    pip cache purge && \
+    rm -rf /tmp/*.txt /root/.cache
+
 # Copy entire project structure
 COPY . .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r backend/requirements.txt && \
-    pip install --no-cache-dir -r backend/diagram_processor/requirements.txt
 
 # Set environment variables
 ENV PYTHONPATH=/app
