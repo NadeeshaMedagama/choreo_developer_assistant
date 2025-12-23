@@ -10,6 +10,7 @@ build/
 
 # Virtual environments
 venv/
+.venv/
 env/
 ENV/
 
@@ -23,12 +24,13 @@ ENV/
 # Git
 .git/
 .gitignore
+.github/
 
 # Logs
 *.log
 logs/
 
-# Data and outputs
+# Data and outputs - EXCLUDE ALL OUTPUT
 data/diagrams/
 backend/diagram_processor/output/
 backend/diagram_processor/docs/
@@ -37,23 +39,28 @@ backend/diagram_processor/repositories/
 !package*.json
 !tsconfig*.json
 !credentials/*.json
+!component.yaml
+!.component.yaml
 *.csv
 
 # Notebooks
 notebooks/
 *.ipynb
+.ipynb_checkpoints/
 
 # Tests
 tests/
 *_test.py
 test_*.py
+**/tests/
+**/test/
 
-# Documentation
+# Documentation - exclude all except essential README
 docs/
 *.md
 !README.md
 *.txt
-!requirements.txt
+!requirements*.txt
 
 # Backup files
 *.backup
@@ -62,7 +69,7 @@ Dockerfile.backup
 Dockerfile.optimized
 Dockerfile.minimal
 
-# Scripts
+# Scripts - only include start scripts
 *.sh
 !start.sh
 
@@ -81,6 +88,8 @@ Thumbs.db
 *.pth
 *.onnx
 *.h5
+*.pkl
+*.pickle
 
 # Frontend (if separate build)
 frontend/node_modules/
@@ -97,13 +106,14 @@ k8s/
 # Monitoring
 monitoring/
 
-# Wiki ingestion files
+# Wiki and GitHub ingestion files
 wiki_ingestion_*.json
 backend/wiki_ingestion/
 backend/github_issues_ingestion/
 
-# Root level files to exclude
+# Exclude root level non-essential files
 CHOREO_RUN_COMMAND.md
-docs/readmes/12-choreo-deployment/POSTMAN_COLLECTION.md
 START_FRESH_REPO.sh
+project.toml
+requirements-consolidated.txt
 

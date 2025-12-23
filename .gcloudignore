@@ -6,7 +6,7 @@
 .gitignore
 .github/
 
-# Python cache
+# Python cache and build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,6 +15,8 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.pyc
+.pytest_cache/
 
 # Virtual environments
 venv/
@@ -28,12 +30,14 @@ ENV/
 *.swp
 *.swo
 *~
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 logs/
 
-# Data and outputs
+# Data and outputs - EXCLUDE ALL
 data/
 backend/diagram_processor/output/
 backend/diagram_processor/docs/
@@ -42,13 +46,16 @@ backend/diagram_processor/repositories/
 # Notebooks
 notebooks/
 *.ipynb
+.ipynb_checkpoints/
 
-# Tests
+# Tests - exclude all test files
 tests/
 *_test.py
 test_*.py
+**/tests/
+**/test/
 
-# Documentation - KEEP requirements.txt files
+# Documentation - ONLY keep requirements.txt
 docs/
 *.md
 !README.md
@@ -77,7 +84,7 @@ temp/
 .DS_Store
 Thumbs.db
 
-# Large model files
+# Large model files - exclude all pre-trained models
 *.bin
 *.pt
 *.pth
@@ -85,8 +92,9 @@ Thumbs.db
 *.h5
 *.pkl
 *.pickle
+*.safetensors
 
-# Frontend build artifacts (if not needed for backend)
+# Frontend build artifacts (not needed for backend)
 frontend/node_modules/
 frontend/.vite/
 frontend/dist/
@@ -100,6 +108,7 @@ docker-compose.yml
 k8s/
 *.yaml
 !component.yaml
+!.component.yaml
 
 # Monitoring
 monitoring/
@@ -110,11 +119,17 @@ credentials/
 !package*.json
 !tsconfig*.json
 
-# Large ingestion modules (if not needed)
+# Large ingestion modules (if not needed for core service)
 backend/wiki_ingestion/
 backend/github_issues_ingestion/
 backend/run_ingestion.py
 
-# CSV files
+# CSV and data files
 *.csv
+*.xlsx
+*.xls
+
+# Root level non-essential files
+requirements-consolidated.txt
+project.toml
 
