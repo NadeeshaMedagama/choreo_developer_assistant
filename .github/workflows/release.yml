@@ -83,23 +83,22 @@ jobs:
           pip install --no-cache-dir build wheel setuptools
           
           # Create a minimal setup.py
-          cat > setup.py << 'EOF'
-from setuptools import setup, find_packages
-
-setup(
-    name="choreo-ai-assistant",
-    version="${{ steps.get_version.outputs.version_number }}",
-    packages=find_packages(exclude=["tests*", "docs*", "logs*"]),
-    python_requires=">=3.11",
-    install_requires=[
-        "fastapi>=0.100.0,<1.0.0",
-        "uvicorn[standard]>=0.25.0",
-        "python-dotenv>=1.0.0",
-        "requests>=2.31.0",
-        "httpx>=0.25.0",
-    ],
-)
-EOF
+          VERSION="${{ steps.get_version.outputs.version_number }}"
+          echo "from setuptools import setup, find_packages" > setup.py
+          echo "" >> setup.py
+          echo "setup(" >> setup.py
+          echo "    name=\"choreo-ai-assistant\"," >> setup.py
+          echo "    version=\"$VERSION\"," >> setup.py
+          echo "    packages=find_packages(exclude=[\"tests*\", \"docs*\", \"logs*\"])," >> setup.py
+          echo "    python_requires=\">=3.11\"," >> setup.py
+          echo "    install_requires=[" >> setup.py
+          echo "        \"fastapi>=0.100.0,<1.0.0\"," >> setup.py
+          echo "        \"uvicorn[standard]>=0.25.0\"," >> setup.py
+          echo "        \"python-dotenv>=1.0.0\"," >> setup.py
+          echo "        \"requests>=2.31.0\"," >> setup.py
+          echo "        \"httpx>=0.25.0\"," >> setup.py
+          echo "    ]," >> setup.py
+          echo ")" >> setup.py
           
           # Build without installing dependencies
           python -m build --no-isolation
