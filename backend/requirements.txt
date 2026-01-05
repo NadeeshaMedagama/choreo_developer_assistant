@@ -1,6 +1,9 @@
 # Backend Core Requirements - Optimized for Disk Space
 # Uses loose version constraints to allow pip to resolve conflicts
 
+# NOTE: torch is installed separately in Dockerfile with CPU-only version
+# to avoid massive CUDA dependencies (~8GB vs ~200MB)
+
 # Web Framework
 fastapi>=0.100.0,<1.0.0
 uvicorn[standard]>=0.25.0

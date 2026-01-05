@@ -7,12 +7,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ git curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install heavy dependencies in one go to keep layer size down
-RUN pip install --no-cache-dir torch==2.2.0+cpu --index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir \
-    numpy scipy scikit-learn sentence-transformers \
-    fastapi uvicorn langchain openai pymilvus \
-    opencv-python-headless pytesseract pdf2image
+# Copy requirements.txt first for better caching
+COPY requirements.txt .
+
+# Install CPU-only PyTorch FIRST to prevent CUDA dependencies
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+# Install dependencies from requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Clean up pip cache to reduce image size
+RUN pip cache purge || true
 
 # --- Final Production Image ---
 FROM python:3.11-slim
@@ -37,4 +42,4 @@ USER 10014
 ENV PYTHONPATH=/app
 ENV PORT=9090
 
-CMD ["python3", "start.py"]
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "9090"]
