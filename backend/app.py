@@ -10,22 +10,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
-from .services.llm_service import LLMService
-from .services.context_manager import ContextManager
-from .services.github_service import GitHubService
-from .services.image_service import ImageProcessingService
-from .services.conversation_memory_manager import ConversationMemoryManager
-from .services.url_validator import get_url_validator
-from .db.vector_client import VectorClient
-from .utils.config import load_config
-from .services import IngestionService
-from .services.rag_graph import build_graph
+from services.llm_service import LLMService
+from services.context_manager import ContextManager
+from services.github_service import GitHubService
+from services.image_service import ImageProcessingService
+from services.conversation_memory_manager import ConversationMemoryManager
+from services.url_validator import get_url_validator
+from db.vector_client import VectorClient
+from utils.config import load_config
+from services import IngestionService
+from services.rag_graph import build_graph
 
 # Import new SOLID monitoring architecture
-from .monitoring import get_monitoring_service
-from .monitoring.middleware.metrics_middleware import MetricsMiddleware
-from .monitoring.config.logging_setup import setup_logging
-from .monitoring.health.health_checker import MilvusHealthChecker, ApplicationHealthChecker
+from monitoring import get_monitoring_service
+from monitoring.middleware.metrics_middleware import MetricsMiddleware
+from monitoring.config.logging_setup import setup_logging
+from monitoring.health.health_checker import MilvusHealthChecker, ApplicationHealthChecker
 
 # Initialize logging
 setup_logging(log_level="INFO", enable_json=False)
