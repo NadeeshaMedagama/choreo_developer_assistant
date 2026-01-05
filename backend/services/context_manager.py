@@ -1,6 +1,6 @@
 from typing import Optional
-from .llm_service import LLMService
-from ..db.vector_client import VectorClient
+from services.llm_service import LLMService
+from db.vector_client import VectorClient
 
 class ContextManager:
     def __init__(self, vector_client: "VectorClient", llm_service: Optional["LLMService"] = None):
