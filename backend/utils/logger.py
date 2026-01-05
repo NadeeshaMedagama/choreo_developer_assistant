@@ -5,8 +5,8 @@ from logging.handlers import RotatingFileHandler
 import atexit
 import os
 
-# Create .logs directory in the project root
-LOG_DIR = Path(__file__).parent.parent.parent / ".logs"
+# Create logs directory relative to the backend directory
+LOG_DIR = Path(__file__).parent.parent / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_DIR / "backend.log"
 
