@@ -8,8 +8,8 @@ Uses intelligent chunking strategies to preserve semantic meaning.
 from typing import List, Dict, Any
 import re
 
-from ..models import Summary, TextChunk, DiagramFile
-from ..utils.logger import get_logger
+from diagram_processor.models import Summary, TextChunk, DiagramFile
+from diagram_processor.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
