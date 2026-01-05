@@ -9,8 +9,8 @@ from typing import List, Dict, Any, Optional
 import json
 import re
 
-from ..models import ExtractedContent, Summary, DiagramFile
-from ..utils.logger import get_logger
+from diagram_processor.models import ExtractedContent, Summary, DiagramFile
+from diagram_processor.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
