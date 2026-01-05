@@ -5,7 +5,7 @@ Following Interface Segregation Principle.
 
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-from ..models.chunk import TextChunk
+from github_issues_ingestion.models.chunk import TextChunk
 
 
 class IVectorStore(ABC):
