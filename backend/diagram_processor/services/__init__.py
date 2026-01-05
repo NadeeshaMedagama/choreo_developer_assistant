@@ -10,16 +10,16 @@ from pathlib import Path
 import time
 from datetime import datetime
 
-from ..models import DiagramFile, ProcessingResult, FileType
-from ..utils import Config
-from ..utils.logger import setup_logger, get_logger
-from .file_discovery import FileDiscoveryService
-from .text_extraction import TextExtractionService
-from .summary_generation import SummaryGenerationService
-from .chunking import ChunkingService
-from .embedding import EmbeddingService
-from .knowledge_graph import KnowledgeGraphService
-from ..repositories import VectorStoreRepository
+from diagram_processor.models import DiagramFile, ProcessingResult, FileType
+from diagram_processor.utils import Config
+from diagram_processor.utils.logger import setup_logger, get_logger
+from diagram_processor.services.file_discovery import FileDiscoveryService
+from diagram_processor.services.text_extraction import TextExtractionService
+from diagram_processor.services.summary_generation import SummaryGenerationService
+from diagram_processor.services.chunking import ChunkingService
+from diagram_processor.services.embedding import EmbeddingService
+from diagram_processor.services.knowledge_graph import KnowledgeGraphService
+from diagram_processor.repositories import VectorStoreRepository
 
 logger = get_logger(__name__)
 
