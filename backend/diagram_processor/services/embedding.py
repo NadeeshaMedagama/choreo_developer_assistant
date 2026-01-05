@@ -8,8 +8,8 @@ from typing import List, Dict, Any, Optional
 import hashlib
 import time
 
-from ..models import TextChunk, EmbeddingRecord
-from ..utils.logger import get_logger
+from diagram_processor.models import TextChunk, EmbeddingRecord
+from diagram_processor.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
