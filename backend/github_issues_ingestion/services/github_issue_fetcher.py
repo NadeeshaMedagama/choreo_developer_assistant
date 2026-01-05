@@ -7,8 +7,8 @@ import requests
 import time
 from typing import List, Dict, Any, Optional
 
-from ..interfaces.issue_fetcher import IIssueFetcher
-from ..models.github_issue import GitHubIssue
+from github_issues_ingestion.interfaces.issue_fetcher import IIssueFetcher
+from github_issues_ingestion.models.github_issue import GitHubIssue
 
 
 class GitHubIssueFetcher(IIssueFetcher):
