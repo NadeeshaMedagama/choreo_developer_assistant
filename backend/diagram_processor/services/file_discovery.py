@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import List, Set
 from datetime import datetime
 
-from ..models import DiagramFile, FileType
-from ..utils.logger import get_logger
+from diagram_processor.models import DiagramFile, FileType
+from diagram_processor.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
