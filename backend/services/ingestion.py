@@ -7,17 +7,17 @@ import threading
 import sys
 import select
 
-from ..utils.logger import get_logger
-from ..utils.resource_monitor import (
+from utils.logger import get_logger
+from utils.resource_monitor import (
     wait_for_memory,
     force_garbage_collection,
     get_memory_usage_mb,
     get_memory_usage_percent
 )
-from .github_service import GitHubService
-from .llm_service import LLMService
-from .image_service import ImageProcessingService
-from ..db.vector_client import VectorClient
+from services.github_service import GitHubService
+from services.llm_service import LLMService
+from services.image_service import ImageProcessingService
+from db.vector_client import VectorClient
 
 logger = get_logger(__name__)
 
