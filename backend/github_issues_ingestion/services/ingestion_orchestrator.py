@@ -7,13 +7,13 @@ from typing import List, Dict, Any, Optional
 import time
 from datetime import datetime
 
-from ..interfaces.issue_fetcher import IIssueFetcher
-from ..interfaces.text_processor import ITextProcessor
-from ..interfaces.chunker import IChunker
-from ..interfaces.embedding_service import IEmbeddingService
-from ..interfaces.vector_store import IVectorStore
-from ..models.github_issue import GitHubIssue
-from ..models.chunk import TextChunk
+from github_issues_ingestion.interfaces.issue_fetcher import IIssueFetcher
+from github_issues_ingestion.interfaces.text_processor import ITextProcessor
+from github_issues_ingestion.interfaces.chunker import IChunker
+from github_issues_ingestion.interfaces.embedding_service import IEmbeddingService
+from github_issues_ingestion.interfaces.vector_store import IVectorStore
+from github_issues_ingestion.models.github_issue import GitHubIssue
+from github_issues_ingestion.models.chunk import TextChunk
 
 
 class IngestionOrchestrator:
