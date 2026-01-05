@@ -4,9 +4,9 @@ Handles chunking of markdown files with configurable requirements.
 """
 from pathlib import Path
 from typing import List, Dict
-from backend.utils import chunk_markdown_file, should_chunk_markdown_file
-from backend.utils.config import Config
-from backend.utils.logger import get_logger
+from utils import chunk_markdown_file, should_chunk_markdown_file
+from utils.config import Config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
