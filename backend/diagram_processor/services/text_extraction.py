@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Optional
 import io
 
-from ..models import DiagramFile, ExtractedContent, FileType
-from ..utils.logger import get_logger
+from diagram_processor.models import DiagramFile, ExtractedContent, FileType
+from diagram_processor.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
