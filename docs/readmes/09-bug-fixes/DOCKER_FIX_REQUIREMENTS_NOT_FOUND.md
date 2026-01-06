@@ -52,7 +52,7 @@ Moved requirements.txt exceptions to the TOP of .dockerignore to ensure they're 
 
 ```dockerfile
 # Copy existing requirements files
-COPY ../../../backend/requirements.txt /tmp/backend-requirements.txt
+COPY ../../../backend/choreo-ai-assistant/requirements.txt /tmp/backend-requirements.txt
 COPY ../../../backend/diagram_processor/requirements.txt /tmp/diagram-requirements.txt
 
 # Install PyTorch CPU-only (~200MB instead of 2.5GB)
