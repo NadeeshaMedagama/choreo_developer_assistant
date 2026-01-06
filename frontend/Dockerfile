@@ -21,11 +21,19 @@ FROM nginx:stable-alpine
 # Copy built files to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Copy public directory (including config.js template)
+COPY --from=build /app/public /usr/share/nginx/html
+
 # Copy custom nginx config to proxy API requests to backend
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy startup script for dynamic config generation
+COPY docs/scripts/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
+# Use custom entrypoint to generate config.js with environment variables
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
