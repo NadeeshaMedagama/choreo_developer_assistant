@@ -1,0 +1,70 @@
+# +required The configuration file schema version
+schemaVersion: 1.2
+
+# +required Choreo component implementation type
+# Use 'WebApplication' for static frontend served via nginx
+implementation: WebApplication
+
+# +optional Build configuration
+build:
+  buildType: dockerfile
+  dockerfilePath: Dockerfile
+  dockerContext: .
+  buildArgs:
+    - name: BUILDKIT_INLINE_CACHE
+      value: "1"
+
+# +optional Resource configuration
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 256Mi
+    cpu: 250m
+
+# +optional Incoming connection details for the component
+endpoints:
+  - name: choreo-ai-frontend
+    displayName: Choreo AI Assistant Frontend
+    service:
+      basePath: /
+      port: 80
+    type: WebApplication
+    networkVisibilities:
+      - Public
+
+# +optional Outgoing connections from this component
+# This component connects to the backend service
+dependsOn:
+  - name: choreo-ai-backend
+    connectionConfig:
+      type: REST
+
+# +optional Defines runtime configurations
+configurations:
+  env:
+    # Backend API URL - dynamically injected from backend service connection
+    - name: API_URL
+      valueFrom:
+        connectionRef:
+          name: choreo-developer-assistant-connection
+          key: ServiceURL
+
+    # Environment name (development, staging, production)
+    - name: ENVIRONMENT
+      valueFrom:
+        configForm:
+          displayName: Environment
+          required: false
+          type: string
+          default: "production"
+
+    # Application version
+    - name: VERSION
+      valueFrom:
+        configForm:
+          displayName: Application Version
+          required: false
+          type: string
+          default: "1.0.0"
