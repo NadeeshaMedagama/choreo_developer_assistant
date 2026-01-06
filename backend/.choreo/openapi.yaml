@@ -19,9 +19,12 @@ info:
   contact:
     name: Choreo AI Assistant Support
     email: support@choreo.dev
+  x-choreo-version: v1.0
 
 servers:
-  - url: https://your-component-url.choreo.dev
+  - url: https://bfdef01f-7fc1-46ea-af69-42279e15f710-dev.e1-us-east-azure.choreoapis.dev/choreo-ai-assistant/backend-yn/v1.0
+    description: Choreo Development Environment
+  - url: https://your-component-url.choreoapis.dev/choreo-ai-assistant/backend-yn/v1.0
     description: Choreo Production Environment
   - url: http://localhost:9090
     description: Local Development Environment
