@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Send, Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, Moon, Sun, ArrowDown, Search } from 'lucide-react'
 import Message from './components/Message'
 import MonitoringButton from './components/MonitoringButton.jsx'
+import { getApiUrl } from './config'
 
 const INITIAL_ASSISTANT = {
   id: 1,
@@ -115,7 +116,8 @@ export default function App() {
   useEffect(() => {
     const check = async () => {
       try {
-        const res = await fetch('/api/health')
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}api/health`)
         await res.json().catch(() => ({}))
         setStatus(res.ok ? 'online' : 'offline')
       } catch {
@@ -257,7 +259,8 @@ export default function App() {
 
     try {
       // Use streaming endpoint with conversation history and summary
-      const response = await fetch('/api/ask/stream', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -351,7 +354,8 @@ export default function App() {
       console.error('Streaming error:', e)
       // Fallback to regular API if streaming fails
       try {
-        const res = await fetch('/api/ask', {
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -428,7 +432,8 @@ export default function App() {
 
     try {
       // Use streaming endpoint with conversation history and summary
-      const response = await fetch('/api/ask/stream', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -519,7 +524,8 @@ export default function App() {
       console.error('Regenerate streaming error:', e)
       // Fallback to regular API
       try {
-        const res = await fetch('/api/ask', {
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -601,7 +607,8 @@ export default function App() {
 
     try {
       // Use streaming endpoint with edited question and conversation history
-      const response = await fetch('/api/ask/stream', {
+      const apiUrl = getApiUrl();
+      const response = await fetch(`${apiUrl}api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -675,7 +682,8 @@ export default function App() {
       console.error('Edit question streaming error:', e)
       // Fallback to regular API
       try {
-        const res = await fetch('/api/ask', {
+        const apiUrl = getApiUrl();
+        const res = await fetch(`${apiUrl}api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
