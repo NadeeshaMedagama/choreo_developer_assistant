@@ -34,22 +34,17 @@ endpoints:
     networkVisibilities:
       - Public
 
-# +optional Outgoing connections from this component
-# This component connects to the backend service
-dependsOn:
-  - name: choreo-ai-backend
-    connectionConfig:
-      type: REST
-
 # +optional Defines runtime configurations
 configurations:
   env:
-    # Backend API URL - dynamically injected from backend service connection
+    # Backend API URL - Set to the full backend invoke URL with version
     - name: API_URL
       valueFrom:
-        connectionRef:
-          name: choreo-developer-assistant-connection
-          key: ServiceURL
+        configForm:
+          displayName: Backend API URL
+          required: true
+          type: string
+          default: "https://bfdef01f-7fc1-46ea-af69-42279e15f710-dev.e1-us-east-azure.choreoapis.dev/choreo-ai-assistant/backend-yn/v1.0/"
 
     # Environment name (development, staging, production)
     - name: ENVIRONMENT
