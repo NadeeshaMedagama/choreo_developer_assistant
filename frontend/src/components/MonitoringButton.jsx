@@ -1,27 +1,32 @@
 import React, { useState } from 'react'
 import { Activity, X } from 'lucide-react'
+import { getApiUrl } from '../config'
 
 export default function MonitoringButton({ isDark }) {
   const [showMenu, setShowMenu] = useState(false)
 
   const openMetrics = () => {
     // Open raw Prometheus metrics (always available when backend is running)
-    window.open('http://localhost:8000/metrics', '_blank', 'noopener,noreferrer')
+    const apiUrl = getApiUrl();
+    const metricsUrl = apiUrl.endsWith('/') ? `${apiUrl}metrics` : `${apiUrl}/metrics`;
+    window.open(metricsUrl, '_blank', 'noopener,noreferrer')
   }
 
   const openGrafana = () => {
-    // Try to open Grafana (may not be running)
+    // Try to open Grafana (may not be running in Choreo)
     window.open('http://localhost:3000', '_blank', 'noopener,noreferrer')
   }
 
   const openPrometheus = () => {
-    // Try to open Prometheus (may not be running)
+    // Try to open Prometheus (may not be running in Choreo)
     window.open('http://localhost:9090', '_blank', 'noopener,noreferrer')
   }
 
   const openHealth = () => {
     // Open health check endpoint
-    window.open('http://localhost:8000/api/health', '_blank', 'noopener,noreferrer')
+    const apiUrl = getApiUrl();
+    const healthUrl = apiUrl.endsWith('/') ? `${apiUrl}api/health` : `${apiUrl}/api/health`;
+    window.open(healthUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (
