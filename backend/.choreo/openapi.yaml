@@ -42,6 +42,7 @@ tags:
 paths:
   /:
     get:
+      operationId: getRootStatus
       summary: Root endpoint
       description: Returns a welcome message and API status
       tags:
@@ -61,6 +62,7 @@ paths:
                     type: string
                     example: "ok"
     post:
+      operationId: handleRootPost
       summary: Root POST endpoint
       description: Handles POST requests to root - often from webhooks or health checks
       tags:
@@ -92,6 +94,7 @@ paths:
 
   /health:
     get:
+      operationId: getHealthSimplified
       summary: Health check (simplified)
       description: Simplified health check showing Milvus connectivity status (used by Choreo deployment)
       tags:
@@ -124,6 +127,7 @@ paths:
 
   /api/health:
     get:
+      operationId: getHealthDetailed
       summary: Health check
       description: Check API health and Milvus vector database connectivity
       tags:
@@ -165,6 +169,7 @@ paths:
 
   /metrics:
     get:
+      operationId: getPrometheusMetrics
       summary: Prometheus metrics
       description: |
         Returns metrics in Prometheus format for monitoring and observability.
@@ -193,6 +198,7 @@ paths:
 
   /api/ask:
     post:
+      operationId: askQuestion
       summary: Ask a question (standard RAG)
       description: |
         Ask a question about Choreo using standard RAG (Retrieval Augmented Generation).
@@ -252,6 +258,7 @@ paths:
 
   /ask:
     post:
+      operationId: askQuestionLegacy
       summary: Ask a question (legacy endpoint)
       description: Legacy endpoint for asking questions. Use /api/ask instead.
       deprecated: true
@@ -273,6 +280,7 @@ paths:
 
   /api/ask/stream:
     post:
+      operationId: askQuestionStream
       summary: Ask a question with streaming response
       description: |
         Stream AI response progressively like ChatGPT with conversation history and smart summarization.
@@ -347,6 +355,7 @@ paths:
 
   /api/ask_graph:
     post:
+      operationId: askQuestionGraph
       summary: Ask a question (LangGraph RAG)
       description: |
         Ask a question using LangGraph-based RAG for more sophisticated query processing.
@@ -375,6 +384,7 @@ paths:
 
   /ask_graph:
     post:
+      operationId: askQuestionGraphLegacy
       summary: Ask a question with LangGraph (legacy endpoint)
       description: Legacy endpoint. Use /api/ask_graph instead.
       deprecated: true
@@ -396,6 +406,7 @@ paths:
 
   /api/ingest/github:
     post:
+      operationId: ingestGitHubRepository
       summary: Ingest GitHub repository
       description: |
         Ingest markdown documentation from a GitHub repository into the vector database.
@@ -435,6 +446,7 @@ paths:
 
   /ingest/github:
     post:
+      operationId: ingestGitHubRepositoryLegacy
       summary: Ingest GitHub repository (legacy endpoint)
       description: Legacy endpoint. Use /api/ingest/github instead.
       deprecated: true
@@ -459,6 +471,7 @@ paths:
 
   /api/ingest/github/with-images:
     post:
+      operationId: ingestGitHubRepositoryWithImages
       summary: Ingest GitHub repository with images
       description: |
         Ingest both markdown files and images from a GitHub repository.
@@ -510,6 +523,7 @@ paths:
 
   /api/ingest/org:
     post:
+      operationId: ingestOrganizationRepositories
       summary: Ingest organization repositories
       description: |
         Bulk ingest markdown files from all repositories in a GitHub organization.
@@ -565,6 +579,7 @@ paths:
 
   /api/webhook/github:
     post:
+      operationId: handleGitHubWebhook
       summary: GitHub webhook handler
       description: |
         Handles GitHub webhooks to automatically re-ingest repositories on push events.
@@ -610,6 +625,7 @@ paths:
 
   /webhook/github:
     post:
+      operationId: handleGitHubWebhookLegacy
       summary: GitHub webhook handler (legacy endpoint)
       description: Legacy endpoint. Use /api/webhook/github instead.
       deprecated: true
@@ -867,10 +883,6 @@ components:
               type: array
               items:
                 type: string
-        context_count:
-          type: integer
-          description: Number of context chunks used to generate the answer
-          example: 5
 
     IngestionResponse:
       type: object
