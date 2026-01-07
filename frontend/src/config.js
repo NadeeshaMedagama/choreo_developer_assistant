@@ -6,7 +6,9 @@
  * Falls back to "/" if not configured
  */
 export const getApiUrl = () => {
-  return window?.configs?.apiUrl ? window.configs.apiUrl : "/";
+  const apiUrl = window?.configs?.apiUrl || "/";
+  // Ensure trailing slash for consistency
+  return apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
 };
 
 /**
@@ -16,10 +18,9 @@ export const getApiUrl = () => {
  */
 export const getApiEndpoint = (endpoint) => {
   const baseUrl = getApiUrl();
-  // Remove trailing slash from baseUrl and leading slash from endpoint if both exist
-  const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${cleanBase}${cleanEndpoint}`;
+  // Remove leading slash from endpoint if it exists since baseUrl has trailing slash
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${baseUrl}${cleanEndpoint}`;
 };
 
 /**
