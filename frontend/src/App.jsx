@@ -117,7 +117,7 @@ export default function App() {
     const check = async () => {
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/health`)
+        const res = await fetch(`${apiUrl}api/health`)
         await res.json().catch(() => ({}))
         setStatus(res.ok ? 'online' : 'offline')
       } catch {
@@ -125,6 +125,9 @@ export default function App() {
       }
     }
     check()
+    // Periodic health check every 30 seconds
+    const interval = setInterval(check, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   // Save conversations to localStorage whenever they change
@@ -260,7 +263,8 @@ export default function App() {
     try {
       // Use streaming endpoint with conversation history and summary
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/ask/stream`, {
+      const streamUrl = `${apiUrl}api/ask/stream`;
+      const response = await fetch(streamUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -277,6 +281,9 @@ export default function App() {
       if (!response.ok) {
         throw new Error('Network response was not ok')
       }
+
+      // Update status to online on successful connection
+      setStatus('online')
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
@@ -355,7 +362,8 @@ export default function App() {
       // Fallback to regular API if streaming fails
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/ask`, {
+        const askUrl = `${apiUrl}api/ask`;
+        const res = await fetch(askUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -433,7 +441,7 @@ export default function App() {
     try {
       // Use streaming endpoint with conversation history and summary
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/ask/stream`, {
+      const response = await fetch(`${apiUrl}api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -525,7 +533,8 @@ export default function App() {
       // Fallback to regular API
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/ask`, {
+        const askUrl = `${apiUrl}api/ask`;
+        const res = await fetch(askUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -608,7 +617,7 @@ export default function App() {
     try {
       // Use streaming endpoint with edited question and conversation history
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}/api/ask/stream`, {
+      const response = await fetch(`${apiUrl}api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -683,7 +692,7 @@ export default function App() {
       // Fallback to regular API
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}/api/ask`, {
+        const res = await fetch(`${apiUrl}api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
