@@ -7,9 +7,17 @@ export default function MonitoringButton({ isDark }) {
 
   const openMetrics = () => {
     // Open raw Prometheus metrics (always available when backend is running)
-    const apiUrl = getApiUrl();
-    const metricsUrl = apiUrl.endsWith('/') ? `${apiUrl}metrics` : `${apiUrl}/metrics`;
-    window.open(metricsUrl, '_blank', 'noopener,noreferrer')
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocal) {
+      // For local development, use direct backend URL
+      window.open('http://localhost:8000/metrics', '_blank', 'noopener,noreferrer');
+    } else {
+      // For Choreo deployment, use API URL
+      const apiUrl = getApiUrl();
+      const metricsUrl = `${apiUrl}metrics`;
+      window.open(metricsUrl, '_blank', 'noopener,noreferrer');
+    }
   }
 
   const openGrafana = () => {
@@ -24,9 +32,17 @@ export default function MonitoringButton({ isDark }) {
 
   const openHealth = () => {
     // Open health check endpoint
-    const apiUrl = getApiUrl();
-    const healthUrl = apiUrl.endsWith('/') ? `${apiUrl}api/health` : `${apiUrl}/api/health`;
-    window.open(healthUrl, '_blank', 'noopener,noreferrer')
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocal) {
+      // For local development, use direct backend URL
+      window.open('http://localhost:8000/api/health', '_blank', 'noopener,noreferrer');
+    } else {
+      // For Choreo deployment, use API URL
+      const apiUrl = getApiUrl();
+      const healthUrl = `${apiUrl}api/health`;
+      window.open(healthUrl, '_blank', 'noopener,noreferrer');
+    }
   }
 
   return (
