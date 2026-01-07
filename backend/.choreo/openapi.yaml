@@ -57,6 +57,38 @@ paths:
                   message:
                     type: string
                     example: "Choreo AI Assistant (Azure LLM + Milvus) is running."
+                  status:
+                    type: string
+                    example: "ok"
+    post:
+      summary: Root POST endpoint
+      description: Handles POST requests to root - often from webhooks or health checks
+      tags:
+        - Health
+      requestBody:
+        description: Optional JSON payload
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: POST received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "POST received at root endpoint"
+                  hint:
+                    type: string
+                    example: "Use /api/webhook/github for GitHub webhooks or /api/ask for AI queries"
+                  received:
+                    type: object
+                    description: Echo of received payload (if any)
 
   /health:
     get:
@@ -131,6 +163,34 @@ paths:
                         details: {}
                     timestamp: "2024-12-19T10:30:00.000000"
 
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: |
+        Returns metrics in Prometheus format for monitoring and observability.
+        
+        Includes metrics for:
+        - HTTP request counts and latency
+        - AI inference performance
+        - Vector search performance
+        - Error rates and counts
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Prometheus metrics in text format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP http_requests_total Total HTTP requests
+                  # TYPE http_requests_total counter
+                  http_requests_total{method="POST",endpoint="/api/ask"} 42
+                  # HELP ai_inference_duration_seconds AI inference duration
+                  # TYPE ai_inference_duration_seconds histogram
+                  ai_inference_duration_seconds_bucket{le="1.0"} 35
+
   /api/ask:
     post:
       summary: Ask a question (standard RAG)
@@ -138,31 +198,57 @@ paths:
         Ask a question about Choreo using standard RAG (Retrieval Augmented Generation).
         
         This endpoint:
-        1. Retrieves relevant context from Milvus vector database
-        2. Sends context + question to Azure OpenAI
-        3. Returns AI-generated answer with context count
+        1. Manages conversation memory with smart summarization
+        2. Enriches query with conversation context
+        3. Retrieves relevant context from Milvus vector database
+        4. Sends context + question to Azure OpenAI
+        5. Validates URLs in response
+        6. Returns AI-generated answer with sources and metadata
+        
+        Features:
+        - Conversation history support
+        - Automatic summarization of long conversations
+        - URL validation for reliable sources
+        - Source document references with relevance scores
       tags:
         - Query
-      parameters:
-        - name: question
-          in: query
-          required: true
-          description: The question to ask about Choreo
-          schema:
-            type: string
-            example: "What is Choreo?"
+      requestBody:
+        description: Question and conversation context
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRequest'
+            examples:
+              simple_question:
+                summary: Simple question without history
+                value:
+                  question: "What is Choreo?"
+              with_history:
+                summary: Question with conversation history
+                value:
+                  question: "How do I deploy it?"
+                  conversation_history:
+                    - role: "user"
+                      content: "What is Choreo?"
+                    - role: "assistant"
+                      content: "Choreo is an internal developer platform..."
       responses:
         '200':
-          description: Successful response with answer
+          description: Successful response with answer, sources, and metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AskResponse'
-              examples:
-                example1:
-                  value:
-                    answer: "Choreo is an internal developer platform that enables developers to build, deploy, and manage cloud-native applications with ease."
-                    context_count: 5
+                $ref: '#/components/schemas/AskResponseDetailed'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
 
   /ask:
     post:
@@ -184,6 +270,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AskResponse'
+
+  /api/ask/stream:
+    post:
+      summary: Ask a question with streaming response
+      description: |
+        Stream AI response progressively like ChatGPT with conversation history and smart summarization.
+        
+        This endpoint:
+        1. Manages conversation memory with smart summarization
+        2. Retrieves relevant context from Milvus vector database
+        3. Streams response from Azure OpenAI word by word
+        4. Validates URLs in complete response before streaming
+        5. Returns sources and metadata at the end of stream
+        
+        Features:
+        - Progressive streaming for better user experience
+        - Conversation history support
+        - Automatic summarization
+        - URL validation
+        - Server-Sent Events (SSE) format
+      tags:
+        - Query
+      requestBody:
+        description: Question and conversation context
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AskRequest'
+            examples:
+              simple_question:
+                summary: Simple streaming question
+                value:
+                  question: "What is Choreo?"
+              with_history:
+                summary: Streaming with conversation history
+                value:
+                  question: "How do I deploy it?"
+                  conversation_history:
+                    - role: "user"
+                      content: "What is Choreo?"
+                    - role: "assistant"
+                      content: "Choreo is an internal developer platform..."
+      responses:
+        '200':
+          description: Streaming response in Server-Sent Events format
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Stream of Server-Sent Events. Each event contains either:
+                  - Content chunk: {"content": "word "}
+                  - Metadata (sent at end): {"sources": [...], "memory_stats": {...}, "url_validation": {...}}
+                  - Done signal: [DONE]
+              example: |
+                data: {"content": "Choreo "}
+                
+                data: {"content": "is "}
+                
+                data: {"content": "a "}
+                
+                data: {"sources": [...], "memory_stats": {...}}
+                
+                data: [DONE]
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
 
   /api/ask_graph:
     post:
@@ -448,6 +608,32 @@ paths:
                   message:
                     type: string
 
+  /webhook/github:
+    post:
+      summary: GitHub webhook handler (legacy endpoint)
+      description: Legacy endpoint. Use /api/webhook/github instead.
+      deprecated: true
+      tags:
+        - Webhooks
+      requestBody:
+        description: GitHub webhook payload
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, error, ignored]
+
 components:
   schemas:
     HealthResponse:
@@ -493,6 +679,194 @@ components:
           type: string
           description: AI-generated answer to the question
           example: "Choreo is an internal developer platform that enables developers to build, deploy, and manage cloud-native applications."
+        context_count:
+          type: integer
+          description: Number of context chunks used to generate the answer
+          example: 5
+
+    AskRequest:
+      type: object
+      required:
+        - question
+      properties:
+        question:
+          type: string
+          description: The question to ask about Choreo
+          example: "What is Choreo?"
+        conversation_history:
+          type: array
+          description: Previous conversation messages for context
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant]
+                description: Role of the message sender
+              content:
+                type: string
+                description: Message content
+          example:
+            - role: "user"
+              content: "What is Choreo?"
+            - role: "assistant"
+              content: "Choreo is an internal developer platform..."
+        summary:
+          type: object
+          description: Conversation summary from previous interactions
+          properties:
+            content:
+              type: string
+              description: Summary text
+            topics_covered:
+              type: array
+              items:
+                type: string
+              description: Topics discussed in the conversation
+            key_questions:
+              type: array
+              items:
+                type: string
+              description: Key questions from the conversation
+            important_decisions:
+              type: array
+              items:
+                type: string
+              description: Important decisions or conclusions
+        max_history_tokens:
+          type: integer
+          description: Configurable token limit for conversation history
+          default: 4000
+          example: 4000
+        enable_summarization:
+          type: boolean
+          description: Enable/disable auto-summarization
+          default: true
+          example: true
+
+    AskResponseDetailed:
+      type: object
+      properties:
+        answer:
+          type: string
+          description: AI-generated answer to the question
+          example: "Choreo is an internal developer platform that enables developers to build, deploy, and manage cloud-native applications."
+        sources:
+          type: array
+          description: Source documents used to generate the answer
+          items:
+            type: object
+            properties:
+              content:
+                type: string
+                description: Preview of the source content
+              score:
+                type: number
+                format: float
+                description: Relevance score (0.0 to 1.0)
+                example: 0.85
+              repository:
+                type: string
+                description: GitHub repository name
+                example: "wso2-enterprise/choreo-docs"
+              file_path:
+                type: string
+                description: Path to the file within the repository
+                example: "docs/overview.md"
+              url:
+                type: string
+                description: URL to the source document
+                example: "https://github.com/wso2-enterprise/choreo-docs"
+              source_type:
+                type: string
+                description: Type of source (e.g., markdown, wiki, issue)
+                example: "markdown"
+              title:
+                type: string
+                description: Title of the source document
+                example: "Choreo Overview"
+        context_count:
+          type: integer
+          description: Number of context chunks retrieved
+          example: 10
+        url_validation:
+          type: object
+          description: URL validation results
+          properties:
+            total_urls:
+              type: integer
+              description: Total number of URLs validated
+              example: 3
+            valid_urls:
+              type: integer
+              description: Number of valid URLs
+              example: 3
+            invalid_urls:
+              type: integer
+              description: Number of invalid URLs
+              example: 0
+            validation_enabled:
+              type: boolean
+              description: Whether URL validation is enabled
+              example: true
+        memory_stats:
+          type: object
+          description: Conversation memory management statistics
+          properties:
+            original_history_size:
+              type: integer
+              description: Original number of messages in history
+              example: 10
+            summarized_messages:
+              type: integer
+              description: Number of messages that were summarized
+              example: 6
+            recent_messages_kept:
+              type: integer
+              description: Number of recent messages kept verbatim
+              example: 4
+            total_tokens_estimate:
+              type: integer
+              description: Estimated total tokens after memory management
+              example: 3500
+        summary:
+          type: object
+          description: Updated conversation summary
+          properties:
+            content:
+              type: string
+              description: Summary content
+            topics_covered:
+              type: array
+              items:
+                type: string
+              description: Topics covered in the conversation
+            key_questions:
+              type: array
+              items:
+                type: string
+              description: Key questions asked
+            important_decisions:
+              type: array
+              items:
+                type: string
+              description: Important decisions or conclusions
+        summary_metadata:
+          type: object
+          description: Additional metadata about the summary
+          properties:
+            topics_covered:
+              type: array
+              items:
+                type: string
+            key_questions:
+              type: array
+              items:
+                type: string
+            important_decisions:
+              type: array
+              items:
+                type: string
         context_count:
           type: integer
           description: Number of context chunks used to generate the answer
