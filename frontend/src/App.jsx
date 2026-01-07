@@ -117,7 +117,7 @@ export default function App() {
     const check = async () => {
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}api/health`)
+        const res = await fetch(`${apiUrl}/api/health`)
         await res.json().catch(() => ({}))
         setStatus(res.ok ? 'online' : 'offline')
       } catch {
@@ -260,7 +260,7 @@ export default function App() {
     try {
       // Use streaming endpoint with conversation history and summary
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}api/ask/stream`, {
+      const response = await fetch(`${apiUrl}/api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -433,7 +433,7 @@ export default function App() {
     try {
       // Use streaming endpoint with conversation history and summary
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}api/ask/stream`, {
+      const response = await fetch(`${apiUrl}/api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -608,7 +608,7 @@ export default function App() {
     try {
       // Use streaming endpoint with edited question and conversation history
       const apiUrl = getApiUrl();
-      const response = await fetch(`${apiUrl}api/ask/stream`, {
+      const response = await fetch(`${apiUrl}/api/ask/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -683,7 +683,7 @@ export default function App() {
       // Fallback to regular API
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}api/ask`, {
+        const res = await fetch(`${apiUrl}/api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
