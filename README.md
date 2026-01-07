@@ -2,6 +2,29 @@
 
 Minimal RAG assistant that ingests a GitHub repo into Milvus and answers with Azure OpenAI. Frontend is a ChatGPT-like UI built with React + Vite + Tailwind.
 
+## 🚀 Quick Start (Local Development)
+
+```bash
+# 1. Clone and setup
+cd choreo-ai-assistant
+
+# 2. Configure environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with your API keys
+
+# 3. Install dependencies
+cd frontend && npm install && cd ..
+
+# 4. Start the application
+./docs/scripts/start_local.sh
+```
+
+That's it! Open http://localhost:5173 to use the application.
+
+**Troubleshooting?** See [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) or [CONNECTIVITY_FIX.md](./CONNECTIVITY_FIX.md)
+
+---
+
 > 📚 **All documentation is now centralized in [`docs/readmes/`](./docs/readmes/INDEX.md)**  
 > See [Documentation Index](./docs/readmes/INDEX.md) for complete guides on setup, features, and deployment.
 
