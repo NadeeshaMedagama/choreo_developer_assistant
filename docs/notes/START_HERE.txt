@@ -1,164 +1,77 @@
+═══════════════════════════════════════════════════════════════════
+  CHOREO AI ASSISTANT - SCRIPTS RESTORED & FIXED ✅
+═══════════════════════════════════════════════════════════════════
 
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║   🚀 DevChoreo - Ready to Run!                              ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
+All deleted .sh files have been recreated with improvements!
 
-✅ SETUP COMPLETE - Your project is ready!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┌──────────────────────────────────────────────────────────────┐
-│  QUICK START (Just run this one command!)                   │
-└──────────────────────────────────────────────────────────────┘
+📋 WHAT'S AVAILABLE:
 
-    cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
-    ./quick-start.sh
+  ✅ start_local.sh          - Start both backend & frontend
+  ✅ test_setup.sh           - Verify setup before starting
+  ✅ backend/start_local.sh  - Start backend only
+  ✅ frontend/start_local.sh - Start frontend only
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-This will:
-  ✓ Install frontend dependencies (if needed)
-  ✓ Check all prerequisites
-  ✓ Start backend on port 8000
-  ✓ Start frontend on port 5173
-  ✓ Monitor both services
+🚀 QUICK START (3 COMMANDS):
 
+  1. Test your setup:
+     ./test_setup.sh
 
-┌──────────────────────────────────────────────────────────────┐
-│  WHAT'S CONFIGURED                                           │
-└──────────────────────────────────────────────────────────────┘
+  2. Start the application:
+     ./start_local.sh
 
-  ✅ Backend API keys in backend/.env
-  ✅ Python dependencies installed (FastAPI 0.118.0)
-  ✅ Docker setup fixed and ready
-  ✅ Frontend-Backend connection configured
-  ✅ CORS enabled
-  ✅ API endpoints with /api prefix
+  3. Open browser:
+     http://localhost:5173
 
+That's it! You're running! 🎉
 
-┌──────────────────────────────────────────────────────────────┐
-│  AFTER STARTING THE PROJECT                                  │
-└──────────────────────────────────────────────────────────────┘
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. Open browser: http://localhost:5173
-   → You'll see the DevChoreo chat interface
+🔧 WHAT WAS FIXED:
 
-2. Ingest documentation from GitHub:
+  ✅ Frontend config.js - Auto-detects local vs Choreo
+  ✅ Startup scripts - Easy one-command launch
+  ✅ Backend connectivity - Works on localhost:8000
+  ✅ Vite proxy - Forwards /api to backend
+  ✅ Error handling - Graceful shutdowns & checks
 
-   curl -X POST "http://localhost:8000/api/ingest/github?repo_url=https://github.com/NadeeshaMedagama/docs-choreo-dev&branch=main"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   This will:
-   ✓ Fetch all .md files from the repo using GitHub API
-   ✓ Chunk the content
-   ✓ Create embeddings with Azure OpenAI
-   ✓ Store in Pinecone database
+📊 VERIFICATION:
 
-   ⏱️ Takes 5-10 minutes depending on repo size
+After starting, verify:
+  ✓ Frontend shows "online" (green indicator, top-right)
+  ✓ Backend health: curl http://localhost:8000/api/health
+  ✓ Console check: window.configs.apiUrl should be "/"
 
-3. Ask questions in the UI!
-   Example: "What is Choreo?"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+📚 DOCUMENTATION:
 
-┌──────────────────────────────────────────────────────────────┐
-│  ALTERNATIVE: MANUAL START                                   │
-└──────────────────────────────────────────────────────────────┘
+  SCRIPTS_SUMMARY.txt     - Complete script documentation
+  LOCAL_DEVELOPMENT.md    - Full development guide
+  CONNECTIVITY_FIX.md     - Technical details of the fix
+  QUICK_REFERENCE.txt     - Quick command reference
 
-Terminal 1 (Backend):
-  cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
-  python -m uvicorn backend.app:app --host 0.0.0.0 --port 8000
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Terminal 2 (Frontend):
-  cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant/frontend"
-  npm install  # first time only
-  npm run dev
+🎯 YOUR NEXT STEPS:
 
+  1. Run: ./test_setup.sh
+  2. If all passes, run: ./start_local.sh
+  3. Open: http://localhost:5173
+  4. Ask a question and verify it works!
 
-┌──────────────────────────────────────────────────────────────┐
-│  ALTERNATIVE: DOCKER                                         │
-└──────────────────────────────────────────────────────────────┘
+═══════════════════════════════════════════════════════════════════
 
-Backend in Docker:
-  cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant/docker"
-  docker compose up --build
+Problems? The scripts now include:
+  • Better error messages
+  • Automatic dependency checking
+  • Health verification
+  • Colored output for clarity
 
-Frontend locally:
-  cd ../frontend
-  npm run dev
-
-
-┌──────────────────────────────────────────────────────────────┐
-│  TESTING THE CONNECTION                                      │
-└──────────────────────────────────────────────────────────────┘
-
-Backend health:
-  curl http://localhost:8000/api/health
-
-Expected response:
-  {"status":"healthy","pinecone":"connected"}
-
-Ask a question via API:
-  curl -X POST "http://localhost:8000/api/ask?question=test"
-
-
-┌──────────────────────────────────────────────────────────────┐
-│  AVAILABLE ENDPOINTS                                         │
-└──────────────────────────────────────────────────────────────┘
-
-  GET  /api/health              - Health & Pinecone status
-  POST /api/ask?question=...    - Ask a question (RAG)
-  POST /api/ask_graph?question=... - Ask using LangGraph
-  POST /api/ingest/github       - Ingest GitHub repo
-  GET  /docs                    - FastAPI interactive docs
-
-
-┌──────────────────────────────────────────────────────────────┐
-│  FILES CREATED FOR YOU                                       │
-└──────────────────────────────────────────────────────────────┘
-
-  ✓ quick-start.sh                   - One-command startup
-  ✓ run.sh                           - Comprehensive runner
-  ✓ RUN_PROJECT.md                   - Complete guide
-  ✓ FRONTEND_BACKEND_CONNECTION.md   - Connection docs
-  ✓ backend/app.py                   - Updated with /api routes
-
-
-┌──────────────────────────────────────────────────────────────┐
-│  TROUBLESHOOTING                                             │
-└──────────────────────────────────────────────────────────────┘
-
-"Backend offline":
-  → Check: curl http://localhost:8000/api/health
-  → Restart backend
-
-Port already in use:
-  → Kill process: lsof -ti:8000 | xargs kill -9
-
-See logs:
-  → tail -f backend.log
-  → tail -f frontend.log
-
-More help:
-  → See RUN_PROJECT.md
-  → See FRONTEND_BACKEND_CONNECTION.md
-
-
-┌──────────────────────────────────────────────────────────────┐
-│  YOUR NEXT COMMAND                                           │
-└──────────────────────────────────────────────────────────────┘
-
-    cd "/home/nadeeshame/CHOREO/Choreo AI Assistant/choreo-ai-assistant"
-    ./quick-start.sh
-
-
-That's it! The script handles everything else automatically.
-
-Press Ctrl+C to stop all services when done.
-
-═══════════════════════════════════════════════════════════════
-
-Questions? Check the documentation:
-  - RUN_PROJECT.md (complete guide)
-  - FRONTEND_BACKEND_CONNECTION.md (connection details)
-  - README.md (project overview)
-
-Happy coding! 🎉
+Just run the scripts and follow the prompts!
 
