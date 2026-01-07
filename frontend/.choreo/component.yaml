@@ -37,7 +37,7 @@ endpoints:
 # +optional Defines runtime configurations
 configurations:
   env:
-    # Backend API URL - Set to the full backend invoke URL with version
+    # Backend API URL - Full absolute URL to backend invoke endpoint
     - name: API_URL
       valueFrom:
         configForm:
