@@ -1,5 +1,3 @@
-// Runtime configuration for Choreo deployment
-// This file can be dynamically generated or replaced during deployment
 // Runtime configuration for both local and Choreo deployment
 // This file can be dynamically generated or replaced during deployment
 (function() {
