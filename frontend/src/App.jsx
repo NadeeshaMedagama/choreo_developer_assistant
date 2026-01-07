@@ -355,7 +355,7 @@ export default function App() {
       // Fallback to regular API if streaming fails
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}api/ask`, {
+        const res = await fetch(`${apiUrl}/api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -525,7 +525,7 @@ export default function App() {
       // Fallback to regular API
       try {
         const apiUrl = getApiUrl();
-        const res = await fetch(`${apiUrl}api/ask`, {
+        const res = await fetch(`${apiUrl}/api/ask`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
