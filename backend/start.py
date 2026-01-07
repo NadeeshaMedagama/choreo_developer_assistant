@@ -15,8 +15,9 @@ def main():
     print(f"Binding to 0.0.0.0:{port}")
 
     # Start uvicorn with the PORT environment variable
+    # Use module path syntax to handle relative imports
     cmd = [
-        'uvicorn',
+        'python', '-m', 'uvicorn',
         'app:app',
         '--host', '0.0.0.0',
         '--port', port
