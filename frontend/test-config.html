@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Test</title>
+</head>
+<body>
+    <h1>Config Test</h1>
+    <div id="output"></div>
+    <script src="public/config.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        output.innerHTML = `
+            <h2>Window Configs:</h2>
+            <pre>${JSON.stringify(window.configs, null, 2)}</pre>
+            <h2>Test URLs:</h2>
+            <ul>
+                <li>Health: ${window.configs.apiUrl}/api/health</li>
+                <li>Ask: ${window.configs.apiUrl}/api/ask</li>
+                <li>Stream: ${window.configs.apiUrl}/api/ask/stream</li>
+            </ul>
+        `;
+    </script>
+</body>
+</html>
