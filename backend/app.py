@@ -352,9 +352,22 @@ async def ask_ai(request: AskRequest):
 
         # 3. Retrieve context from vector DB
         search_start = time.time()
-        similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
-        search_duration = time.time() - search_start
-        monitoring.record_vector_search(search_duration, len(similar_rows))
+        try:
+            similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
+            search_duration = time.time() - search_start
+            monitoring.record_vector_search(search_duration, len(similar_rows))
+        except Exception as e:
+            # Handle Milvus errors gracefully (including index creation errors)
+            monitoring.log_error(
+                f"Vector search failed - {type(e).__name__}: {str(e)}",
+                logger_type='ai',
+                exc_info=True,
+                error_type=type(e).__name__
+            )
+            # Continue with empty results if vector search fails
+            similar_rows = []
+            search_duration = time.time() - search_start
+            monitoring.record_vector_search(search_duration, 0)
 
         # Filter out OpenChoreo content
         filtered_rows = [
@@ -651,9 +664,22 @@ async def ask_ai_stream(request: AskRequest):
 
         # 3. Retrieve context from vector DB
         search_start = time.time()
-        similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
-        search_duration = time.time() - search_start
-        monitoring.record_vector_search(search_duration, len(similar_rows))
+        try:
+            similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
+            search_duration = time.time() - search_start
+            monitoring.record_vector_search(search_duration, len(similar_rows))
+        except Exception as e:
+            # Handle Milvus errors gracefully (including index creation errors)
+            monitoring.log_error(
+                f"Vector search failed - {type(e).__name__}: {str(e)}",
+                logger_type='ai',
+                exc_info=True,
+                error_type=type(e).__name__
+            )
+            # Continue with empty results if vector search fails
+            similar_rows = []
+            search_duration = time.time() - search_start
+            monitoring.record_vector_search(search_duration, 0)
 
         # Filter out OpenChoreo content
         filtered_rows = [
