@@ -590,6 +590,14 @@ def ask_ai_legacy(question: str):
 async def ask_ai_stream(request: AskRequest):
     """Stream AI response progressively like ChatGPT with conversation history and smart summarization"""
     try:
+        # Ensure services are initialized
+        if not services_initialized:
+            monitoring.log_error(
+                "Services not initialized when streaming endpoint called",
+                logger_type='ai'
+            )
+            raise RuntimeError("Services not initialized. Please check application startup.")
+
         question = request.question
         conversation_history = request.conversation_history or []
         existing_summary = request.summary
@@ -763,6 +771,11 @@ Always provide complete, accurate answers based on ALL available context."""
                 full_answer = ""
 
                 # Stream from Azure OpenAI
+                monitoring.log_info(
+                    "Starting Azure OpenAI streaming request",
+                    logger_type='ai'
+                )
+
                 response = llm_service.client.chat.completions.create(
                     model=llm_service.deployment,
                     messages=messages,
@@ -777,6 +790,11 @@ Always provide complete, accurate answers based on ALL available context."""
                         delta = chunk.choices[0].delta
                         if hasattr(delta, 'content') and delta.content:
                             full_answer += delta.content
+
+                monitoring.log_info(
+                    f"Azure OpenAI response collected, length: {len(full_answer)}",
+                    logger_type='ai'
+                )
 
                 # Validate URLs in the complete answer
                 filtered_answer, url_validation_map = await url_validator.validate_answer_urls(full_answer)
@@ -839,22 +857,35 @@ Always provide complete, accurate answers based on ALL available context."""
                 )
             except Exception as e:
                 monitoring.log_error(
-                    f"Streaming failed: {str(e)}",
+                    f"Streaming generator failed - {type(e).__name__}: {str(e)}",
                     logger_type='ai',
-                    exc_info=True
+                    exc_info=True,
+                    error_type=type(e).__name__,
+                    error_details=str(e)
                 )
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                yield f"data: {json.dumps({{'error': f'{type(e).__name__}: {str(e)}'}})}}\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
 
     except Exception as e:
         monitoring.log_error(
-            f"Streaming AI request failed: {str(e)}",
+            f"Streaming AI request setup failed - {type(e).__name__}: {str(e)}",
             logger_type='ai',
-            exc_info=True
+            exc_info=True,
+            error_type=type(e).__name__
         )
         monitoring.record_error()
-        raise
+
+        # Return error as JSON instead of raising to provide better client feedback
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": type(e).__name__,
+                "message": str(e),
+                "detail": "Failed to process streaming request. Check server logs for details."
+            }
+        )
 
 @app.post("/api/ask_graph")
 def ask_ai_graph(question: str):
