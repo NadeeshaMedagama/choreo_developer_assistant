@@ -68,6 +68,11 @@ class VectorClient:
     def _create_collection(self):
         """Create a new Milvus collection with the appropriate schema."""
         try:
+            # Check if collection already exists
+            if self.client.has_collection(collection_name=self.collection_name):
+                logger.info(f"Collection '{self.collection_name}' already exists, skipping creation")
+                return
+
             # Create collection with auto-id and vector field
             self.client.create_collection(
                 collection_name=self.collection_name,
@@ -79,7 +84,11 @@ class VectorClient:
             logger.info(f"Created Milvus collection '{self.collection_name}' with dimension {self.dimension}")
         except Exception as e:
             logger.error(f"Failed to create collection: {e}")
-            raise
+            # Log the error but don't raise if collection already exists
+            if "already exist" in str(e).lower():
+                logger.warning(f"Collection '{self.collection_name}' already exists, continuing...")
+            else:
+                raise
 
     def _collection_exists(self, name: str) -> bool:
         """Check if a Milvus collection exists."""
@@ -104,13 +113,20 @@ class VectorClient:
                 f"metric {self.metric}"
             )
 
-            self.client.create_collection(
-                collection_name=self.collection_name,
-                dimension=int(dim),
-                metric_type=self.metric,
-                auto_id=False,
-                enable_dynamic_field=True
-            )
+            try:
+                self.client.create_collection(
+                    collection_name=self.collection_name,
+                    dimension=int(dim),
+                    metric_type=self.metric,
+                    auto_id=False,
+                    enable_dynamic_field=True
+                )
+            except Exception as e:
+                # Handle case where collection was created by another process
+                if "already exist" in str(e).lower() or "duplicate" in str(e).lower():
+                    logger.warning(f"Collection '{self.collection_name}' already exists, continuing...")
+                else:
+                    raise
 
         if not self.dimension and dimension:
             self.dimension = int(dimension)
