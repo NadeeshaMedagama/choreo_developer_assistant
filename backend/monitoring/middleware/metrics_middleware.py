@@ -61,12 +61,15 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # Record error
             self._monitoring.record_error()
+
+            # Detailed exception logging with full traceback
             self._monitoring.log_error(
-                f"Request failed: {str(e)}",
+                f"Unhandled exception in request processing: {type(e).__name__}: {str(e)}",
                 logger_type='app',
                 exc_info=True,
                 method=request.method,
-                path=request.url.path
+                path=request.url.path,
+                error_type=type(e).__name__
             )
             raise
         finally:
