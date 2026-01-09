@@ -79,10 +79,11 @@ def initialize_services():
             dimension=config.get("MILVUS_DIMENSION", 1536),
             metric=config.get("MILVUS_METRIC", "COSINE")
         )
-        monitoring.log_info("Milvus vector client initialized", logger_type='app')
+        monitoring.log_info("Milvus vector client initialized successfully", logger_type='app')
     except Exception as e:
-        monitoring.log_error(f"Failed to initialize Milvus: {e}", logger_type='app')
-        # Continue without Milvus for basic health checks
+        monitoring.log_error(f"CRITICAL: Failed to initialize Milvus: {e}", logger_type='app')
+        monitoring.log_error("Application will start but RAG features will be unavailable", logger_type='app')
+        vector_client = None  # Explicitly set to None to signal failure
 
     try:
         monitoring.log_info("Initializing Azure OpenAI LLM service...", logger_type='app')
@@ -293,6 +294,19 @@ async def ask_ai(request: AskRequest):
     if not services_initialized:
         monitoring.log_info("Request received, initializing services...", logger_type='app')
         initialize_services()
+
+    # Fail fast if critical services are not available
+    if vector_client is None or conversation_memory_manager is None or llm_service is None:
+        monitoring.log_error("Critical services not initialized - cannot process request", logger_type='app')
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": "Service Unavailable",
+                "message": "Database or AI services are not available",
+                "detail": "Vector database initialization failed. Please check server logs and verify Milvus connection."
+            }
+        )
 
     start_time = time.time()
     try:
@@ -610,6 +624,19 @@ async def ask_ai_stream(request: AskRequest):
                 logger_type='ai'
             )
             raise RuntimeError("Services not initialized. Please check application startup.")
+
+        # Fail fast if critical services are not available
+        if vector_client is None or conversation_memory_manager is None or llm_service is None:
+            monitoring.log_error("Critical services not initialized - cannot process streaming request", logger_type='app')
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "Service Unavailable",
+                    "message": "Database or AI services are not available",
+                    "detail": "Vector database initialization failed. Please check server logs and verify Milvus connection."
+                }
+            )
 
         question = request.question
         conversation_history = request.conversation_history or []
