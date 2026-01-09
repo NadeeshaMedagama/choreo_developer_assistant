@@ -12,13 +12,14 @@ except ImportError:
 logger = get_logger(__name__)
 
 try:
-    from pymilvus import MilvusClient, DataType, Collection, connections
+    from pymilvus import MilvusClient, DataType, Collection, connections, utility
     MILVUS_AVAILABLE = True
 except ImportError:
     MilvusClient = None
     DataType = None
     Collection = None
     connections = None
+    utility = None
     MILVUS_AVAILABLE = False
     logger.warning("Milvus not installed. Install with: pip install pymilvus")
 
@@ -52,8 +53,20 @@ class VectorClient:
                 token=self.token
             )
 
-            # Check if collection exists, create if not
-            if not self.client.has_collection(collection_name=self.collection_name):
+            # Check if collection exists using utility module (compatible with older pymilvus versions)
+            collection_exists = False
+            try:
+                # Try new API first
+                if hasattr(self.client, 'has_collection'):
+                    collection_exists = self.client.has_collection(collection_name=self.collection_name)
+                else:
+                    # Fall back to utility module for older versions
+                    collection_exists = utility.has_collection(self.collection_name)
+            except Exception as check_error:
+                logger.warning(f"Error checking collection existence: {check_error}, assuming it doesn't exist")
+                collection_exists = False
+
+            if not collection_exists:
                 logger.info(f"Creating new Milvus collection: {self.collection_name}")
                 self._create_collection()
             else:
@@ -62,14 +75,26 @@ class VectorClient:
             logger.info(f"Connected to Milvus collection: {self.collection_name}")
 
         except Exception as e:
-            logger.warning(f"Failed to connect to Milvus: {e}")
-            logger.info("Application will continue but vector operations will fail until Milvus is accessible")
+            logger.error(f"Failed to connect to Milvus: {e}")
+            logger.error("Vector operations will fail until Milvus is accessible")
+            # Set client to None to signal initialization failure
+            self.client = None
+            raise  # Re-raise to signal initialization failure
 
     def _create_collection(self):
         """Create a new Milvus collection with the appropriate schema."""
         try:
-            # Check if collection already exists
-            if self.client.has_collection(collection_name=self.collection_name):
+            # Check if collection already exists using utility module
+            collection_exists = False
+            try:
+                if hasattr(self.client, 'has_collection'):
+                    collection_exists = self.client.has_collection(collection_name=self.collection_name)
+                else:
+                    collection_exists = utility.has_collection(self.collection_name)
+            except Exception:
+                collection_exists = False
+
+            if collection_exists:
                 logger.info(f"Collection '{self.collection_name}' already exists, skipping creation")
                 return
 
@@ -82,6 +107,10 @@ class VectorClient:
                 enable_dynamic_field=True  # Allow dynamic metadata fields
             )
             logger.info(f"Created Milvus collection '{self.collection_name}' with dimension {self.dimension}")
+
+            # Note: create_collection automatically creates an index on the vector field
+            # Do NOT manually create another index to avoid "at most one distinct index" error
+
         except Exception as e:
             logger.error(f"Failed to create collection: {e}")
             # Log the error but don't raise if collection already exists
@@ -93,7 +122,10 @@ class VectorClient:
     def _collection_exists(self, name: str) -> bool:
         """Check if a Milvus collection exists."""
         try:
-            return self.client.has_collection(collection_name=name)
+            if hasattr(self.client, 'has_collection'):
+                return self.client.has_collection(collection_name=name)
+            else:
+                return utility.has_collection(name)
         except Exception as e:
             logger.warning(f"Failed to check Milvus collection: {e}")
             return False
