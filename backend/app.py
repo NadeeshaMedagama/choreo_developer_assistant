@@ -18,7 +18,7 @@ from services.conversation_memory_manager import ConversationMemoryManager
 from services.url_validator import get_url_validator
 from db.vector_client import VectorClient
 from utils.config import load_config
-from services import IngestionService
+from services.ingestion import IngestionService
 from services.rag_graph import build_graph
 
 # Import new SOLID monitoring architecture
@@ -863,7 +863,8 @@ Always provide complete, accurate answers based on ALL available context."""
                     error_type=type(e).__name__,
                     error_details=str(e)
                 )
-                yield f"data: {json.dumps({{'error': f'{type(e).__name__}: {str(e)}'}})}}\n\n"
+                error_msg = {"error": f"{type(e).__name__}: {str(e)}"}
+                yield f"data: {json.dumps(error_msg)}\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
 
