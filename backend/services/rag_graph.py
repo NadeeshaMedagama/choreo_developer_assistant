@@ -35,11 +35,11 @@ def build_graph(llm_service, vector_client):
     graph = StateGraph(RAGState)
     graph.add_node("embed", embed_node)
     graph.add_node("retrieve", retrieve_node)
-    graph.add_node("answer", answer_node)
+    graph.add_node("generate_answer", answer_node)
 
     graph.set_entry_point("embed")
     graph.add_edge("embed", "retrieve")
-    graph.add_edge("retrieve", "answer")
-    graph.add_edge("answer", END)
+    graph.add_edge("retrieve", "generate_answer")
+    graph.add_edge("generate_answer", END)
 
     return graph.compile()
