@@ -53,6 +53,8 @@ class VectorClient:
                 token=self.token
             )
 
+            logger.info(f"Creating new Milvus client: {self.client}")
+
             # Check if collection exists using utility module (compatible with older pymilvus versions)
             collection_exists = False
             try:
