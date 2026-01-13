@@ -14,14 +14,16 @@ logger = get_logger(__name__)
 try:
     from pymilvus import MilvusClient, DataType, Collection, connections, utility
     MILVUS_AVAILABLE = True
-except ImportError:
+    logger.info("Milvus SDK successfully imported")
+except ImportError as import_error:
     MilvusClient = None
     DataType = None
     Collection = None
     connections = None
     utility = None
     MILVUS_AVAILABLE = False
-    logger.warning("Milvus not installed. Install with: pip install pymilvus")
+    logger.error(f"Milvus not installed or import failed: {import_error}")
+    logger.warning("Install Milvus with: pip install pymilvus")
 
 
 class VectorClient:
@@ -36,8 +38,23 @@ class VectorClient:
         metric: str = "COSINE",
         **kwargs  # Accept extra args for backward compatibility
     ):
+        logger.info("=" * 80)
+        logger.info("INITIALIZING MILVUS VECTOR CLIENT")
+        logger.info("=" * 80)
+
+        # Log SDK availability
+        logger.info(f"Milvus SDK Available: {MILVUS_AVAILABLE}")
+
         if not MILVUS_AVAILABLE:
+            logger.error("CRITICAL: Milvus SDK not installed or failed to import")
             raise RuntimeError("Milvus SDK not installed. Install with: pip install pymilvus")
+
+        # Log connection parameters (mask sensitive data)
+        logger.info(f"URI: {uri}")
+        logger.info(f"Token: {'*' * 10 if token else 'NOT_PROVIDED'}")
+        logger.info(f"Collection Name: {collection_name}")
+        logger.info(f"Dimension: {dimension or 1536}")
+        logger.info(f"Metric: {metric}")
 
         self.uri = uri
         self.token = token
@@ -46,61 +63,122 @@ class VectorClient:
         self.metric = metric
         self.client = None
 
+        # Validate required parameters
+        if not uri:
+            logger.error("CRITICAL: Milvus URI is missing or empty")
+            raise ValueError("Milvus URI is required")
+
+        if not token:
+            logger.error("CRITICAL: Milvus token is missing or empty")
+            raise ValueError("Milvus token is required")
+
+        if not collection_name:
+            logger.error("CRITICAL: Collection name is missing or empty")
+            raise ValueError("Collection name is required")
+
         # Initialize Milvus client
+        logger.info("Attempting to create Milvus client connection...")
         try:
             self.client = MilvusClient(
                 uri=self.uri,
                 token=self.token
             )
 
-            logger.info(f"Creating new Milvus client: {self.client}")
+            logger.info(f"✓ Milvus client created successfully")
+            logger.info(f"Client instance: {type(self.client).__name__}")
+            logger.info(f"Client object: {self.client}")
 
             # Check if collection exists using utility module (compatible with older pymilvus versions)
+            logger.info(f"Checking if collection '{self.collection_name}' exists...")
             collection_exists = False
             try:
                 # Try new API first
                 if hasattr(self.client, 'has_collection'):
+                    logger.info("Using client.has_collection() method")
                     collection_exists = self.client.has_collection(collection_name=self.collection_name)
+                    logger.info(f"Collection exists check result: {collection_exists}")
                 else:
                     # Fall back to utility module for older versions
+                    logger.info("Using utility.has_collection() method (fallback)")
                     collection_exists = utility.has_collection(self.collection_name)
+                    logger.info(f"Collection exists check result: {collection_exists}")
             except Exception as check_error:
-                logger.warning(f"Error checking collection existence: {check_error}, assuming it doesn't exist")
+                logger.warning(f"Error checking collection existence: {check_error}")
+                logger.warning(f"Error type: {type(check_error).__name__}")
+                logger.warning("Assuming collection doesn't exist, will attempt to create")
                 collection_exists = False
 
             if not collection_exists:
-                logger.info(f"Creating new Milvus collection: {self.collection_name}")
+                logger.info(f"Collection '{self.collection_name}' does not exist, creating new collection...")
                 self._create_collection()
+                logger.info(f"✓ Collection '{self.collection_name}' created successfully")
             else:
-                logger.info(f"Using existing Milvus collection: {self.collection_name}")
+                logger.info(f"✓ Using existing collection '{self.collection_name}'")
 
-            logger.info(f"Connected to Milvus collection: {self.collection_name}")
+            logger.info("=" * 80)
+            logger.info(f"✓ MILVUS INITIALIZATION SUCCESSFUL")
+            logger.info(f"✓ Connected to collection: {self.collection_name}")
+            logger.info("=" * 80)
 
         except Exception as e:
-            logger.error(f"Failed to connect to Milvus: {e}")
+            logger.error("=" * 80)
+            logger.error("✗ MILVUS INITIALIZATION FAILED")
+            logger.error("=" * 80)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error message: {str(e)}")
+            logger.error(f"URI used: {self.uri}")
+            logger.error(f"Collection name: {self.collection_name}")
+
+            # Import traceback for detailed error info
+            import traceback
+            logger.error("Full traceback:")
+            logger.error(traceback.format_exc())
+
             logger.error("Vector operations will fail until Milvus is accessible")
+            logger.error("Please verify:")
+            logger.error("  1. MILVUS_URI is correct and accessible")
+            logger.error("  2. MILVUS_TOKEN is valid")
+            logger.error("  3. Network connectivity to Milvus server")
+            logger.error("  4. Firewall rules allow connection")
+            logger.error("=" * 80)
+
             # Set client to None to signal initialization failure
             self.client = None
             raise  # Re-raise to signal initialization failure
 
     def _create_collection(self):
         """Create a new Milvus collection with the appropriate schema."""
+        logger.info("-" * 80)
+        logger.info("CREATING MILVUS COLLECTION")
+        logger.info("-" * 80)
+
         try:
             # Check if collection already exists using utility module
+            logger.info(f"Double-checking if collection '{self.collection_name}' already exists...")
             collection_exists = False
             try:
                 if hasattr(self.client, 'has_collection'):
                     collection_exists = self.client.has_collection(collection_name=self.collection_name)
                 else:
                     collection_exists = utility.has_collection(self.collection_name)
-            except Exception:
+                logger.info(f"Collection exists: {collection_exists}")
+            except Exception as check_err:
+                logger.warning(f"Error during existence check: {check_err}")
                 collection_exists = False
 
             if collection_exists:
-                logger.info(f"Collection '{self.collection_name}' already exists, skipping creation")
+                logger.info(f"✓ Collection '{self.collection_name}' already exists, skipping creation")
+                logger.info("-" * 80)
                 return
 
             # Create collection with auto-id and vector field
+            logger.info("Creating new collection with parameters:")
+            logger.info(f"  - collection_name: {self.collection_name}")
+            logger.info(f"  - dimension: {self.dimension}")
+            logger.info(f"  - metric_type: {self.metric}")
+            logger.info(f"  - auto_id: False")
+            logger.info(f"  - enable_dynamic_field: True")
+
             self.client.create_collection(
                 collection_name=self.collection_name,
                 dimension=self.dimension,
@@ -108,17 +186,31 @@ class VectorClient:
                 auto_id=False,  # We'll provide IDs
                 enable_dynamic_field=True  # Allow dynamic metadata fields
             )
-            logger.info(f"Created Milvus collection '{self.collection_name}' with dimension {self.dimension}")
+
+            logger.info(f"✓ Successfully created Milvus collection '{self.collection_name}'")
+            logger.info(f"✓ Collection dimension: {self.dimension}")
+            logger.info(f"✓ Metric type: {self.metric}")
+            logger.info("-" * 80)
 
             # Note: create_collection automatically creates an index on the vector field
             # Do NOT manually create another index to avoid "at most one distinct index" error
+            logger.info("Note: Vector index automatically created by create_collection()")
 
         except Exception as e:
-            logger.error(f"Failed to create collection: {e}")
+            logger.error("-" * 80)
+            logger.error("✗ COLLECTION CREATION FAILED")
+            logger.error("-" * 80)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error message: {str(e)}")
+
             # Log the error but don't raise if collection already exists
             if "already exist" in str(e).lower():
-                logger.warning(f"Collection '{self.collection_name}' already exists, continuing...")
+                logger.warning(f"Collection '{self.collection_name}' already exists (detected in error message)")
+                logger.warning("Continuing despite error...")
+                logger.info("-" * 80)
             else:
+                logger.error("This is a critical error, re-raising exception")
+                logger.error("-" * 80)
                 raise
 
     def _collection_exists(self, name: str) -> bool:
@@ -366,22 +458,52 @@ class VectorClient:
 
     def test_connection(self) -> bool:
         """Test the Milvus connection."""
+        logger.info("=" * 80)
+        logger.info("TESTING MILVUS CONNECTION")
+        logger.info("=" * 80)
+
         try:
             if self.client is None:
+                logger.error("✗ Client is None - connection was not initialized")
+                logger.error("=" * 80)
                 return False
 
+            logger.info("✓ Client object exists")
+
             # Try to list collections
+            logger.info("Attempting to list collections...")
             collections = self.client.list_collections()
+            logger.info(f"✓ Successfully listed collections: {collections}")
 
             # Check if our collection exists
+            logger.info(f"Checking if target collection '{self.collection_name}' exists...")
             if self._collection_exists(self.collection_name):
+                logger.info(f"✓ Target collection '{self.collection_name}' exists")
+
                 # Try to get collection stats
                 try:
+                    logger.info("Fetching collection statistics...")
                     stats = self.client.get_collection_stats(collection_name=self.collection_name)
-                    logger.info(f"Milvus collection stats: {stats}")
-                except Exception:
-                    pass
+                    logger.info(f"✓ Collection stats: {stats}")
+                except Exception as stats_error:
+                    logger.warning(f"Could not fetch collection stats: {stats_error}")
+            else:
+                logger.warning(f"✗ Target collection '{self.collection_name}' does not exist")
+
+            logger.info("=" * 80)
+            logger.info("✓ MILVUS CONNECTION TEST SUCCESSFUL")
+            logger.info("=" * 80)
             return True
+
         except Exception as e:
-            logger.error(f"Milvus health check failed: {e}")
+            logger.error("=" * 80)
+            logger.error("✗ MILVUS CONNECTION TEST FAILED")
+            logger.error("=" * 80)
+            logger.error(f"Error type: {type(e).__name__}")
+            logger.error(f"Error message: {str(e)}")
+
+            import traceback
+            logger.error("Full traceback:")
+            logger.error(traceback.format_exc())
+            logger.error("=" * 80)
             return False
