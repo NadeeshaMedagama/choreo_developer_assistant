@@ -164,6 +164,8 @@ class VectorClient:
                 logger.info(f"Collection exists: {collection_exists}")
             except Exception as check_err:
                 logger.warning(f"Error during existence check: {check_err}")
+                # SAFETY FIX: If check fails, do NOT assume it doesn't exist.
+                # We proceed to try/catch the creation instead.
                 collection_exists = False
 
             if collection_exists:
@@ -176,42 +178,40 @@ class VectorClient:
             logger.info(f"  - collection_name: {self.collection_name}")
             logger.info(f"  - dimension: {self.dimension}")
             logger.info(f"  - metric_type: {self.metric}")
-            logger.info(f"  - auto_id: False")
-            logger.info(f"  - enable_dynamic_field: True")
 
             self.client.create_collection(
                 collection_name=self.collection_name,
                 dimension=self.dimension,
                 metric_type=self.metric,
-                auto_id=False,  # We'll provide IDs
-                enable_dynamic_field=True  # Allow dynamic metadata fields
+                auto_id=False,
+                enable_dynamic_field=True
             )
 
             logger.info(f"✓ Successfully created Milvus collection '{self.collection_name}'")
-            logger.info(f"✓ Collection dimension: {self.dimension}")
-            logger.info(f"✓ Metric type: {self.metric}")
             logger.info("-" * 80)
 
-            # Note: create_collection automatically creates an index on the vector field
-            # Do NOT manually create another index to avoid "at most one distinct index" error
-            logger.info("Note: Vector index automatically created by create_collection()")
-
         except Exception as e:
+            error_str = str(e)
+
+            # 1. Handle "Collection already exists" (Standard error)
+            if "already exist" in error_str.lower() or "already created" in error_str.lower():
+                logger.warning(f"Collection '{self.collection_name}' already exists (caught in exception). Continuing...")
+                logger.info("-" * 80)
+                return
+
+            # 2. Handle "Index collision" (The specific race condition error)
+            # This happens when create_collection tries to re-create the index on an existing collection
+            if "at most one distinct index is allowed" in error_str:
+                logger.warning(f"Index for '{self.collection_name}' already exists. Initialization considered successful.")
+                logger.info("-" * 80)
+                return
+
             logger.error("-" * 80)
             logger.error("✗ COLLECTION CREATION FAILED")
-            logger.error("-" * 80)
             logger.error(f"Error type: {type(e).__name__}")
-            logger.error(f"Error message: {str(e)}")
-
-            # Log the error but don't raise if collection already exists
-            if "already exist" in str(e).lower():
-                logger.warning(f"Collection '{self.collection_name}' already exists (detected in error message)")
-                logger.warning("Continuing despite error...")
-                logger.info("-" * 80)
-            else:
-                logger.error("This is a critical error, re-raising exception")
-                logger.error("-" * 80)
-                raise
+            logger.error(f"Error message: {error_str}")
+            logger.error("-" * 80)
+            raise
 
     def _collection_exists(self, name: str) -> bool:
         """Check if a Milvus collection exists."""
