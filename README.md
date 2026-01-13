@@ -126,32 +126,52 @@ curl -X POST "http://localhost:8000/api/ask/stream?question=What%20is%20Choreo%3
 # LangGraph-based query (advanced)
 curl -X POST "http://localhost:8000/api/ask_graph?question=What%20is%20Choreo%3F"
 ```
-## 🐳 Docker Deployment
-- **[Run Project](./docs/readmes/RUN_PROJECT.md)** - How to run the application
-### Quick Start with Docker Compose
----
+## 🚀 Deployment for Multiple Users
 
+### ⚡ Quick Deploy (Easiest Method)
+
+```bash
+# One-command deployment
+./quick-deploy.sh
+```
+
+**Access Points:**
+- Frontend UI: http://localhost:8080
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+### 📖 Full Deployment Guide
+
+**Want to deploy for your team?** See **[EASY_DEPLOYMENT_GUIDE.md](./EASY_DEPLOYMENT_GUIDE.md)** for:
+
+1. **Docker Compose** (5 min) - Easiest, full control
+2. **Cloud Platforms** (15 min) - Railway, Render, Fly.io
+3. **Choreo Platform** (20 min) - Enterprise deployment
+
+The guide includes:
+- ✅ Step-by-step instructions
+- 🔒 Security checklist
+- 📊 Comparison table
+- 🆘 Troubleshooting tips
+- 💡 Scaling recommendations
+
+### 🐳 Docker Deployment
+
+```bash
 cd docker
 
 # Create .env file with your credentials
-cp ../.env.example .env
-# Edit .env with your API keys
+cp ../backend/.env.example ../backend/.env
+# Edit backend/.env with your API keys
 
 # Build and run
-docker-compose up --build
-
-# Run in background
 docker-compose up -d
 
-**Setup in GitHub:**
-**Access Points:**
-- Backend API: http://localhost:8000
-- Frontend UI: http://localhost:3000
-- API Docs: http://localhost:8000/docs
-2. **Payload URL**: `https://your-domain.com/api/webhook/github`
-**See [Docker Guide](./docs/readmes/DOCKER_README.md) for production deployment.**
-5. **Secret**: (optional, not currently verified)
-6. Click **Add webhook**
+# View logs
+docker-compose logs -f
+```
+
+**See [Docker Guide](./docs/readmes/03-deployment/DOCKER_README.md) for details.**
 
 ## 🚢 Choreo Platform Deployment
 
