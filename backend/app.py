@@ -820,6 +820,16 @@ Always provide complete, accurate answers based on ALL available context."""
         # 6. Stream response from LLM
         async def generate():
             try:
+                # Validate URLs in sources FIRST and send them early
+                validated_sources = await url_validator.validate_and_filter_sources(sources)
+
+                # Send sources IMMEDIATELY at the start of stream (before content)
+                monitoring.log_info(
+                    f"Sending {len(validated_sources)} sources at stream start",
+                    logger_type='ai'
+                )
+                yield f"data: {json.dumps({'sources': validated_sources})}\n\n"
+
                 # Collect the full answer first for URL validation
                 full_answer = ""
 
@@ -863,9 +873,6 @@ Always provide complete, accurate answers based on ALL available context."""
                         invalid_urls=invalid_count
                     )
 
-                # Validate URLs in sources
-                validated_sources = await url_validator.validate_and_filter_sources(sources)
-
                 # Stream the filtered answer word by word to maintain progressive feel
                 words = filtered_answer.split(' ')
                 for word in words:
@@ -873,32 +880,30 @@ Always provide complete, accurate answers based on ALL available context."""
                     # Small delay to simulate progressive streaming
                     await asyncio.sleep(0.01)
 
-                # Send sources and memory stats
-                metadata = {
-                    "sources": validated_sources
-                }
-
-                # Add URL validation info if validation was performed
-                if url_validation_map:
-                    enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
-                    metadata["url_validation"] = {
-                        "total_urls": len(url_validation_map),
-                        "valid_urls": sum(1 for v in url_validation_map.values() if v),
-                        "invalid_urls": sum(1 for v in url_validation_map.values() if not v),
-                        "validation_enabled": enable_url_validation
-                    }
-
+                # Send memory stats and summary separately
                 if enable_summarization:
-                    metadata["memory_stats"] = memory_stats
+                    memory_metadata = {"memory_stats": memory_stats}
                     if summary:
-                        metadata["summary"] = summary.to_dict()
-                        metadata["summary_metadata"] = {
+                        memory_metadata["summary"] = summary.to_dict()
+                        memory_metadata["summary_metadata"] = {
                             "topics_covered": summary.topics_covered,
                             "key_questions": summary.key_questions,
                             "important_decisions": summary.important_decisions
                         }
+                    yield f"data: {json.dumps(memory_metadata)}\n\n"
 
-                yield f"data: {json.dumps(metadata)}\n\n"
+                # Add URL validation info if validation was performed
+                if url_validation_map:
+                    enable_url_validation = os.getenv("ENABLE_URL_VALIDATION", "true").lower() == "true"
+                    url_metadata = {
+                        "url_validation": {
+                            "total_urls": len(url_validation_map),
+                            "valid_urls": sum(1 for v in url_validation_map.values() if v),
+                            "invalid_urls": sum(1 for v in url_validation_map.values() if not v),
+                            "validation_enabled": enable_url_validation
+                        }
+                    }
+                    yield f"data: {json.dumps(url_metadata)}\n\n"
 
                 # Send done signal
                 yield "data: [DONE]\n\n"
@@ -919,7 +924,18 @@ Always provide complete, accurate answers based on ALL available context."""
                 error_msg = {"error": f"{type(e).__name__}: {str(e)}"}
                 yield f"data: {json.dumps(error_msg)}\n\n"
 
-        return StreamingResponse(generate(), media_type="text/event-stream")
+        # Add headers to prevent buffering in proxies/gateways
+        headers = {
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Disable buffering in nginx
+            "Connection": "keep-alive"
+        }
+
+        return StreamingResponse(
+            generate(),
+            media_type="text/event-stream",
+            headers=headers
+        )
 
     except Exception as e:
         monitoring.log_error(
