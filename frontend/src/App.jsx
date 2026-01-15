@@ -304,6 +304,7 @@ export default function App() {
             const data = line.slice(6)
             if (data === '[DONE]') {
               // Mark streaming as complete and add sources, update summary
+              console.log('[SendQuestion] Stream complete. Sources to attach:', sources)
               updateConversation(c => ({
                 ...c,
                 messages: c.messages.map(m =>
@@ -319,6 +320,7 @@ export default function App() {
 
             try {
               const parsed = JSON.parse(data)
+              console.log('[SendQuestion] Parsed SSE data:', parsed)
               if (parsed.content) {
                 accumulatedContent += parsed.content
                 // Update message content progressively
@@ -333,6 +335,7 @@ export default function App() {
               } else if (parsed.sources) {
                 // Capture sources when received
                 sources = parsed.sources
+                console.log('[SendQuestion] Sources received from backend:', sources)
               } else if (parsed.summary) {
                 // Capture summary for next request
                 summary = parsed.summary
@@ -477,6 +480,7 @@ export default function App() {
           if (line.startsWith('data: ')) {
             const data = line.slice(6)
             if (data === '[DONE]') {
+              console.log('[Regenerate] Stream complete. Sources to attach:', sources)
               updateConversation(c => ({
                 ...c,
                 messages: c.messages.map(m =>
@@ -492,6 +496,7 @@ export default function App() {
 
             try {
               const parsed = JSON.parse(data)
+              console.log('[Regenerate] Parsed SSE data:', parsed)
               if (parsed.content) {
                 accumulatedContent += parsed.content
                 updateConversation(c => ({
@@ -505,6 +510,7 @@ export default function App() {
               } else if (parsed.sources) {
                 // Capture sources when received
                 sources = parsed.sources
+                console.log('[Regenerate] Sources received from backend:', sources)
               } else if (parsed.summary) {
                 // Capture summary for next request
                 summary = parsed.summary
