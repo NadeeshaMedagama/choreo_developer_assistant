@@ -933,7 +933,7 @@ export default function App() {
       </div>
 
       {/* Monitoring Button */}
-      <MonitoringButton isDark={isDark} />
+      {/* <MonitoringButton isDark={isDark} /> */}
     </div>
   )
 }
