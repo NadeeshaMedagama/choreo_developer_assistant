@@ -119,6 +119,52 @@ class URLValidator:
 
         return url, False
 
+    def auto_fix_all_choreo_urls(self, text: str) -> str:
+        """
+        Aggressively fix ALL wso2 public org URLs to wso2-enterprise in text.
+        This catches any URLs the LLM generates before validation.
+
+        Args:
+            text: Text potentially containing incorrect Choreo URLs
+
+        Returns:
+            Text with all wso2 public org URLs fixed to wso2-enterprise
+        """
+        if not self.choreo_registry:
+            return text
+
+        # Pattern to match github.com/wso2/choreo-* URLs (but not wso2-enterprise)
+        # This will match: github.com/wso2/choreo-console but not github.com/wso2-enterprise/choreo-console
+        pattern = r'github\.com/wso2/choreo-([a-zA-Z0-9\-]+)'
+
+        def replace_func(match):
+            component = f"choreo-{match.group(1)}"
+            # Check if this is a valid Choreo component
+            if self.choreo_registry.is_valid_choreo_component(component):
+                original_url = match.group(0)
+                fixed_url = f"github.com/wso2-enterprise/{component}"
+                logger.info(f"Auto-fixed URL in text: {original_url} -> {fixed_url}")
+                return fixed_url
+            return match.group(0)
+
+        fixed_text = re.sub(pattern, replace_func, text)
+
+        # Also fix full URLs with https://
+        pattern_full = r'https://github\.com/wso2/choreo-([a-zA-Z0-9\-]+)'
+
+        def replace_func_full(match):
+            component = f"choreo-{match.group(1)}"
+            if self.choreo_registry.is_valid_choreo_component(component):
+                original_url = match.group(0)
+                fixed_url = f"https://github.com/wso2-enterprise/{component}"
+                logger.info(f"Auto-fixed full URL in text: {original_url} -> {fixed_url}")
+                return fixed_url
+            return match.group(0)
+
+        fixed_text = re.sub(pattern_full, replace_func_full, fixed_text)
+
+        return fixed_text
+
     def extract_urls_from_text(self, text: str) -> List[str]:
         """
         Extract URLs from text using regex.
@@ -326,32 +372,36 @@ class URLValidator:
         if not self.enable_validation:
             return answer, {}
         
-        # Extract URLs from answer
-        urls = self.extract_urls_from_text(answer)
-        
+        # FIRST: Aggressively auto-fix all wso2 public org URLs to wso2-enterprise
+        # This catches URLs before we even extract them
+        auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
+
+        # Extract URLs from the auto-fixed answer
+        urls = self.extract_urls_from_text(auto_fixed_answer)
+
         if not urls:
-            return answer, {}
-        
-        # First, fix any incorrect Choreo URLs
+            return auto_fixed_answer, {}
+
+        # SECOND: Fix any remaining incorrect Choreo URLs using individual validation
         url_fixes = {}
         for url in urls:
             fixed_url, is_choreo = self.validate_and_fix_choreo_url(url)
             if fixed_url != url:
                 url_fixes[url] = fixed_url
 
-        # Apply fixes to the answer text
-        fixed_answer = answer
+        # Apply individual fixes to the answer text
+        fixed_answer = auto_fixed_answer
         for old_url, new_url in url_fixes.items():
             fixed_answer = fixed_answer.replace(old_url, new_url)
             logger.info(f"Replaced URL in answer: {old_url} -> {new_url}")
 
-        # Get the updated list of URLs after fixes
+        # Get the updated list of URLs after all fixes
         updated_urls = self.extract_urls_from_text(fixed_answer)
 
-        # Validate URLs
+        # THIRD: Validate all URLs
         validation_map = await self.validate_urls(updated_urls)
 
-        # Filter answer
+        # FOURTH: Filter out any invalid URLs
         filtered_answer = self.filter_valid_urls_from_text(fixed_answer, validation_map)
 
         return filtered_answer, validation_map
