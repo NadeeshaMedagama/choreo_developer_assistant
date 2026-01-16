@@ -27,13 +27,19 @@ except ImportError:
 class URLValidator:
     """Service to validate URLs and filter out broken/inaccessible ones."""
     
-    # Trusted domains that should bypass validation (e.g., private repos, internal sites)
+    # Trusted domains that should bypass validation (only for non-GitHub URLs)
+    # GitHub URLs should ALWAYS be validated to ensure repos actually exist
     TRUSTED_DOMAINS = [
-        'github.com/wso2-enterprise',  # WSO2 Enterprise GitHub (private repos)
-        'github.com/wso2',             # WSO2 public GitHub
         'wso2.com',                    # WSO2 official site
         'console.choreo.dev',          # Choreo console
         'docs.choreo.dev',             # Choreo docs
+    ]
+
+    # GitHub URLs that need special handling (authenticated access)
+    # These will be validated but with special logic
+    GITHUB_ENTERPRISE_DOMAINS = [
+        'github.com/wso2-enterprise',  # WSO2 Enterprise GitHub (private repos)
+        'github.com/wso2',             # WSO2 public GitHub
     ]
 
     def __init__(
@@ -73,7 +79,8 @@ class URLValidator:
 
     def is_trusted_url(self, url: str) -> bool:
         """
-        Check if URL is from a trusted domain.
+        Check if URL is from a trusted domain (non-GitHub).
+        GitHub URLs are NOT automatically trusted - they must be validated.
 
         Args:
             url: URL to check
@@ -81,10 +88,81 @@ class URLValidator:
         Returns:
             True if URL is from a trusted domain, False otherwise
         """
+        # GitHub URLs should always be validated, not trusted
+        if 'github.com' in url:
+            return False
+
         for domain in self.trusted_domains:
             if domain in url:
                 return True
         return False
+
+    def is_github_url(self, url: str) -> bool:
+        """Check if URL is a GitHub URL."""
+        return 'github.com' in url.lower()
+
+    async def validate_github_repo(self, url: str, session: ClientSession) -> bool:
+        """
+        Validate if a GitHub repository exists and is accessible.
+        Uses GitHub API for better reliability than HTTP HEAD requests.
+
+        Args:
+            url: GitHub repository URL
+            session: aiohttp ClientSession
+
+        Returns:
+            True if repository exists and is accessible, False otherwise
+        """
+        # Extract owner and repo from URL
+        # Pattern: github.com/{owner}/{repo}
+        pattern = r'github\.com/([^/]+)/([^/]+?)(?:/|$|\?|#)'
+        match = re.search(pattern, url)
+
+        if not match:
+            logger.warning(f"Invalid GitHub URL format: {url}")
+            return False
+
+        owner, repo = match.groups()
+
+        # Use GitHub API to check if repo exists
+        api_url = f"https://api.github.com/repos/{owner}/{repo}"
+
+        try:
+            # GitHub API is more reliable than checking the web URL
+            headers = {}
+            # If GITHUB_TOKEN is available in environment, use it for private repos
+            import os
+            github_token = os.getenv('GITHUB_TOKEN')
+            if github_token:
+                headers['Authorization'] = f'token {github_token}'
+
+            async with session.get(api_url, headers=headers, timeout=self.timeout) as response:
+                if response.status == 200:
+                    logger.info(f"✓ GitHub repo exists: {owner}/{repo}")
+                    return True
+                elif response.status == 404:
+                    logger.warning(f"✗ GitHub repo NOT FOUND (404): {owner}/{repo}")
+                    return False
+                elif response.status == 403:
+                    # Rate limited or private repo without access
+                    logger.warning(f"⚠ GitHub repo access forbidden (403): {owner}/{repo} - may be private")
+                    # For private repos, assume they exist if they're in our registry
+                    if self.choreo_registry:
+                        validation = self.choreo_registry.validate_github_url(url)
+                        if validation and validation.get("is_valid"):
+                            logger.info(f"✓ Private repo in registry, assuming valid: {owner}/{repo}")
+                            return True
+                    return False
+                else:
+                    logger.warning(f"GitHub API returned status {response.status} for {owner}/{repo}")
+                    return False
+
+        except asyncio.TimeoutError:
+            logger.warning(f"GitHub API timeout for: {owner}/{repo}")
+            return False
+        except Exception as e:
+            logger.error(f"GitHub API error for {owner}/{repo}: {str(e)}")
+            return False
 
     def validate_and_fix_choreo_url(self, url: str) -> tuple[str, bool]:
         """
@@ -194,7 +272,8 @@ class URLValidator:
     async def validate_url(self, url: str, session: ClientSession) -> bool:
         """
         Validate a single URL by checking if it's accessible.
-        Trusted domains (e.g., wso2-enterprise GitHub) are automatically marked as valid.
+        For GitHub URLs, uses GitHub API to verify repository existence.
+        For other URLs, uses HTTP HEAD/GET requests.
 
         Args:
             url: URL to validate
@@ -203,17 +282,25 @@ class URLValidator:
         Returns:
             True if URL is accessible, False otherwise
         """
-        # Trusted domains bypass validation (e.g., private repos, internal sites)
+        # Check cache first
+        if url in self._cache:
+            logger.debug(f"URL validation cache hit: {url}")
+            return self._cache[url]
+
+        # GitHub URLs get special validation via API
+        if self.is_github_url(url):
+            async with self._semaphore:
+                is_valid = await self.validate_github_repo(url, session)
+                self._cache[url] = is_valid
+                return is_valid
+
+        # Non-GitHub trusted domains bypass validation
         if self.is_trusted_url(url):
             logger.debug(f"URL is from trusted domain, marking as valid: {url}")
             self._cache[url] = True
             return True
 
-        # Check cache first
-        if url in self._cache:
-            logger.debug(f"URL validation cache hit: {url}")
-            return self._cache[url]
-        
+        # Standard HTTP validation for other URLs
         async with self._semaphore:
             try:
                 # Use HEAD request for efficiency (doesn't download full content)
