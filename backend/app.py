@@ -16,6 +16,7 @@ from services.github_service import GitHubService
 from services.image_service import ImageProcessingService
 from services.conversation_memory_manager import ConversationMemoryManager
 from services.url_validator import get_url_validator
+from services.choreo_repo_registry import get_choreo_registry
 from db.vector_client import VectorClient
 from utils.config import load_config
 from services.ingestion import IngestionService
@@ -405,7 +406,11 @@ async def ask_ai(request: AskRequest):
         context_text = "\n".join(row.get("content", "") for row in context_rows if row.get("content"))
 
         # 4. Build optimized messages for LLM with summary
-        system_prompt = """You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        # Get comprehensive repository URLs from registry
+        choreo_registry = get_choreo_registry()
+        repo_urls_section = choreo_registry.generate_system_prompt_urls()
+
+        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
 
 IMPORTANT INSTRUCTIONS:
 - You provide information about the Choreo platform (https://wso2.com/choreo/)
@@ -418,30 +423,7 @@ IMPORTANT INSTRUCTIONS:
 - Only say information is not available if it's truly not in the provided context
 - Do NOT provide information about OpenChoreo or other non-Choreo platforms
 
-REPOSITORY URLS - CRITICAL:
-Each Choreo component has its OWN separate repository.
-Most Choreo repositories are in the wso2-enterprise organization (private repos with main information).
-
-When mentioning Choreo components, use this URL format:
-https://github.com/wso2-enterprise/choreo-{component-name}
-
-Main Choreo component repositories (in wso2-enterprise):
-  * choreo-console: https://github.com/wso2-enterprise/choreo-console
-  * choreo-runtime: https://github.com/wso2-enterprise/choreo-runtime  
-  * choreo-telemetry: https://github.com/wso2-enterprise/choreo-telemetry
-  * choreo-obsapi: https://github.com/wso2-enterprise/choreo-obsapi
-  * choreo-linker: https://github.com/wso2-enterprise/choreo-linker
-  * choreo-negotiator: https://github.com/wso2-enterprise/choreo-negotiator
-  * choreo-apim: https://github.com/wso2-enterprise/choreo-apim
-  * choreo-logging: https://github.com/wso2-enterprise/choreo-logging
-  * choreo-email: https://github.com/wso2-enterprise/choreo-email
-  * And 20+ other choreo-* components in wso2-enterprise
-
-IMPORTANT: 
-- Each component is in its own separate repository
-- Primary organization is wso2-enterprise (has all main Choreo information)
-- Repository names have the "choreo-" prefix (e.g., choreo-console)
-- Use format: github.com/wso2-enterprise/choreo-{component}
+{repo_urls_section}
 
 Your knowledge base includes:
 - Public Choreo documentation
@@ -788,7 +770,11 @@ async def ask_ai_stream(request: AskRequest):
             sources = sources[:3]
 
         # 5. Build optimized messages for LLM
-        system_prompt = """You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        # Get comprehensive repository URLs from registry
+        choreo_registry = get_choreo_registry()
+        repo_urls_section = choreo_registry.generate_system_prompt_urls()
+
+        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
 
 IMPORTANT INSTRUCTIONS:
 - You provide information about the Choreo platform (https://wso2.com/choreo/)
@@ -800,6 +786,8 @@ IMPORTANT INSTRUCTIONS:
 - If the context contains information, share it fully - don't filter or hide internal details
 - Only say information is not available if it's truly not in the provided context
 - Do NOT provide information about OpenChoreo or other non-Choreo platforms
+
+{repo_urls_section}
 
 Your knowledge base includes:
 - Public Choreo documentation
