@@ -17,6 +17,7 @@ from services.image_service import ImageProcessingService
 from services.conversation_memory_manager import ConversationMemoryManager
 from services.url_validator import get_url_validator
 from services.choreo_repo_registry import get_choreo_registry
+from services.llm_repo_matcher import get_llm_repo_matcher
 from db.vector_client import VectorClient
 from utils.config import load_config
 from services.ingestion import IngestionService
@@ -405,33 +406,151 @@ async def ask_ai(request: AskRequest):
         context_rows = high_quality_rows[:10]
         context_text = "\n".join(row.get("content", "") for row in context_rows if row.get("content"))
 
-        # 4. Build optimized messages for LLM with summary
-        # Get comprehensive repository URLs from registry
-        choreo_registry = get_choreo_registry()
-        repo_urls_section = choreo_registry.generate_system_prompt_urls()
+        # 4. Use LLM-powered repo matcher to extract available repo URLs from context
+        repo_matcher = get_llm_repo_matcher()
 
-        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        # Extract repo URLs from both context text and source metadata
+        context_urls = repo_matcher.extract_repo_urls_from_context(context_text)
+        source_urls = repo_matcher.extract_repo_urls_from_sources(context_rows)
 
-IMPORTANT INSTRUCTIONS:
-- You provide information about the Choreo platform (https://wso2.com/choreo/)
-- You have access to BOTH public documentation AND internal/private repositories
-- ALWAYS use the provided context from the knowledge base to answer accurately
-- Share ALL relevant information including internal implementation details, private APIs, and internal services
-- This is an INTERNAL tool for Choreo developers - provide complete technical details
-- Use the conversation history and summary to maintain context
-- If the context contains information, share it fully - don't filter or hide internal details
-- Only say information is not available if it's truly not in the provided context
-- Do NOT provide information about OpenChoreo or other non-Choreo platforms
+        # Combine URLs
+        all_extracted_urls = list(set(context_urls + source_urls))
 
-{repo_urls_section}
+        # Check if user is asking for ALL repositories or all Choreo repositories
+        query_lower = question.lower()
+        is_requesting_all_repos = any(pattern in query_lower for pattern in [
+            'all repos', 'all repositories', 'give me all',
+            'list all repo', 'show all repo', 'provide all repo',
+            'all wso2-enterprise', 'all 154', 'how many repo'
+        ])
 
-Your knowledge base includes:
-- Public Choreo documentation
-- Internal/private repositories with implementation details
-- Internal services and endpoints (like Rudder, etc.)
-- Private APIs and configurations
+        is_requesting_choreo_repos = any(pattern in query_lower for pattern in [
+            'all choreo repo', 'choreo keyword repo', 'choreo related repo',
+            'repos with choreo', 'repositories with choreo'
+        ])
 
-Always provide complete, accurate answers based on ALL available context."""
+        # Check if user is asking for a SPECIFIC repository
+        is_requesting_specific_repo = any(pattern in query_lower for pattern in [
+            'repo url', 'repository url', 'repo of', 'repository of',
+            'repo contains', 'repository contains', 'repo for',
+            'which repo has', 'what repo', 'find repo', 'locate repo',
+            'give me repo'
+        ]) and not (is_requesting_all_repos or is_requesting_choreo_repos)
+
+        # Special handling: If asking for a specific repo, search dynamically
+        if is_requesting_specific_repo:
+            monitoring.log_info(
+                f"Specific repository search requested: {question[:100]}",
+                logger_type='ai'
+            )
+
+            try:
+                # Extract the key part of query (after "repo of/for/contains")
+                search_term = question.lower()
+                for prefix in ['repo url of the', 'repo url of', 'repository url of the', 'repository url of',
+                             'repo of the', 'repo of', 'repository of the', 'repository of',
+                             'repo contains the', 'repo contains', 'repository contains the', 'repository contains',
+                             'repo for the', 'repo for', 'repository for the', 'repository for',
+                             'which repo has', 'what repo has', 'give me repo url of the', 'give me repo url of',
+                             'find repo for', 'locate repo for']:
+                    if prefix in search_term:
+                        search_term = search_term.split(prefix, 1)[1].strip()
+                        break
+
+                # Clean up search term
+                search_term = search_term.replace('?', '').replace('the ', '').strip()
+
+                if search_term:  # Only search if we have a term
+                    # Search for the repository
+                    repo = repo_matcher.find_repository_by_name(search_term)
+
+                    if repo:
+                        formatted_response = repo_matcher.format_single_repo_response(repo, search_term)
+
+                        monitoring.log_info(
+                            f"Found specific repository: {repo.get('name')}",
+                            logger_type='ai'
+                        )
+
+                        # Return directly without LLM processing
+                        return {
+                            "answer": formatted_response,
+                            "sources": [],
+                            "summary": summary.to_dict() if summary else None,
+                            "memory_stats": memory_stats
+                        }
+
+            except Exception as e:
+                monitoring.log_error(
+                    f"Failed to search for specific repository: {e}",
+                    logger_type='ai',
+                    exc_info=True
+                )
+                # Fall through to normal LLM response
+
+        # Special handling: If user is asking for ALL repos, fetch and return directly
+        if is_requesting_all_repos or is_requesting_choreo_repos:
+            monitoring.log_info(
+                f"Direct repository list requested: all_repos={is_requesting_all_repos}, choreo_repos={is_requesting_choreo_repos}",
+                logger_type='ai'
+            )
+
+            try:
+                # Fetch repos dynamically from GitHub
+                if is_requesting_choreo_repos:
+                    repos = repo_matcher.get_all_wso2_enterprise_repos(keyword="choreo")
+                    formatted_response = repo_matcher.format_repos_for_response(
+                        repos,
+                        query_context="with 'choreo' keyword"
+                    )
+                else:
+                    repos = repo_matcher.get_all_wso2_enterprise_repos(keyword=None)
+                    formatted_response = repo_matcher.format_repos_for_response(
+                        repos,
+                        query_context="from wso2-enterprise organization"
+                    )
+
+                monitoring.log_info(
+                    f"Successfully fetched {len(repos)} repositories",
+                    logger_type='ai'
+                )
+
+                # Return directly without LLM processing
+                return {
+                    "answer": formatted_response,
+                    "sources": [],
+                    "summary": summary.to_dict() if summary else None,
+                    "memory_stats": memory_stats
+                }
+
+            except Exception as e:
+                monitoring.log_error(
+                    f"Failed to fetch repositories dynamically: {e}",
+                    logger_type='ai',
+                    exc_info=True
+                )
+                # Fall through to normal LLM response
+
+        # If asking about repositories in general (not specific component), get more repos
+        is_general_repo_query = any(keyword in query_lower for keyword in [
+            'which repo', 'what repo', 'list repo',
+            'show repo', 'available repo'
+        ])
+
+        if is_general_repo_query or len(all_extracted_urls) < 5:
+            # Query database for more Choreo repos
+            db_repos = repo_matcher.get_all_choreo_repos_from_db(vector_client, top_k=50)
+            all_extracted_urls = list(set(all_extracted_urls + db_repos))
+
+            # Use registry as fallback if still not enough
+            all_extracted_urls = repo_matcher.enhance_with_registry_fallback(all_extracted_urls)
+
+        # Generate enhanced system prompt with available repo URLs
+        system_prompt = repo_matcher.generate_enhanced_system_prompt(
+            base_context=context_text,
+            context_urls=all_extracted_urls,
+            source_urls=[]  # Already combined above
+        )
 
         messages = conversation_memory_manager.build_llm_messages(
             question=question,
@@ -769,33 +888,57 @@ async def ask_ai_stream(request: AskRequest):
         else:
             sources = sources[:3]
 
-        # 5. Build optimized messages for LLM
-        # Get comprehensive repository URLs from registry
-        choreo_registry = get_choreo_registry()
-        repo_urls_section = choreo_registry.generate_system_prompt_urls()
+        # 5. Use LLM-powered repo matcher to extract available repo URLs from context
+        repo_matcher = get_llm_repo_matcher()
 
-        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        # Extract repo URLs from both context text and source metadata
+        context_urls = repo_matcher.extract_repo_urls_from_context(context_text)
+        source_urls = repo_matcher.extract_repo_urls_from_sources(context_rows)
 
-IMPORTANT INSTRUCTIONS:
-- You provide information about the Choreo platform (https://wso2.com/choreo/)
-- You have access to BOTH public documentation AND internal/private repositories
-- ALWAYS use the provided context from the knowledge base to answer accurately
-- Share ALL relevant information including internal implementation details, private APIs, and internal services
-- This is an INTERNAL tool for Choreo developers - provide complete technical details
-- Use the conversation history and summary to maintain context
-- If the context contains information, share it fully - don't filter or hide internal details
-- Only say information is not available if it's truly not in the provided context
-- Do NOT provide information about OpenChoreo or other non-Choreo platforms
+        # Combine URLs
+        all_extracted_urls = list(set(context_urls + source_urls))
 
-{repo_urls_section}
+        # Check if user is asking for ALL repositories or all Choreo repositories
+        query_lower = question.lower()
+        is_requesting_all_repos = any(pattern in query_lower for pattern in [
+            'all repos', 'all repositories', 'give me all',
+            'list all repo', 'show all repo', 'provide all repo',
+            'all wso2-enterprise', 'all 154', 'how many repo'
+        ])
 
-Your knowledge base includes:
-- Public Choreo documentation
-- Internal/private repositories with implementation details
-- Internal services and endpoints (like Rudder, etc.)
-- Private APIs and configurations
+        is_requesting_choreo_repos = any(pattern in query_lower for pattern in [
+            'all choreo repo', 'choreo keyword repo', 'choreo related repo',
+            'repos with choreo', 'repositories with choreo'
+        ])
 
-Always provide complete, accurate answers based on ALL available context."""
+        # Check if user is asking for a SPECIFIC repository
+        is_requesting_specific_repo = any(pattern in query_lower for pattern in [
+            'repo url', 'repository url', 'repo of', 'repository of',
+            'repo contains', 'repository contains', 'repo for',
+            'which repo has', 'what repo', 'find repo', 'locate repo',
+            'give me repo'
+        ]) and not (is_requesting_all_repos or is_requesting_choreo_repos)
+
+        # If asking about repositories in general (not specific component), get more repos
+        is_general_repo_query = any(keyword in query_lower for keyword in [
+            'list repo', 'available repo'
+        ])
+
+        if is_general_repo_query or len(all_extracted_urls) < 5:
+            # Query database for more Choreo repos
+            db_repos = repo_matcher.get_all_choreo_repos_from_db(vector_client, top_k=50)
+            all_extracted_urls = list(set(all_extracted_urls + db_repos))
+
+            # Use registry as fallback if still not enough
+            all_extracted_urls = repo_matcher.enhance_with_registry_fallback(all_extracted_urls)
+
+        # Generate enhanced system prompt with available repo URLs
+        system_prompt = repo_matcher.generate_enhanced_system_prompt(
+            base_context=context_text,
+            context_urls=all_extracted_urls,
+            source_urls=[]  # Already combined above
+        )
+
 
         messages = conversation_memory_manager.build_llm_messages(
             question=question,
@@ -808,7 +951,107 @@ Always provide complete, accurate answers based on ALL available context."""
         # 6. Stream response from LLM
         async def generate():
             try:
-                # Validate URLs in sources FIRST and send them early
+                # Special handling: If user is asking for a specific repo, search and return
+                if is_requesting_specific_repo:
+                    monitoring.log_info(
+                        f"Specific repository search requested in stream: {question[:100]}",
+                        logger_type='ai'
+                    )
+
+                    try:
+                        # Extract search term
+                        search_term = question.lower()
+                        for prefix in ['repo url of the', 'repo url of', 'repository url of the', 'repository url of',
+                                     'repo of the', 'repo of', 'repository of the', 'repository of',
+                                     'repo contains the', 'repo contains', 'repository contains the', 'repository contains',
+                                     'repo for the', 'repo for', 'repository for the', 'repository for',
+                                     'which repo has', 'what repo has', 'give me repo url of the', 'give me repo url of',
+                                     'find repo for', 'locate repo for']:
+                            if prefix in search_term:
+                                search_term = search_term.split(prefix, 1)[1].strip()
+                                break
+
+                        search_term = search_term.replace('?', '').replace('the ', '').strip()
+
+                        if search_term:
+                            repo = repo_matcher.find_repository_by_name(search_term)
+
+                            if repo:
+                                formatted_response = repo_matcher.format_single_repo_response(repo, search_term)
+
+                                # Send empty sources first
+                                yield f"data: {json.dumps({'sources': []})}\n\n"
+
+                                # Stream the formatted response
+                                for char in formatted_response:
+                                    yield f"data: {json.dumps({'content': char})}\n\n"
+                                    await asyncio.sleep(0.001)
+
+                                # Send done signal
+                                yield f"data: {json.dumps({'done': True})}\n\n"
+
+                                monitoring.log_info(
+                                    f"Successfully returned specific repository: {repo.get('name')}",
+                                    logger_type='ai'
+                                )
+                                return
+
+                    except Exception as e:
+                        monitoring.log_error(
+                            f"Failed to search for specific repository: {e}",
+                            logger_type='ai',
+                            exc_info=True
+                        )
+                        # Fall through to normal processing
+
+                # Special handling: If user is asking for ALL repos, fetch and return directly
+                if is_requesting_all_repos or is_requesting_choreo_repos:
+                    monitoring.log_info(
+                        f"Direct repository list requested: all_repos={is_requesting_all_repos}, choreo_repos={is_requesting_choreo_repos}",
+                        logger_type='ai'
+                    )
+
+                    try:
+                        # Fetch repos dynamically from GitHub
+                        if is_requesting_choreo_repos:
+                            repos = repo_matcher.get_all_wso2_enterprise_repos(keyword="choreo")
+                            formatted_response = repo_matcher.format_repos_for_response(
+                                repos,
+                                query_context="with 'choreo' keyword"
+                            )
+                        else:
+                            repos = repo_matcher.get_all_wso2_enterprise_repos(keyword=None)
+                            formatted_response = repo_matcher.format_repos_for_response(
+                                repos,
+                                query_context="from wso2-enterprise organization"
+                            )
+
+                        # Send empty sources first
+                        yield f"data: {json.dumps({'sources': []})}\n\n"
+
+                        # Stream the formatted response
+                        for char in formatted_response:
+                            yield f"data: {json.dumps({'content': char})}\n\n"
+                            await asyncio.sleep(0.001)  # Small delay for smooth streaming
+
+                        # Send done signal
+                        yield f"data: {json.dumps({'done': True})}\n\n"
+
+                        monitoring.log_info(
+                            f"Successfully returned {len(repos)} repositories",
+                            logger_type='ai'
+                        )
+                        return
+
+                    except Exception as e:
+                        monitoring.log_error(
+                            f"Failed to fetch repositories dynamically: {e}",
+                            logger_type='ai',
+                            exc_info=True
+                        )
+                        # Fall through to normal LLM response
+
+                # Normal flow: Validate URLs in sources FIRST and send them early
                 validated_sources = await url_validator.validate_and_filter_sources(sources)
 
                 # Send sources IMMEDIATELY at the start of stream (before content)
