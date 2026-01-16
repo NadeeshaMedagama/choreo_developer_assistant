@@ -359,6 +359,62 @@ class ChoreoRepoRegistry:
 
         return score
 
+    def generate_system_prompt_urls(self) -> str:
+        """
+        Generate a comprehensive system prompt section with all Choreo repository URLs.
+        This ensures the LLM always uses the correct wso2-enterprise organization URLs.
+
+        Returns:
+            Formatted string with repository URL instructions
+        """
+        prompt = """REPOSITORY URLS - CRITICAL RULES:
+⚠️ ALWAYS use wso2-enterprise organization for ALL Choreo repositories
+⚠️ NEVER use github.com/wso2/{repo} - it's WRONG and leads to 404 errors
+⚠️ Each Choreo component has its OWN separate repository
+
+CORRECT URL FORMAT:
+https://github.com/wso2-enterprise/choreo-{component-name}
+
+ALL CHOREO COMPONENT REPOSITORIES (wso2-enterprise organization):
+"""
+        # Group components by category for better readability
+        main_components = []
+        ai_components = []
+        other_components = []
+
+        for comp_name, (org, repo, desc) in sorted(self.OFFICIAL_REPOS.items()):
+            url = f"https://github.com/{org}/{repo}"
+            entry = f"  • {comp_name}: {url}"
+
+            if comp_name.startswith("choreo-ai-"):
+                ai_components.append(entry)
+            elif comp_name in ["choreo-console", "choreo-runtime", "choreo-telemetry", "choreo-obsapi",
+                               "choreo-linker", "choreo-negotiator", "choreo-apim", "choreo-logging"]:
+                main_components.append(entry)
+            else:
+                other_components.append(entry)
+
+        if main_components:
+            prompt += "\nMain Platform Components:\n" + "\n".join(main_components)
+
+        if ai_components:
+            prompt += "\n\nAI-Powered Components:\n" + "\n".join(ai_components)
+
+        if other_components:
+            prompt += "\n\nOther Components:\n" + "\n".join(other_components)
+
+        prompt += """
+
+CRITICAL REMINDERS:
+✓ ONLY use wso2-enterprise organization URLs
+✓ Format: https://github.com/wso2-enterprise/{repository-name}
+✗ NEVER use: https://github.com/wso2/{anything} (this is PUBLIC org, not Choreo)
+✗ Do NOT make up URLs - only use the ones listed above
+
+If you need to reference a Choreo component not listed above, say you don't have the URL rather than guessing."""
+
+        return prompt
+
 
 # Singleton instance
 _registry_instance: Optional[ChoreoRepoRegistry] = None
