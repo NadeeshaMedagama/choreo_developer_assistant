@@ -407,6 +407,8 @@ If a URL is not in that list, say it's not available in your knowledge base.
         response += f"\n*Note: This is a private repository requiring wso2-enterprise organization access.*\n"
 
         return response
+
+    def format_repos_for_response(self, repos: List[Dict[str, str]], query_context: str = "") -> str:
         """
         Format repository list for LLM response.
 
