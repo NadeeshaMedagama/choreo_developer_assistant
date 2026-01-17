@@ -21,16 +21,16 @@ import sys
 import argparse
 from pathlib import Path
 
-# Add project root to Python path
-project_root = Path(__file__).resolve().parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+# Add backend directory to Python path
+backend_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(backend_dir))
 
-from backend.services.github_service import GitHubService
-from backend.services.llm_service import LLMService
-from backend.services.ingestion import IngestionService, start_keyboard_monitor
-from backend.db.vector_client import VectorClient
-from backend.utils.config import load_config
-from backend.utils.logger import get_logger
+from services.github_service import GitHubService
+from services.llm_service import LLMService
+from services.ingestion import IngestionService, start_keyboard_monitor
+from db.vector_client import VectorClient
+from utils.config import load_config
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
