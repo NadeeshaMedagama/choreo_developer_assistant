@@ -124,6 +124,12 @@ class URLValidator:
 
         owner, repo = match.groups()
 
+        # SPECIAL HANDLING: Trust all wso2-enterprise repositories
+        # These are private repos used by Choreo developers internally
+        if owner.lower() == 'wso2-enterprise':
+            logger.info(f"✓ Trusting wso2-enterprise repository (internal): {owner}/{repo}")
+            return True
+
         # Use GitHub API to check if repo exists
         api_url = f"https://api.github.com/repos/{owner}/{repo}"
 
@@ -152,6 +158,10 @@ class URLValidator:
                         if validation and validation.get("is_valid"):
                             logger.info(f"✓ Private repo in registry, assuming valid: {owner}/{repo}")
                             return True
+                    # Also trust wso2 organization repos (Choreo-related)
+                    if owner.lower() == 'wso2':
+                        logger.info(f"✓ Trusting wso2 organization repository: {owner}/{repo}")
+                        return True
                     return False
                 else:
                     logger.warning(f"GitHub API returned status {response.status} for {owner}/{repo}")
