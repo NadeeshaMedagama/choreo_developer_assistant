@@ -333,9 +333,18 @@ export default function App() {
                   )
                 }))
               } else if (parsed.sources) {
-                // Capture sources when received
+                // Capture sources when received AND attach immediately
                 sources = parsed.sources
                 console.log('[SendQuestion] Sources received from backend:', sources)
+                // Attach sources immediately to the message
+                updateConversation(c => ({
+                  ...c,
+                  messages: c.messages.map(m =>
+                    m.id === assistantMsgId
+                      ? { ...m, sources }
+                      : m
+                  )
+                }))
               } else if (parsed.summary) {
                 // Capture summary for next request
                 summary = parsed.summary
@@ -508,9 +517,18 @@ export default function App() {
                   )
                 }))
               } else if (parsed.sources) {
-                // Capture sources when received
+                // Capture sources when received AND attach immediately
                 sources = parsed.sources
                 console.log('[Regenerate] Sources received from backend:', sources)
+                // Attach sources immediately to the message
+                updateConversation(c => ({
+                  ...c,
+                  messages: c.messages.map(m =>
+                    m.id === messageId
+                      ? { ...m, sources }
+                      : m
+                  )
+                }))
               } else if (parsed.summary) {
                 // Capture summary for next request
                 summary = parsed.summary
