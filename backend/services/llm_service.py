@@ -322,19 +322,16 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
-DOCUMENTATION URLS - IMPORTANT:
+DOCUMENTATION URLS - CRITICAL RULES:
 The official Choreo documentation is at https://wso2.com/choreo/docs/
-Use these CORRECT URL patterns for documentation links:
-- CLI docs: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
-- General docs: https://wso2.com/choreo/docs/{section}/{topic}/
-- Concepts: https://wso2.com/choreo/docs/choreo-concepts/{concept}/
-- Quick starts: https://wso2.com/choreo/docs/quick-start-guides/{guide}/
-- Development: https://wso2.com/choreo/docs/develop-components/{topic}/
-- Deployment: https://wso2.com/choreo/docs/deploy-and-manage-components/{topic}/
-- API Management: https://wso2.com/choreo/docs/api-management/{topic}/
-- Observability: https://wso2.com/choreo/docs/observability-and-analytics/{topic}/
+Documentation source repository: https://github.com/wso2/docs-choreo-dev
 
-NEVER use generic URLs like https://wso2.com/choreo/docs/cli/ - always use the full, specific path.
+Use these CORRECT URL patterns - verify before providing:
+- CLI Overview: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
+
+FORBIDDEN URL PATTERNS - NEVER USE:
+❌ https://wso2.com/choreo/docs/reference/cli/ (WRONG)
+❌ https://wso2.com/choreo/docs/cli/ (WRONG)
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -516,19 +513,26 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
-DOCUMENTATION URLS - IMPORTANT:
+DOCUMENTATION URLS - CRITICAL RULES:
 The official Choreo documentation is at https://wso2.com/choreo/docs/
-Use these CORRECT URL patterns for documentation links:
-- CLI docs: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
-- General docs: https://wso2.com/choreo/docs/{section}/{topic}/
+Documentation source repository: https://github.com/wso2/docs-choreo-dev
+
+Use these CORRECT URL patterns - verify before providing:
+- CLI Overview: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
+- CLI Reference: https://wso2.com/choreo/docs/choreo-cli/cli-command-reference/
+- CLI Installation: https://wso2.com/choreo/docs/choreo-cli/install-cli/
 - Concepts: https://wso2.com/choreo/docs/choreo-concepts/{concept}/
 - Quick starts: https://wso2.com/choreo/docs/quick-start-guides/{guide}/
 - Development: https://wso2.com/choreo/docs/develop-components/{topic}/
 - Deployment: https://wso2.com/choreo/docs/deploy-and-manage-components/{topic}/
 - API Management: https://wso2.com/choreo/docs/api-management/{topic}/
 - Observability: https://wso2.com/choreo/docs/observability-and-analytics/{topic}/
+- Connectors: https://wso2.com/choreo/docs/develop-components/develop-integrations/develop-a-service-with-a-custom-connector/
 
-NEVER use generic URLs like https://wso2.com/choreo/docs/cli/ - always use the full, specific path.
+FORBIDDEN URL PATTERNS - NEVER USE:
+❌ https://wso2.com/choreo/docs/reference/cli/ (WRONG)
+❌ https://wso2.com/choreo/docs/cli/ (WRONG)
+✅ https://wso2.com/choreo/docs/choreo-cli/cli-command-reference/ (CORRECT)
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -566,9 +570,8 @@ Always provide complete, accurate answers based on ALL available context. Verify
 Use this context to answer the user's question accurately."""
             messages.append({"role": "system", "content": context_message})
 
-        # Add conversation history (limit to recent messages to avoid token limits)
+        # Add conversation history
         if conversation_history:
-            # Keep only recent history (last 10 messages = ~5 turns)
             recent_history = conversation_history[-10:]
             for msg in recent_history:
                 if msg.get("role") in ["user", "assistant"]:
@@ -617,6 +620,4 @@ Use this context to answer the user's question accurately."""
         else:
             yield "LLM response generation not available with SentenceTransformer model."
 
-    def get_dimension(self) -> int:
-        """Get the embedding dimension."""
-        return self.embedding_dimension
+
