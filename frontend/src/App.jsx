@@ -4,11 +4,11 @@ import Message from './components/Message'
 import MonitoringButton from './components/MonitoringButton.jsx'
 import { getApiUrl } from './config'
 
-const INITIAL_ASSISTANT = {
+const INITIAL_MESSAGE = {
   id: 1,
-  role: 'assistant',
-  content: "Hi, I'm DevChoreo. Ask me anything about your project!",
-}
+  role: "assistant",
+  content: "Hi, I'm **DevChoreo** – your AI assistant for the WSO2 Choreo platform! 🚀\n\nI can help you with:\n- 📚 Choreo platform concepts, features, and architecture\n- 🔧 Component development, deployment, and CI/CD workflows\n- 🔗 API management, integrations, and connectors\n- 📖 Documentation, code examples, and best practices\n- 🐛 Troubleshooting and debugging guidance\n- 🏗️ Internal implementation details and repository information\n\nWhat would you like to know about Choreo?",
+};
 
 const STORAGE_KEY = 'devchoreo_conversations'
 const THEME_STORAGE_KEY = 'devchoreo_theme'
@@ -19,9 +19,9 @@ function newConversationTemplate() {
     id: String(now),
     title: 'New Chat',
     createdAt: now,
-    messages: [ { ...INITIAL_ASSISTANT, id: now } ],
+    messages: [ { ...INITIAL_MESSAGE, id: now } ],
     summary: null, // Conversation summary for memory management
-    memoryStats: null, // Memory statistics
+    memoryStats: null, // Memory statistics,
   }
 }
 
