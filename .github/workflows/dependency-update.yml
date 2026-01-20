@@ -1,0 +1,135 @@
+name: Weekly Dependency Check
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+# Add permissions for creating issues
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Python dependencies
+        id: python-check
+        run: |
+          cd choreo-ai-assistant/backend
+          pip install pip-audit
+          echo "## Python Dependencies" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for vulnerabilities
+          if pip-audit -r requirements.txt --format json > audit.json 2>&1; then
+            echo "✅ No vulnerabilities found in Python dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "python_vulns=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Vulnerabilities found in Python dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "python_vulns=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # List outdated packages
+          pip install -r requirements.txt
+          pip list --outdated >> $GITHUB_STEP_SUMMARY || true
+        continue-on-error: true
+
+      - name: Check NPM dependencies
+        id: npm-check
+        run: |
+          cd choreo-ai-assistant/frontend
+          echo "## NPM Dependencies" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for vulnerabilities
+          if npm audit --json > npm-audit.json 2>&1; then
+            echo "✅ No vulnerabilities found in NPM dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "npm_vulns=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Vulnerabilities found in NPM dependencies" >> $GITHUB_STEP_SUMMARY
+            echo "npm_vulns=true" >> $GITHUB_OUTPUT
+          fi
+          
+          # List outdated packages
+          npm outdated >> $GITHUB_STEP_SUMMARY || true
+        continue-on-error: true
+
+      - name: Create issue if updates needed
+        if: steps.python-check.outputs.python_vulns == 'true' || steps.npm-check.outputs.npm_vulns == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            const timestamp = new Date().toISOString();
+            
+            // Check if there's already an open issue
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'dependencies,automated'
+            });
+            
+            // Don't create duplicate issues
+            if (issues.data.length > 0) {
+              console.log('An open dependency issue already exists, skipping...');
+              return;
+            }
+            
+            // Build issue body
+            let issueBody = `## 🔒 Security Alert: Dependency Updates Required\n\n`;
+            issueBody += `This issue was automatically created on ${date} after detecting vulnerabilities in dependencies.\n\n`;
+            issueBody += `### 🚨 Action Required\n\n`;
+            issueBody += `- **Python Dependencies**: Vulnerabilities detected\n`;
+            issueBody += `- **NPM Dependencies**: Check required\n\n`;
+            issueBody += `### 📋 Update Process\n\n`;
+            issueBody += `#### Python Dependencies\n`;
+            issueBody += '```bash\n';
+            issueBody += 'cd choreo-ai-assistant/backend\n';
+            issueBody += 'pip-audit -r requirements.txt\n';
+            issueBody += 'pip list --outdated\n';
+            issueBody += '# Update packages as needed\n';
+            issueBody += '```\n\n';
+            issueBody += `#### NPM Dependencies\n`;
+            issueBody += '```bash\n';
+            issueBody += 'cd choreo-ai-assistant/frontend\n';
+            issueBody += 'npm audit\n';
+            issueBody += 'npm outdated\n';
+            issueBody += 'npm update\n';
+            issueBody += '```\n\n';
+            issueBody += `### ✅ Checklist\n\n`;
+            issueBody += `- [ ] Review vulnerability reports\n`;
+            issueBody += `- [ ] Update affected packages\n`;
+            issueBody += `- [ ] Test all functionality\n`;
+            issueBody += `- [ ] Update lockfiles\n`;
+            issueBody += `- [ ] Create PR with changes\n\n`;
+            issueBody += `### ⚠️ Important\n\n`;
+            issueBody += `- Always test after updating dependencies\n`;
+            issueBody += `- Review breaking changes in package changelogs\n`;
+            issueBody += `- Run full test suite before merging\n\n`;
+            issueBody += `---\n\n`;
+            issueBody += `**Created:** ${timestamp}\n`;
+            issueBody += `**Workflow Run:** https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔒 Security: Dependency Vulnerabilities Detected',
+              body: issueBody,
+              labels: ['dependencies', 'automated', 'security']
+            });
