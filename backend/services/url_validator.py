@@ -29,10 +29,10 @@ class URLValidator:
     
     # Trusted domains that should bypass validation (only for non-GitHub URLs)
     # GitHub URLs should ALWAYS be validated to ensure repos actually exist
+    # NOTE: wso2.com is NOT trusted - we validate documentation URLs to ensure they're not 404
     TRUSTED_DOMAINS = [
-        'wso2.com',                    # WSO2 official site
         'console.choreo.dev',          # Choreo console
-        'docs.choreo.dev',             # Choreo docs
+        'docs.choreo.dev',             # Choreo docs (alternative domain)
     ]
 
     # GitHub URLs that need special handling (authenticated access)
@@ -384,12 +384,15 @@ class URLValidator:
         """
         Remove invalid URLs from text.
         
+        IMPORTANT: Choreo documentation URLs (wso2.com/choreo/docs/*) are NEVER removed,
+        even if HTTP validation fails. We trust these URLs and keep them in the answer.
+
         Args:
             text: Text containing URLs
             validation_map: Dictionary mapping URLs to their validation status
             
         Returns:
-            Text with invalid URLs removed
+            Text with invalid URLs removed (except Choreo docs URLs which are always kept)
         """
         if not validation_map:
             return text
@@ -398,6 +401,21 @@ class URLValidator:
         
         for url, is_valid in validation_map.items():
             if not is_valid:
+                # CRITICAL: NEVER remove Choreo documentation URLs
+                # These are trusted URLs from the knowledge base
+                if 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
+                    logger.info(f"Keeping Choreo docs URL even though validation failed: {url}")
+                    continue  # Skip removal for Choreo docs
+
+                # CRITICAL: NEVER remove wso2-enterprise repository URLs
+                # These are internal private repos
+                if 'github.com/wso2-enterprise' in url:
+                    logger.info(f"Keeping wso2-enterprise repo URL even though validation failed: {url}")
+                    continue  # Skip removal for wso2-enterprise repos
+
+                # Only remove non-Choreo URLs that failed validation
+                logger.warning(f"Removing invalid non-Choreo URL: {url}")
+
                 # Remove invalid URLs from text
                 # Handle both plain URLs and markdown format
                 filtered_text = re.sub(re.escape(url), "[URL removed - not accessible]", filtered_text)
@@ -457,67 +475,200 @@ class URLValidator:
         
         return filtered_sources
     
-    async def validate_answer_urls(self, answer: str) -> tuple[str, Dict[str, bool]]:
+    async def validate_answer_urls(self, answer: str, llm_service=None, context: str = "") -> tuple[str, Dict[str, bool]]:
         """
-        Validate URLs in the answer text, fix incorrect Choreo URLs, and return filtered answer.
+        Validate URLs in the answer text using BOTH LLM intelligence AND accessibility checks.
 
         This method:
-        1. Fixes GitHub organization URLs (wso2 -> wso2-enterprise for Choreo repos)
-        2. Validates URL accessibility (checks for 404, timeouts, network errors)
-        3. Trusts LLM to provide only relevant URLs based on retrieved context
-        4. Does NOT filter valid documentation URLs from wso2.com/choreo/docs/*
-        5. Only removes URLs that are actually broken/inaccessible
+        1. Uses LLM to verify URLs are correct and relevant (if llm_service provided)
+        2. Fixes GitHub organization URLs (wso2 -> wso2-enterprise for Choreo repos)
+        3. Validates URLs for accessibility (404, timeout, network errors)
+        4. Removes URLs that are wrong or inaccessible
 
-        The LLM system prompts ensure only relevant URLs from the knowledge base are included.
+        The LLM validates URLs are correct BEFORE checking if they're accessible.
 
         Args:
             answer: Answer text potentially containing URLs
-            
+            llm_service: LLM service instance for intelligent URL validation (optional)
+            context: The knowledge base context used to generate the answer
+
         Returns:
             Tuple of (filtered_answer, validation_map)
         """
         # If validation is disabled, still apply GitHub org URL fixes
         if not self.enable_validation:
-            # Still fix GitHub org URLs even if validation is disabled
             if self.choreo_registry:
                 auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
                 return auto_fixed_answer, {}
             return answer, {}
 
-        # Aggressively auto-fix all wso2 public org URLs to wso2-enterprise
-        # This catches URLs before we even extract them
+        # Fix all wso2 public org URLs to wso2-enterprise
         auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
 
-        # Extract URLs from the auto-fixed answer
+        # Extract URLs from the answer
         urls = self.extract_urls_from_text(auto_fixed_answer)
 
         if not urls:
             return auto_fixed_answer, {}
 
-        # THIRD: Fix any remaining incorrect Choreo URLs using individual validation
+        # STEP 1: LLM-based URL validation (if LLM service is available)
+        llm_validated_urls = {}
+        if llm_service:
+            logger.info(f"Using LLM to validate {len(urls)} URLs for correctness and relevance")
+            llm_validated_urls = await self._validate_urls_with_llm(urls, llm_service, context, answer)
+        else:
+            # If no LLM service, assume all URLs need HTTP validation
+            llm_validated_urls = {url: True for url in urls}
+
+        # STEP 2: Fix any incorrect Choreo URLs
         url_fixes = {}
         for url in urls:
-            fixed_url, is_choreo = self.validate_and_fix_choreo_url(url)
-            if fixed_url != url:
-                url_fixes[url] = fixed_url
+            if llm_validated_urls.get(url, False):  # Only fix URLs that LLM validated
+                fixed_url, is_choreo = self.validate_and_fix_choreo_url(url)
+                if fixed_url != url:
+                    url_fixes[url] = fixed_url
 
-        # Apply individual fixes to the answer text
+        # Apply fixes to the answer text
         fixed_answer = auto_fixed_answer
         for old_url, new_url in url_fixes.items():
             fixed_answer = fixed_answer.replace(old_url, new_url)
             logger.info(f"Replaced URL in answer: {old_url} -> {new_url}")
 
-        # Get the updated list of URLs after all fixes
+        # Get the updated list of URLs after fixes
         updated_urls = self.extract_urls_from_text(fixed_answer)
 
-        # FOURTH: Validate all URLs
-        validation_map = await self.validate_urls(updated_urls)
+        # Filter to only URLs that passed LLM validation
+        urls_to_validate = [url for url in updated_urls if llm_validated_urls.get(url, True)]
 
-        # FIFTH: Filter out any invalid URLs
-        filtered_answer = self.filter_valid_urls_from_text(fixed_answer, validation_map)
+        # STEP 3: HTTP validation for accessibility (404 check)
+        validation_map = await self.validate_urls(urls_to_validate)
 
-        return filtered_answer, validation_map
-    
+        # Combine LLM validation results with HTTP validation
+        final_validation = {}
+        for url in updated_urls:
+            llm_valid = llm_validated_urls.get(url, True)
+            http_valid = validation_map.get(url, False)
+            final_validation[url] = llm_valid and http_valid
+
+            if not llm_valid:
+                logger.warning(f"URL failed LLM validation (incorrect/irrelevant): {url}")
+            elif not http_valid:
+                logger.warning(f"URL failed HTTP validation (404/timeout): {url}")
+
+        # STEP 4: Filter out invalid URLs
+        filtered_answer = self.filter_valid_urls_from_text(fixed_answer, final_validation)
+
+        return filtered_answer, final_validation
+
+    async def _validate_urls_with_llm(self, urls: List[str], llm_service, context: str, answer: str) -> Dict[str, bool]:
+        """
+        Use LLM to validate if URLs are correct and relevant.
+
+        IMPORTANT: Choreo documentation URLs and wso2-enterprise repo URLs are AUTOMATICALLY APPROVED
+        without LLM validation. We trust these URLs from the knowledge base.
+
+        Args:
+            urls: List of URLs to validate
+            llm_service: LLM service instance
+            context: The knowledge base context
+            answer: The answer containing the URLs
+
+        Returns:
+            Dictionary mapping URL to LLM validation result (True/False)
+        """
+        if not urls:
+            return {}
+
+        # Pre-validate: Automatically approve Choreo docs and wso2-enterprise URLs
+        validation_results = {}
+        urls_to_validate = []
+
+        for url in urls:
+            # ALWAYS approve Choreo documentation URLs
+            if 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
+                validation_results[url] = True
+                logger.info(f"✅ Auto-approved Choreo docs URL (trusted): {url}")
+            # ALWAYS approve wso2-enterprise repository URLs
+            elif 'github.com/wso2-enterprise' in url:
+                validation_results[url] = True
+                logger.info(f"✅ Auto-approved wso2-enterprise repo URL (trusted): {url}")
+            # ALWAYS approve docs-choreo-dev repo
+            elif 'github.com/wso2/docs-choreo-dev' in url:
+                validation_results[url] = True
+                logger.info(f"✅ Auto-approved docs-choreo-dev URL (trusted): {url}")
+            else:
+                # Other URLs need LLM validation
+                urls_to_validate.append(url)
+
+        # If all URLs are trusted, return immediately
+        if not urls_to_validate:
+            logger.info("All URLs are trusted Choreo/wso2-enterprise URLs, skipping LLM validation")
+            return validation_results
+
+        # Create a prompt for the LLM to validate remaining URLs
+        url_list = "\n".join([f"{i+1}. {url}" for i, url in enumerate(urls_to_validate)])
+
+        validation_prompt = f"""You are a URL validation expert for Choreo documentation and repositories.
+
+TASK: Validate if the following URLs are CORRECT and RELEVANT to the answer.
+
+KNOWLEDGE BASE CONTEXT:
+{context[:2000] if context else "No context available"}
+
+ANSWER PROVIDED:
+{answer[:1000]}
+
+URLS TO VALIDATE:
+{url_list}
+
+VALIDATION CRITERIA:
+1. Is the URL structure correct for Choreo documentation?
+   - Correct: https://wso2.com/choreo/docs/choreo-cli/get-started-with-the-choreo-cli/
+   - Correct: https://wso2.com/choreo/docs/references/faq/#choreo-cli
+   - Wrong: https://wso2.com/choreo/docs/developer-tools/choreo-cli/
+   
+2. Is the URL relevant to the answer content?
+3. Does the URL path make logical sense?
+4. For repository URLs: Is it wso2-enterprise organization?
+
+RESPOND WITH ONLY:
+For each URL, write either "VALID" or "INVALID" followed by the URL number.
+Example:
+VALID: 1
+INVALID: 2
+VALID: 3
+
+Be lenient - mark as VALID unless the URL is clearly wrong."""
+
+        try:
+            # Get LLM response
+            llm_response = llm_service.get_response(validation_prompt, max_tokens=500)
+
+            logger.info(f"LLM URL validation response: {llm_response}")
+
+            # Parse the LLM response for non-trusted URLs
+            for url_idx, url in enumerate(urls_to_validate, 1):
+                # Check if LLM marked this URL as valid
+                if f"VALID: {url_idx}" in llm_response or f"VALID:{url_idx}" in llm_response:
+                    validation_results[url] = True
+                    logger.info(f"✅ LLM validated URL {url_idx}: {url}")
+                elif f"INVALID: {url_idx}" in llm_response or f"INVALID:{url_idx}" in llm_response:
+                    validation_results[url] = False
+                    logger.warning(f"❌ LLM rejected URL {url_idx}: {url}")
+                else:
+                    # Default to True if LLM didn't explicitly reject
+                    validation_results[url] = True
+                    logger.info(f"⚠️ LLM unclear on URL {url_idx}, defaulting to valid: {url}")
+
+            return validation_results
+
+        except Exception as e:
+            logger.error(f"LLM URL validation failed: {e}")
+            # If LLM validation fails, default all remaining URLs to valid
+            for url in urls_to_validate:
+                validation_results[url] = True
+            return validation_results
+
     def clear_cache(self):
         """Clear the validation cache."""
         self._cache.clear()
