@@ -323,15 +323,20 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
 DOCUMENTATION URLS - CRITICAL RULES:
-The official Choreo documentation is at https://wso2.com/choreo/docs/
-Documentation source repository: https://github.com/wso2/docs-choreo-dev
+**PRIMARY INFORMATION SOURCES:**
+1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
+2. Documentation website: https://wso2.com/choreo/docs/ (main documentation site - NO PATHS ALLOWED)
+3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
-Use these CORRECT URL patterns - verify before providing:
-- CLI Overview: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
-
-FORBIDDEN URL PATTERNS - NEVER USE:
-❌ https://wso2.com/choreo/docs/reference/cli/ (WRONG)
-❌ https://wso2.com/choreo/docs/cli/ (WRONG)
+**STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
+- For documentation website: ONLY use https://wso2.com/choreo/docs/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path)
+  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/
+- For doc source: ONLY use https://github.com/wso2/docs-choreo-dev
+- For specific topics, say: "For more details, visit https://wso2.com/choreo/docs/"
+- **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -369,9 +374,8 @@ Always provide complete, accurate answers based on ALL available context. Verify
 Use this context to answer the user's question accurately."""
             messages.append({"role": "system", "content": context_message})
 
-        # Add conversation history (limit to recent messages to avoid token limits)
+        # Add conversation history
         if conversation_history:
-            # Keep only recent history (last 10 messages = ~5 turns)
             recent_history = conversation_history[-10:]
             for msg in recent_history:
                 if msg.get("role") in ["user", "assistant"]:
@@ -514,25 +518,20 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
 DOCUMENTATION URLS - CRITICAL RULES:
-The official Choreo documentation is at https://wso2.com/choreo/docs/
-Documentation source repository: https://github.com/wso2/docs-choreo-dev
+**PRIMARY INFORMATION SOURCES:**
+1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
+2. Documentation website: https://wso2.com/choreo/docs/ (main documentation site - NO PATHS ALLOWED)
+3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
-Use these CORRECT URL patterns - verify before providing:
-- CLI Overview: https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/
-- CLI Reference: https://wso2.com/choreo/docs/choreo-cli/cli-command-reference/
-- CLI Installation: https://wso2.com/choreo/docs/choreo-cli/install-cli/
-- Concepts: https://wso2.com/choreo/docs/choreo-concepts/{concept}/
-- Quick starts: https://wso2.com/choreo/docs/quick-start-guides/{guide}/
-- Development: https://wso2.com/choreo/docs/develop-components/{topic}/
-- Deployment: https://wso2.com/choreo/docs/deploy-and-manage-components/{topic}/
-- API Management: https://wso2.com/choreo/docs/api-management/{topic}/
-- Observability: https://wso2.com/choreo/docs/observability-and-analytics/{topic}/
-- Connectors: https://wso2.com/choreo/docs/develop-components/develop-integrations/develop-a-service-with-a-custom-connector/
-
-FORBIDDEN URL PATTERNS - NEVER USE:
-❌ https://wso2.com/choreo/docs/reference/cli/ (WRONG)
-❌ https://wso2.com/choreo/docs/cli/ (WRONG)
-✅ https://wso2.com/choreo/docs/choreo-cli/cli-command-reference/ (CORRECT)
+**STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
+- For documentation website: ONLY use https://wso2.com/choreo/docs/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path)
+  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/
+- For doc source: ONLY use https://github.com/wso2/docs-choreo-dev
+- For specific topics, say: "For more details, visit https://wso2.com/choreo/docs/"
+- **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -619,5 +618,4 @@ Use this context to answer the user's question accurately."""
                 yield f"Error generating response: {str(e)}"
         else:
             yield "LLM response generation not available with SentenceTransformer model."
-
 
