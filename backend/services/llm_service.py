@@ -322,48 +322,47 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
-DOCUMENTATION URLS - CRITICAL RULES:
+🔴 CRITICAL URL POLICY - PREVENT WRONG URLS 🔴
 **PRIMARY INFORMATION SOURCES:**
 1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
-2. Documentation website: https://wso2.com/choreo/docs/ (main documentation site - NO PATHS ALLOWED)
+2. Documentation website: https://wso2.com/choreo/docs/ (all paths are valid)
 3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
-**STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
-❌ ❌ ❌ NEVER EVER generate documentation URLs with paths ❌ ❌ ❌
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/cli/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/anything/with/path/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path at all)
-  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/ (base URL only, no paths)
-  
-- For documentation source: ONLY use https://github.com/wso2/docs-choreo-dev
-- For any topic, ONLY say: "For more details, visit https://wso2.com/choreo/docs/"
-- **CRITICAL**: Documentation URLs with paths DO NOT EXIST and will be AUTOMATICALLY REMOVED
-- **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
+**ABSOLUTELY CRITICAL - FOLLOW EXACTLY:**
+✅ **ONLY use URLs that EXPLICITLY appear in the retrieved context below**
+✅ **Copy URLs EXACTLY character-by-character from the context**
+✅ **If context shows: https://wso2.com/choreo/docs/choreo-cli/get-started/ → Use that EXACT URL**
+❌ **DO NOT construct, generate, or invent ANY URLs**
+❌ **DO NOT guess URL paths - they will be wrong and return 404**
+❌ **DO NOT create documentation URLs - they will fail validation**
+
+**CORRECT Examples (ONLY if these exact URLs appear in context):**
+✅ https://wso2.com/choreo/docs/
+✅ https://wso2.com/choreo/docs/choreo-cli/get-started-with-the-choreo-cli/
+✅ https://wso2.com/choreo/docs/devops/ci-pipelines/
+✅ https://wso2.com/choreo/docs/observability/monitoring/
+
+**What happens if you provide wrong URLs:**
+❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
+❌ Invented URL → Returns 404 → Gets REMOVED → User sees [URL removed - not accessible]
+✅ URL from context → Validated → Kept in answer
+
+**If you don't have a specific URL in the context:**
+- Simply refer to: "For more details, visit https://wso2.com/choreo/docs/"
+- DO NOT try to construct a more specific URL
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
-There are 147 repositories with 'choreo' keyword in wso2-enterprise organization.
 
 **MANDATORY URL RULES - FOLLOW STRICTLY:**
-1. **ONLY provide repository URLs that appear in the retrieved context**
+1. **ONLY provide repository URLs that EXPLICITLY appear in the retrieved context**
 2. **NEVER construct, invent, or guess repository URLs**
-3. **ALL Choreo repositories follow this pattern:** https://github.com/wso2-enterprise/choreo-{component-name}
-4. Repository names use hyphens (e.g., choreo-console, choreo-runtime, choreo-ai-copilot)
-5. All repositories are PRIVATE and require wso2-enterprise organization access
-6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization at https://github.com/orgs/wso2-enterprise/repositories?q=choreo for the exact repository"
+3. **Copy repository URLs EXACTLY from context - character by character**
+4. **ALL Choreo repositories follow: https://github.com/wso2-enterprise/choreo-{component-name}**
+5. Repository names use hyphens (choreo-console, choreo-runtime, choreo-ai-copilot)
+6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization"
 
-**DO NOT mention repository URLs unless they explicitly appear in the provided context.**
-
-Examples of CORRECT repository URLs (only use if found in context):
-  * choreo-console: https://github.com/wso2-enterprise/choreo-console
-  * choreo-runtime: https://github.com/wso2-enterprise/choreo-runtime
-  * choreo-telemetry: https://github.com/wso2-enterprise/choreo-telemetry
-  * choreo-obsapi: https://github.com/wso2-enterprise/choreo-obsapi
-  * choreo-negotiator: https://github.com/wso2-enterprise/choreo-negotiator
-  * choreo-ai-copilot: https://github.com/wso2-enterprise/choreo-ai-copilot
-  * choreo-ai-docbot: https://github.com/wso2-enterprise/choreo-ai-docbot
+**DO NOT mention ANY URLs unless they explicitly appear word-for-word in the context.**
 
 Always provide complete, accurate answers based on ALL available context. Verify URLs against the context before providing them."""
 
@@ -521,48 +520,47 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
-DOCUMENTATION URLS - CRITICAL RULES:
+🔴 CRITICAL URL POLICY - PREVENT WRONG URLS 🔴
 **PRIMARY INFORMATION SOURCES:**
 1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
-2. Documentation website: https://wso2.com/choreo/docs/ (main documentation site - NO PATHS ALLOWED)
+2. Documentation website: https://wso2.com/choreo/docs/ (all paths are valid)
 3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
-**STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
-❌ ❌ ❌ NEVER EVER generate documentation URLs with paths ❌ ❌ ❌
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/cli/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/anything/with/path/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path at all)
-  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/ (base URL only, no paths)
-  
-- For documentation source: ONLY use https://github.com/wso2/docs-choreo-dev
-- For any topic, ONLY say: "For more details, visit https://wso2.com/choreo/docs/"
-- **CRITICAL**: Documentation URLs with paths DO NOT EXIST and will be AUTOMATICALLY REMOVED
-- **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
+**ABSOLUTELY CRITICAL - FOLLOW EXACTLY:**
+✅ **ONLY use URLs that EXPLICITLY appear in the retrieved context below**
+✅ **Copy URLs EXACTLY character-by-character from the context**
+✅ **If context shows: https://wso2.com/choreo/docs/choreo-cli/get-started/ → Use that EXACT URL**
+❌ **DO NOT construct, generate, or invent ANY URLs**
+❌ **DO NOT guess URL paths - they will be wrong and return 404**
+❌ **DO NOT create documentation URLs - they will fail validation**
+
+**CORRECT Examples (ONLY if these exact URLs appear in context):**
+✅ https://wso2.com/choreo/docs/
+✅ https://wso2.com/choreo/docs/choreo-cli/get-started-with-the-choreo-cli/
+✅ https://wso2.com/choreo/docs/devops/ci-pipelines/
+✅ https://wso2.com/choreo/docs/observability/monitoring/
+
+**What happens if you provide wrong URLs:**
+❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
+❌ Invented URL → Returns 404 → Gets REMOVED → User sees [URL removed - not accessible]
+✅ URL from context → Validated → Kept in answer
+
+**If you don't have a specific URL in the context:**
+- Simply refer to: "For more details, visit https://wso2.com/choreo/docs/"
+- DO NOT try to construct a more specific URL
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
-There are 147 repositories with 'choreo' keyword in wso2-enterprise organization.
 
 **MANDATORY URL RULES - FOLLOW STRICTLY:**
-1. **ONLY provide repository URLs that appear in the retrieved context**
+1. **ONLY provide repository URLs that EXPLICITLY appear in the retrieved context**
 2. **NEVER construct, invent, or guess repository URLs**
-3. **ALL Choreo repositories follow this pattern:** https://github.com/wso2-enterprise/choreo-{component-name}
-4. Repository names use hyphens (e.g., choreo-console, choreo-runtime, choreo-ai-copilot)
-5. All repositories are PRIVATE and require wso2-enterprise organization access
-6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization at https://github.com/orgs/wso2-enterprise/repositories?q=choreo for the exact repository"
+3. **Copy repository URLs EXACTLY from context - character by character**
+4. **ALL Choreo repositories follow: https://github.com/wso2-enterprise/choreo-{component-name}**
+5. Repository names use hyphens (choreo-console, choreo-runtime, choreo-ai-copilot)
+6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization"
 
-**DO NOT mention repository URLs unless they explicitly appear in the provided context.**
-
-Examples of CORRECT repository URLs (only use if found in context):
-  * choreo-console: https://github.com/wso2-enterprise/choreo-console
-  * choreo-runtime: https://github.com/wso2-enterprise/choreo-runtime
-  * choreo-telemetry: https://github.com/wso2-enterprise/choreo-telemetry
-  * choreo-obsapi: https://github.com/wso2-enterprise/choreo-obsapi
-  * choreo-negotiator: https://github.com/wso2-enterprise/choreo-negotiator
-  * choreo-ai-copilot: https://github.com/wso2-enterprise/choreo-ai-copilot
-  * choreo-ai-docbot: https://github.com/wso2-enterprise/choreo-ai-docbot
+**DO NOT mention ANY URLs unless they explicitly appear word-for-word in the context.**
 
 Always provide complete, accurate answers based on ALL available context. Verify URLs against the context before providing them."""
 
@@ -596,34 +594,25 @@ Use this context to answer the user's question accurately."""
                     model=self.deployment,
                     messages=messages,
                     max_tokens=max_tokens,
-                    temperature=0.7,
-                    stream=True
+                    temperature=0.7
                 )
-                for chunk in response:
-                    if chunk.choices and len(chunk.choices) > 0:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            yield delta.content
+                return response.choices[0].message.content
             except Exception as e:
-                logger.error(f"Azure OpenAI streaming failed: {e}")
-                yield f"Error generating response: {str(e)}"
+                logger.error(f"Azure OpenAI response failed: {e}")
+                return f"Error generating response: {str(e)}"
         elif self.use_openai:
             try:
                 response = self.client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
                     max_tokens=max_tokens,
-                    temperature=0.7,
-                    stream=True
+                    temperature=0.7
                 )
-                for chunk in response:
-                    if chunk.choices and len(chunk.choices) > 0:
-                        delta = chunk.choices[0].delta
-                        if hasattr(delta, 'content') and delta.content:
-                            yield delta.content
+                return response.choices[0].message.content
             except Exception as e:
-                logger.error(f"OpenAI streaming failed: {e}")
-                yield f"Error generating response: {str(e)}"
+                logger.error(f"OpenAI response failed: {e}")
+                return f"Error generating response: {str(e)}"
         else:
-            yield "LLM response generation not available with SentenceTransformer model."
+            return "LLM response generation not available with SentenceTransformer model."
+
 
