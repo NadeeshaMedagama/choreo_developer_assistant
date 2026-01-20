@@ -329,13 +329,17 @@ DOCUMENTATION URLS - CRITICAL RULES:
 3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
 **STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
-- For documentation website: ONLY use https://wso2.com/choreo/docs/
+❌ ❌ ❌ NEVER EVER generate documentation URLs with paths ❌ ❌ ❌
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/cli/
   ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
   ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path)
-  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/
-- For doc source: ONLY use https://github.com/wso2/docs-choreo-dev
-- For specific topics, say: "For more details, visit https://wso2.com/choreo/docs/"
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/anything/with/path/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path at all)
+  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/ (base URL only, no paths)
+  
+- For documentation source: ONLY use https://github.com/wso2/docs-choreo-dev
+- For any topic, ONLY say: "For more details, visit https://wso2.com/choreo/docs/"
+- **CRITICAL**: Documentation URLs with paths DO NOT EXIST and will be AUTOMATICALLY REMOVED
 - **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
@@ -524,13 +528,17 @@ DOCUMENTATION URLS - CRITICAL RULES:
 3. Code repositories: wso2-enterprise organization with 'choreo' keyword (private repos)
 
 **STRICT URL POLICY - ABSOLUTELY NO EXCEPTIONS:**
-- For documentation website: ONLY use https://wso2.com/choreo/docs/
+❌ ❌ ❌ NEVER EVER generate documentation URLs with paths ❌ ❌ ❌
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/cli/
   ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/ci-pipelines/
   ❌ FORBIDDEN: https://wso2.com/choreo/docs/devops/deployment-tracks/
-  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path)
-  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/
-- For doc source: ONLY use https://github.com/wso2/docs-choreo-dev
-- For specific topics, say: "For more details, visit https://wso2.com/choreo/docs/"
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/anything/with/path/
+  ❌ FORBIDDEN: https://wso2.com/choreo/docs/* (any path at all)
+  ✅ ONLY ALLOWED: https://wso2.com/choreo/docs/ (base URL only, no paths)
+  
+- For documentation source: ONLY use https://github.com/wso2/docs-choreo-dev
+- For any topic, ONLY say: "For more details, visit https://wso2.com/choreo/docs/"
+- **CRITICAL**: Documentation URLs with paths DO NOT EXIST and will be AUTOMATICALLY REMOVED
 - **NO EXCEPTIONS** - Never use documentation URLs with paths under any circumstances
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
