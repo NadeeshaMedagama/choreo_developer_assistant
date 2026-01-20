@@ -207,48 +207,6 @@ class URLValidator:
 
         return url, False
 
-    def remove_invalid_wso2_doc_urls(self, text: str) -> str:
-        """
-        Remove invalid WSO2 Choreo documentation URLs with paths.
-        Only https://wso2.com/choreo/docs/ (without path) is allowed.
-        URLs with paths like /cli/, /devops/, etc. are removed.
-
-        Args:
-            text: Text potentially containing invalid documentation URLs
-
-        Returns:
-            Text with invalid documentation URLs removed/replaced
-        """
-        # Pattern to match wso2.com/choreo/docs/ URLs with paths
-        # Examples to match and remove:
-        # - https://wso2.com/choreo/docs/cli/
-        # - https://wso2.com/choreo/docs/devops/ci-pipelines/
-        # - wso2.com/choreo/docs/anything/
-
-        # This pattern matches wso2.com/choreo/docs/ followed by any path
-        # Using [\w/-]+ to match word characters, slashes, and hyphens
-        pattern = r'(https?://wso2\.com/choreo/docs/)[\w/-]+'
-
-        def replace_func(match):
-            invalid_url = match.group(0)
-            logger.info(f"Removing invalid WSO2 docs URL with path: {invalid_url}")
-            # Replace with just the base docs URL (captured group 1, without trailing slash)
-            return match.group(1).rstrip('/')
-
-        fixed_text = re.sub(pattern, replace_func, text)
-
-        # Also handle markdown links with these invalid URLs
-        markdown_pattern = r'\[([^\]]+)\]\((https?://wso2\.com/choreo/docs/)[\w/-]+\)'
-
-        def replace_markdown_func(match):
-            link_text = match.group(1)
-            logger.info(f"Removing invalid WSO2 docs URL from markdown link: {match.group(0)}")
-            # Keep the link text but update URL to base docs (without trailing slash)
-            return f"[{link_text}]({match.group(2).rstrip('/')})"
-
-        fixed_text = re.sub(markdown_pattern, replace_markdown_func, fixed_text)
-
-        return fixed_text
 
     def auto_fix_all_choreo_urls(self, text: str) -> str:
         """
@@ -503,22 +461,32 @@ class URLValidator:
         """
         Validate URLs in the answer text, fix incorrect Choreo URLs, and return filtered answer.
 
+        This method:
+        1. Fixes GitHub organization URLs (wso2 -> wso2-enterprise for Choreo repos)
+        2. Validates URL accessibility (checks for 404, timeouts, network errors)
+        3. Trusts LLM to provide only relevant URLs based on retrieved context
+        4. Does NOT filter valid documentation URLs from wso2.com/choreo/docs/*
+        5. Only removes URLs that are actually broken/inaccessible
+
+        The LLM system prompts ensure only relevant URLs from the knowledge base are included.
+
         Args:
             answer: Answer text potentially containing URLs
             
         Returns:
             Tuple of (filtered_answer, validation_map)
         """
+        # If validation is disabled, still apply GitHub org URL fixes
         if not self.enable_validation:
+            # Still fix GitHub org URLs even if validation is disabled
+            if self.choreo_registry:
+                auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
+                return auto_fixed_answer, {}
             return answer, {}
-        
-        # FIRST: Remove invalid WSO2 documentation URLs with paths (like /cli/, /devops/, etc.)
-        # Only https://wso2.com/choreo/docs/ without paths is allowed
-        cleaned_answer = self.remove_invalid_wso2_doc_urls(answer)
 
-        # SECOND: Aggressively auto-fix all wso2 public org URLs to wso2-enterprise
+        # Aggressively auto-fix all wso2 public org URLs to wso2-enterprise
         # This catches URLs before we even extract them
-        auto_fixed_answer = self.auto_fix_all_choreo_urls(cleaned_answer)
+        auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
 
         # Extract URLs from the auto-fixed answer
         urls = self.extract_urls_from_text(auto_fixed_answer)
