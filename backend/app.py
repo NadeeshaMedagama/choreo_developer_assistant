@@ -570,9 +570,13 @@ async def ask_ai(request: AskRequest):
         )
         answer = response.choices[0].message.content
 
-        # 6. Validate URLs in the answer
+        # 6. Validate URLs in the answer using LLM intelligence + HTTP checks
         validation_start = time.time()
-        filtered_answer, url_validation_map = await url_validator.validate_answer_urls(answer)
+        filtered_answer, url_validation_map = await url_validator.validate_answer_urls(
+            answer=answer,
+            llm_service=llm_service,
+            context=context_text
+        )
         validation_duration = time.time() - validation_start
 
         if url_validation_map:
@@ -1090,8 +1094,12 @@ async def ask_ai_stream(request: AskRequest):
                     logger_type='ai'
                 )
 
-                # Validate URLs in the complete answer
-                filtered_answer, url_validation_map = await url_validator.validate_answer_urls(full_answer)
+                # Validate URLs in the complete answer using LLM intelligence + HTTP checks
+                filtered_answer, url_validation_map = await url_validator.validate_answer_urls(
+                    answer=full_answer,
+                    llm_service=llm_service,
+                    context=context_text
+                )
 
                 # Log URL validation results
                 if url_validation_map:
