@@ -6,6 +6,10 @@ on:
     - cron: '0 9 * * 1'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   # ============================================
   # Check for Python dependency updates
@@ -108,11 +112,15 @@ jobs:
     timeout-minutes: 10
     needs: [python-dependencies, npm-dependencies]
     if: github.event_name == 'schedule'
-    
+    permissions:
+      contents: read
+      issues: write
+
     steps:
       - name: Create or update issue
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const title = '📦 Weekly Dependency Update Check';
             const body = `## Automated Dependency Check
