@@ -350,6 +350,12 @@ class ChoreoRepoRegistry:
         "wso2.com/choreo/docs/security": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
         "wso2.com/choreo/docs/security/service-authentication": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
         "wso2.com/choreo/docs/api-management/security": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+
+        # Invalid Environment Management URLs -> Correct Choreo docs path
+        "wso2.com/choreo/docs/environment-management": "https://wso2.com/choreo/docs/devops-and-ci-cd/manage-environments/",
+
+        # Invalid Components Configuration URLs -> Correct Choreo docs path
+        "wso2.com/choreo/docs/components/configuration": "https://wso2.com/choreo/docs/develop-components/use-configuration-form/",
     }
 
     # List of known INVALID documentation URL patterns (these don't exist)
@@ -364,6 +370,8 @@ class ChoreoRepoRegistry:
         "wso2.com/choreo/docs/examples",
         "wso2.com/choreo/docs/api-management",
         "wso2.com/choreo/docs/security",
+        "wso2.com/choreo/docs/environment-management",
+        "wso2.com/choreo/docs/components/configuration",
     ]
 
     def __init__(self):
