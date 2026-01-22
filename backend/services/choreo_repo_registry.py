@@ -4,6 +4,10 @@ Choreo Repository Registry
 This module maintains a registry of official Choreo components and their GitHub repository locations.
 It provides URL validation and resolution for Choreo-related repositories.
 
+Supports both LOCAL and CLOUD (Choreo) deployments:
+- Local: Can dynamically fetch repositories from GitHub API if GITHUB_TOKEN is available
+- Cloud: Falls back to hardcoded OFFICIAL_REPOS list if GitHub API is unavailable
+
 Now supports dynamic fetching of ALL repositories from wso2-enterprise organization via GitHub API.
 """
 
@@ -13,6 +17,28 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
+
+# Deployment environment detection
+def is_choreo_deployment() -> bool:
+    """
+    Detect if running in Choreo cloud deployment environment.
+    Checks for common Choreo/Kubernetes environment variables.
+    """
+    choreo_indicators = [
+        'CHOREO_COMPONENT',
+        'CHOREO_ENVIRONMENT',
+        'KUBERNETES_SERVICE_HOST',
+        'CHOREO_ORG',
+        'CHOREO_PROJECT',
+    ]
+    return any(os.getenv(var) for var in choreo_indicators)
+
+# Check deployment mode at module load
+IS_CLOUD_DEPLOYMENT = is_choreo_deployment()
+if IS_CLOUD_DEPLOYMENT:
+    logger.info("🌐 Running in CLOUD (Choreo) deployment mode")
+else:
+    logger.info("💻 Running in LOCAL deployment mode")
 
 
 class ChoreoRepoRegistry:
@@ -409,19 +435,57 @@ class ChoreoRepoRegistry:
         return url
 
     def _get_github_service(self):
-        """Lazy load GitHub service with token from environment."""
+        """
+        Lazy load GitHub service with token from environment.
+
+        In cloud deployment (Choreo), GitHub API access may be limited.
+        Returns None if GitHub service cannot be initialized.
+        """
         if self._github_service is None:
-            from services.github_service import GitHubService
-            github_token = os.getenv('GITHUB_TOKEN')
-            self._github_service = GitHubService(token=github_token)
-            logger.info(f"GitHub service initialized {'with' if github_token else 'without'} token")
+            try:
+                # Try relative import first (works in most cases)
+                try:
+                    from services.github_service import GitHubService
+                except ImportError:
+                    # Fallback to absolute import for different deployment structures
+                    try:
+                        from backend.services.github_service import GitHubService
+                    except ImportError:
+                        logger.warning("Could not import GitHubService - dynamic repo fetching disabled")
+                        return None
+
+                github_token = os.getenv('GITHUB_TOKEN')
+
+                if not github_token and IS_CLOUD_DEPLOYMENT:
+                    logger.warning("🌐 Cloud deployment: GITHUB_TOKEN not set - using hardcoded repos only")
+                    return None
+
+                self._github_service = GitHubService(token=github_token)
+                logger.info(f"GitHub service initialized {'with' if github_token else 'without'} token")
+
+            except Exception as e:
+                logger.error(f"Failed to initialize GitHub service: {e}")
+                logger.warning("Dynamic repository fetching will be disabled - using hardcoded repos")
+                return None
+
         return self._github_service
+
+    def is_dynamic_fetch_available(self) -> bool:
+        """
+        Check if dynamic repository fetching from GitHub is available.
+
+        Returns:
+            True if GitHub API can be used, False otherwise
+        """
+        github_service = self._get_github_service()
+        return github_service is not None
 
     def fetch_all_wso2_enterprise_repos(self, use_cache: bool = True) -> List[Dict[str, str]]:
         """
         Dynamically fetch ALL repositories from wso2-enterprise organization via GitHub API.
 
         This replaces the hardcoded OFFICIAL_REPOS list with live data from GitHub.
+        In cloud deployment (Choreo), falls back to hardcoded list if GitHub API unavailable.
 
         Args:
             use_cache: If True, use cached results. If False, fetch fresh from GitHub.
@@ -434,10 +498,18 @@ class ChoreoRepoRegistry:
             logger.info(f"Using cached repository list ({len(self._dynamic_repos)} repos)")
             return self._dynamic_repos
 
+        # In cloud deployment without GitHub access, use hardcoded list directly
+        github_service = self._get_github_service()
+        if github_service is None:
+            if IS_CLOUD_DEPLOYMENT:
+                logger.info("🌐 Cloud deployment: Using hardcoded OFFICIAL_REPOS (GitHub API not available)")
+            else:
+                logger.warning("GitHub service not available - falling back to hardcoded repos")
+            return self._get_hardcoded_repos_as_list()
+
         logger.info("Fetching ALL repositories from wso2-enterprise organization via GitHub API...")
 
         try:
-            github_service = self._get_github_service()
 
             # Fetch all repos from wso2-enterprise org (no keyword filter to get ALL repos)
             all_repos = github_service.search_org_repositories(
@@ -477,6 +549,7 @@ class ChoreoRepoRegistry:
     def fetch_choreo_repos_only(self, use_cache: bool = True) -> List[Dict[str, str]]:
         """
         Fetch only repositories with 'choreo' keyword from wso2-enterprise organization.
+        In cloud deployment (Choreo), falls back to hardcoded list if GitHub API unavailable.
 
         Args:
             use_cache: If True, use cached results. If False, fetch fresh from GitHub.
@@ -484,10 +557,19 @@ class ChoreoRepoRegistry:
         Returns:
             List of Choreo-related repository info dicts
         """
+        # In cloud deployment without GitHub access, use hardcoded list directly
+        github_service = self._get_github_service()
+        if github_service is None:
+            if IS_CLOUD_DEPLOYMENT:
+                logger.info("🌐 Cloud deployment: Using hardcoded Choreo repos (GitHub API not available)")
+            else:
+                logger.warning("GitHub service not available - falling back to hardcoded repos")
+            # Filter hardcoded repos for choreo-related ones
+            return [r for r in self._get_hardcoded_repos_as_list() if 'choreo' in r.get('name', '').lower()]
+
         logger.info("Fetching Choreo-related repositories from wso2-enterprise organization...")
 
         try:
-            github_service = self._get_github_service()
 
             # Fetch repos with 'choreo' keyword
             choreo_repos = github_service.search_org_repositories(
@@ -1050,6 +1132,7 @@ _registry_instance: Optional[ChoreoRepoRegistry] = None
 def get_choreo_registry() -> ChoreoRepoRegistry:
     """
     Get the singleton instance of the Choreo repository registry.
+    Works in both local and cloud (Choreo) deployments.
 
     Returns:
         ChoreoRepoRegistry instance
@@ -1058,7 +1141,31 @@ def get_choreo_registry() -> ChoreoRepoRegistry:
 
     if _registry_instance is None:
         _registry_instance = ChoreoRepoRegistry()
-        logger.info(f"Choreo repository registry initialized with {len(_registry_instance.OFFICIAL_REPOS)} components")
+        deployment_mode = "CLOUD (Choreo)" if IS_CLOUD_DEPLOYMENT else "LOCAL"
+        dynamic_available = _registry_instance.is_dynamic_fetch_available()
+
+        logger.info(f"Choreo repository registry initialized:")
+        logger.info(f"  - Deployment mode: {deployment_mode}")
+        logger.info(f"  - Hardcoded repos: {len(_registry_instance.OFFICIAL_REPOS)} components")
+        logger.info(f"  - Dynamic GitHub fetch: {'Available' if dynamic_available else 'Not available (using hardcoded list)'}")
 
     return _registry_instance
+
+
+def get_deployment_info() -> Dict[str, any]:
+    """
+    Get information about the current deployment environment.
+
+    Returns:
+        Dictionary with deployment details
+    """
+    registry = get_choreo_registry()
+    return {
+        "is_cloud_deployment": IS_CLOUD_DEPLOYMENT,
+        "deployment_mode": "cloud" if IS_CLOUD_DEPLOYMENT else "local",
+        "dynamic_fetch_available": registry.is_dynamic_fetch_available(),
+        "hardcoded_repos_count": len(registry.OFFICIAL_REPOS),
+        "internal_docs_count": len(registry.INTERNAL_DOCS),
+        "url_corrections_count": len(registry.INVALID_DOC_URL_CORRECTIONS),
+    }
 
