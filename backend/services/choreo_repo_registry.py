@@ -298,12 +298,115 @@ class ChoreoRepoRegistry:
         "console": "https://console.choreo.dev",
     }
 
+    # Internal documentation URLs for specific Choreo topics
+    # These are the correct documentation sources for various Choreo features
+    INTERNAL_DOCS = {
+        # Choreo APIM Setup Guide For Development
+        "apim": "https://docs.google.com/document/d/1qkonR2EG7ppgn5jhrNyd8aMhBjxlgzHtZ_1Wb1hrs1c/edit?tab=t.0#heading=h.44xczcdf40wf",
+        "api-management": "https://docs.google.com/document/d/1qkonR2EG7ppgn5jhrNyd8aMhBjxlgzHtZ_1Wb1hrs1c/edit?tab=t.0#heading=h.44xczcdf40wf",
+        "apim-setup": "https://docs.google.com/document/d/1qkonR2EG7ppgn5jhrNyd8aMhBjxlgzHtZ_1Wb1hrs1c/edit?tab=t.0#heading=h.44xczcdf40wf",
+
+        # Choreo Light-Weight Security Token Service (STS)
+        "security": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "sts": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "security-token-service": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "service-authentication": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "authentication": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+    }
+
+    # Mapping of INVALID documentation URL patterns to their CORRECT URLs
+    # These are URLs that LLMs commonly hallucinate but don't actually exist
+    INVALID_DOC_URL_CORRECTIONS = {
+        # Invalid API Management URLs -> Choreo APIM Setup Guide
+        "wso2.com/choreo/docs/api-management": "https://docs.google.com/document/d/1qkonR2EG7ppgn5jhrNyd8aMhBjxlgzHtZ_1Wb1hrs1c/edit?tab=t.0#heading=h.44xczcdf40wf",
+
+        # Invalid Security URLs -> Choreo Light-Weight STS doc
+        "wso2.com/choreo/docs/security": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "wso2.com/choreo/docs/security/service-authentication": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+        "wso2.com/choreo/docs/api-management/security": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
+    }
+
+    # List of known INVALID documentation URL patterns (these don't exist)
+    KNOWN_INVALID_DOC_PATTERNS = [
+        "wso2.com/choreo/docs/ballerina",
+        "wso2.com/choreo/docs/developer-tools",
+        "wso2.com/choreo/docs/tutorials",
+        "wso2.com/choreo/docs/guides",
+        "wso2.com/choreo/docs/quick-start",
+        "wso2.com/choreo/docs/api-reference",
+        "wso2.com/choreo/docs/samples",
+        "wso2.com/choreo/docs/examples",
+        "wso2.com/choreo/docs/api-management",
+        "wso2.com/choreo/docs/security",
+    ]
+
     def __init__(self):
         """Initialize the repository registry."""
         self._url_cache: Dict[str, str] = {}
         self._component_pattern = re.compile(r'choreo-[\w-]+', re.IGNORECASE)
         self._dynamic_repos: Optional[List[Dict[str, str]]] = None
         self._github_service = None
+
+    def get_internal_doc_url(self, topic: str) -> Optional[str]:
+        """
+        Get the correct internal documentation URL for a given topic.
+
+        Args:
+            topic: Topic name (e.g., 'apim', 'security', 'sts')
+
+        Returns:
+            The correct documentation URL or None if not found
+        """
+        topic_lower = topic.lower().strip()
+        return self.INTERNAL_DOCS.get(topic_lower)
+
+    def is_invalid_doc_url(self, url: str) -> bool:
+        """
+        Check if a URL matches a known invalid documentation URL pattern.
+
+        Args:
+            url: URL to check
+
+        Returns:
+            True if URL is known to be invalid, False otherwise
+        """
+        url_lower = url.lower()
+        for pattern in self.KNOWN_INVALID_DOC_PATTERNS:
+            if pattern.lower() in url_lower:
+                return True
+        return False
+
+    def get_correct_doc_url(self, invalid_url: str) -> Optional[str]:
+        """
+        Get the correct documentation URL for a known invalid URL.
+
+        Args:
+            invalid_url: The invalid URL to find a correction for
+
+        Returns:
+            The correct URL if a correction exists, None otherwise
+        """
+        invalid_url_lower = invalid_url.lower()
+        for pattern, correct_url in self.INVALID_DOC_URL_CORRECTIONS.items():
+            if pattern.lower() in invalid_url_lower:
+                logger.info(f"Found doc URL correction: {invalid_url} -> {correct_url}")
+                return correct_url
+        return None
+
+    def fix_invalid_doc_url(self, url: str) -> str:
+        """
+        Fix an invalid documentation URL by replacing it with the correct one.
+
+        Args:
+            url: URL to fix
+
+        Returns:
+            The corrected URL or the original if no correction is available
+        """
+        correct_url = self.get_correct_doc_url(url)
+        if correct_url:
+            return correct_url
+        return url
 
     def _get_github_service(self):
         """Lazy load GitHub service with token from environment."""
