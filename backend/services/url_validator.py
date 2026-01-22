@@ -35,6 +35,65 @@ class URLValidator:
         'docs.choreo.dev',             # Choreo docs (alternative domain)
     ]
 
+    # Known INVALID documentation URL patterns that LLMs often hallucinate
+    # These URL patterns don't exist and should be removed from responses
+    KNOWN_INVALID_URL_PATTERNS = [
+        # Invalid Choreo doc URL paths - these are hallucinated by LLMs
+        'wso2.com/choreo/docs/ballerina',           # Ballerina docs are separate at ballerina.io
+        'wso2.com/choreo/docs/developer-tools',     # Wrong path structure
+        'wso2.com/choreo/docs/tutorials',           # Wrong path - should be specific tutorial paths
+        'wso2.com/choreo/docs/guides',              # Wrong path structure
+        'wso2.com/choreo/docs/quick-start',         # Wrong - should be 'quick-start-guides'
+        'wso2.com/choreo/docs/api-reference',       # Wrong path structure
+        'wso2.com/choreo/docs/samples',             # Wrong path structure
+        'wso2.com/choreo/docs/examples',            # Wrong path structure
+        'wso2.com/choreo/docs/getting-started/ballerina',  # Wrong combined path
+        'wso2.com/choreo/docs/deploy/ballerina',    # Wrong combined path
+        'wso2.com/choreo/docs/build/ballerina',     # Wrong combined path
+        'wso2.com/choreo/docs/test/ballerina',      # Wrong combined path
+        'wso2.com/choreo/docs/observability/ballerina',  # Wrong combined path
+        'wso2.com/choreo/docs/components/ballerina',     # Wrong combined path
+        # Invalid API Management paths - use internal docs instead
+        'wso2.com/choreo/docs/api-management',      # Wrong - use Choreo APIM Setup Guide doc
+        # Invalid Security paths - use internal docs instead
+        'wso2.com/choreo/docs/security',            # Wrong - use Choreo Light-Weight STS doc
+    ]
+
+    # Complete URL patterns that are known to be completely wrong
+    KNOWN_INVALID_URLS = [
+        'https://wso2.com/choreo/docs/ballerina/',
+        'https://wso2.com/choreo/docs/ballerina',
+        'https://wso2.com/choreo/docs/developer-tools/',
+        'https://wso2.com/choreo/docs/developer-tools',
+        'https://wso2.com/choreo/docs/tutorials/',
+        'https://wso2.com/choreo/docs/tutorials',
+        'https://wso2.com/choreo/docs/guides/',
+        'https://wso2.com/choreo/docs/guides',
+        'https://wso2.com/choreo/docs/api-reference/',
+        'https://wso2.com/choreo/docs/api-reference',
+        # Invalid API Management URLs - use internal Choreo APIM Setup Guide
+        'https://wso2.com/choreo/docs/api-management/',
+        'https://wso2.com/choreo/docs/api-management',
+        # Invalid Security URLs - use internal Choreo Light-Weight STS doc
+        'https://wso2.com/choreo/docs/security/',
+        'https://wso2.com/choreo/docs/security',
+        'https://wso2.com/choreo/docs/security/service-authentication/',
+        'https://wso2.com/choreo/docs/security/service-authentication',
+        'https://wso2.com/choreo/docs/api-management/security/',
+        'https://wso2.com/choreo/docs/api-management/security',
+    ]
+
+    # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
+    # When these invalid URLs are detected, they should be replaced with the correct ones
+    URL_CORRECTIONS = {
+        # Choreo APIM Setup Guide For Development
+        'wso2.com/choreo/docs/api-management': 'https://docs.google.com/document/d/1qkonR2EG7ppgn5jhrNyd8aMhBjxlgzHtZ_1Wb1hrs1c/edit?tab=t.0#heading=h.44xczcdf40wf',
+        # Choreo Light-Weight Security Token Service
+        'wso2.com/choreo/docs/security': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
+        'wso2.com/choreo/docs/security/service-authentication': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
+        'wso2.com/choreo/docs/api-management/security': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
+    }
+
     # GitHub URLs that need special handling (authenticated access)
     # These will be validated but with special logic
     GITHUB_ENTERPRISE_DOMAINS = [
@@ -77,10 +136,38 @@ class URLValidator:
         if self.choreo_registry:
             logger.info("Choreo Repository Registry integrated with URL validator")
 
+    def is_known_invalid_url(self, url: str) -> bool:
+        """
+        Check if URL matches known invalid URL patterns that LLMs commonly hallucinate.
+        These URLs look valid but don't actually exist.
+
+        Args:
+            url: URL to check
+
+        Returns:
+            True if URL is known to be invalid, False otherwise
+        """
+        url_lower = url.lower()
+
+        # Check exact matches first
+        for invalid_url in self.KNOWN_INVALID_URLS:
+            if url_lower == invalid_url.lower() or url_lower.rstrip('/') == invalid_url.lower().rstrip('/'):
+                logger.warning(f"URL matches known invalid URL: {url}")
+                return True
+
+        # Check pattern matches
+        for pattern in self.KNOWN_INVALID_URL_PATTERNS:
+            if pattern.lower() in url_lower:
+                logger.warning(f"URL matches known invalid pattern '{pattern}': {url}")
+                return True
+
+        return False
+
     def is_trusted_url(self, url: str) -> bool:
         """
         Check if URL is from a trusted domain (non-GitHub).
         GitHub URLs are NOT automatically trusted - they must be validated.
+        Known invalid URLs are NEVER trusted even if from trusted domains.
 
         Args:
             url: URL to check
@@ -88,6 +175,10 @@ class URLValidator:
         Returns:
             True if URL is from a trusted domain, False otherwise
         """
+        # First check if this is a known invalid URL - never trust these
+        if self.is_known_invalid_url(url):
+            return False
+
         # GitHub URLs should always be validated, not trusted
         if 'github.com' in url:
             return False
@@ -207,18 +298,98 @@ class URLValidator:
 
         return url, False
 
+    def get_correct_url_for_invalid(self, invalid_url: str) -> Optional[str]:
+        """
+        Get the correct URL replacement for a known invalid URL.
+
+        Args:
+            invalid_url: The invalid URL to find a correction for
+
+        Returns:
+            The correct URL if a correction exists, None otherwise
+        """
+        invalid_url_lower = invalid_url.lower()
+
+        for pattern, correct_url in self.URL_CORRECTIONS.items():
+            if pattern.lower() in invalid_url_lower:
+                logger.info(f"Found URL correction: {invalid_url} -> {correct_url}")
+                return correct_url
+
+        return None
+
+    def remove_known_invalid_urls(self, text: str) -> str:
+        """
+        Remove or replace known invalid URLs from text proactively.
+        When a correct URL is available, replaces the invalid URL with the correct one.
+        This catches hallucinated URLs before validation.
+
+        Args:
+            text: Text potentially containing invalid URLs
+
+        Returns:
+            Text with known invalid URLs replaced with correct ones or removed
+        """
+        filtered_text = text
+
+        # First, try to replace invalid URLs with correct ones
+        for pattern, correct_url in self.URL_CORRECTIONS.items():
+            # Build regex to match URLs containing this pattern
+            url_pattern = r'https?://[^\s\)\]\"\'\,\>\}]*' + re.escape(pattern) + r'[^\s\)\]\"\'\,\>\}]*'
+            matches = re.findall(url_pattern, filtered_text, re.IGNORECASE)
+            for match in matches:
+                logger.info(f"Replacing invalid URL '{match}' with correct URL: {correct_url}")
+                filtered_text = filtered_text.replace(match, correct_url)
+                # Also handle markdown format - replace the URL in the link
+                markdown_pattern = r'(\[[^\]]+\]\()' + re.escape(match) + r'(\))'
+                filtered_text = re.sub(markdown_pattern, r'\1' + correct_url + r'\2', filtered_text)
+
+        # Remove exact invalid URLs that don't have corrections
+        for invalid_url in self.KNOWN_INVALID_URLS:
+            # Skip if this URL has a correction (already handled above)
+            has_correction = any(pattern in invalid_url.lower() for pattern in self.URL_CORRECTIONS.keys())
+            if has_correction:
+                continue
+
+            if invalid_url in filtered_text:
+                logger.warning(f"Removing known invalid URL from text: {invalid_url}")
+                filtered_text = re.sub(re.escape(invalid_url), "[removed invalid URL]", filtered_text)
+                # Also handle markdown format
+                markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(invalid_url) + r'\)'
+                filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
+
+        # Remove URLs matching invalid patterns that don't have corrections
+        for pattern in self.KNOWN_INVALID_URL_PATTERNS:
+            # Skip if this pattern has a correction (already handled above)
+            if pattern in self.URL_CORRECTIONS:
+                continue
+
+            # Build regex to match URLs containing this pattern
+            url_pattern = r'https?://[^\s\)\]\"\'\,\>\}]*' + re.escape(pattern) + r'[^\s\)\]\"\'\,\>\}]*'
+            matches = re.findall(url_pattern, filtered_text, re.IGNORECASE)
+            for match in matches:
+                logger.warning(f"Removing URL matching invalid pattern '{pattern}': {match}")
+                filtered_text = filtered_text.replace(match, "[removed invalid URL]")
+                # Also handle markdown format
+                markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(match) + r'\)'
+                filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
+
+        return filtered_text
 
     def auto_fix_all_choreo_urls(self, text: str) -> str:
         """
         Aggressively fix ALL wso2 public org URLs to wso2-enterprise in text.
+        Also removes known invalid URLs.
         This catches any URLs the LLM generates before validation.
 
         Args:
             text: Text potentially containing incorrect Choreo URLs
 
         Returns:
-            Text with all wso2 public org URLs fixed to wso2-enterprise
+            Text with all wso2 public org URLs fixed to wso2-enterprise and invalid URLs removed
         """
+        # FIRST: Remove known invalid URLs
+        text = self.remove_known_invalid_urls(text)
+
         if not self.choreo_registry:
             return text
 
@@ -384,15 +555,15 @@ class URLValidator:
         """
         Remove invalid URLs from text.
         
-        IMPORTANT: Choreo documentation URLs (wso2.com/choreo/docs/*) are NEVER removed,
-        even if HTTP validation fails. We trust these URLs and keep them in the answer.
+        IMPORTANT: Choreo documentation URLs (wso2.com/choreo/docs/*) are generally kept,
+        EXCEPT for known invalid URL patterns that LLMs commonly hallucinate.
 
         Args:
             text: Text containing URLs
             validation_map: Dictionary mapping URLs to their validation status
             
         Returns:
-            Text with invalid URLs removed (except Choreo docs URLs which are always kept)
+            Text with invalid URLs removed (except valid Choreo docs URLs which are always kept)
         """
         if not validation_map:
             return text
@@ -401,7 +572,17 @@ class URLValidator:
         
         for url, is_valid in validation_map.items():
             if not is_valid:
-                # CRITICAL: NEVER remove Choreo documentation URLs
+                # FIRST: Check if this is a known invalid URL - ALWAYS remove these
+                if self.is_known_invalid_url(url):
+                    logger.warning(f"Removing known invalid URL: {url}")
+                    # Remove invalid URLs from text
+                    filtered_text = re.sub(re.escape(url), "[URL removed - invalid documentation path]", filtered_text)
+                    # Also remove markdown links containing this URL
+                    markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(url) + r'\)'
+                    filtered_text = re.sub(markdown_pattern, r'\1 [link removed - invalid path]', filtered_text)
+                    continue
+
+                # Keep valid Choreo documentation URLs
                 # These are trusted URLs from the knowledge base
                 if 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
                     logger.info(f"Keeping Choreo docs URL even though validation failed: {url}")
@@ -584,8 +765,12 @@ class URLValidator:
         urls_to_validate = []
 
         for url in urls:
-            # ALWAYS approve Choreo documentation URLs
-            if 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
+            # FIRST: Check if this is a known invalid URL - NEVER approve these
+            if self.is_known_invalid_url(url):
+                validation_results[url] = False
+                logger.warning(f"❌ Rejected known invalid URL: {url}")
+            # ALWAYS approve Choreo documentation URLs (after checking known invalid patterns)
+            elif 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
                 validation_results[url] = True
                 logger.info(f"✅ Auto-approved Choreo docs URL (trusted): {url}")
             # ALWAYS approve wso2-enterprise repository URLs
