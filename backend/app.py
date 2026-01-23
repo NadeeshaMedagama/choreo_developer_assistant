@@ -406,6 +406,17 @@ async def ask_ai(request: AskRequest):
         context_rows = high_quality_rows[:10]
         context_text = "\n".join(row.get("content", "") for row in context_rows if row.get("content"))
 
+        # 3.5 Enhance context with STS Runtime Flow knowledge if query is related
+        choreo_registry = get_choreo_registry()
+        if choreo_registry and choreo_registry.is_sts_runtime_query(question):
+            sts_runtime_info = choreo_registry.get_sts_runtime_flow_info(question)
+            context_text = f"{sts_runtime_info}\n\n{context_text}"
+            monitoring.log_info(
+                "STS Runtime Flow context injected",
+                logger_type='ai',
+                query_topic="sts_runtime"
+            )
+
         # 4. Use LLM-powered repo matcher to extract available repo URLs from context
         repo_matcher = get_llm_repo_matcher()
 
@@ -833,6 +844,17 @@ async def ask_ai_stream(request: AskRequest):
 
         context_rows = high_quality_rows[:5]
         context_text = "\n".join(row.get("content", "") for row in context_rows if row.get("content"))
+
+        # 3.5 Enhance context with STS Runtime Flow knowledge if query is related
+        choreo_registry = get_choreo_registry()
+        if choreo_registry and choreo_registry.is_sts_runtime_query(question):
+            sts_runtime_info = choreo_registry.get_sts_runtime_flow_info(question)
+            context_text = f"{sts_runtime_info}\n\n{context_text}"
+            monitoring.log_info(
+                "STS Runtime Flow context injected (streaming)",
+                logger_type='ai',
+                query_topic="sts_runtime"
+            )
 
         # 4. Extract source documents
         RELEVANCE_THRESHOLD = 0.70
