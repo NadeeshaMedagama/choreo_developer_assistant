@@ -301,6 +301,29 @@ class ChoreoRepoRegistry:
         "bfsi-demo-samples": ("wso2-enterprise", "bfsi-demo-samples", "BFSI demo samples on choreo"),
         "wso2-baremetal-kube-cluster-provisioner": ("wso2-enterprise", "wso2-baremetal-kube-cluster-provisioner", "Baremetal kubernetes cluster provisioning scripts for choreo"),
         "ballerina-registry-control-plane": ("wso2-enterprise", "ballerina-registry-control-plane", "Ballerina registry control plane"),
+
+        # Data Plane Components (from Important links.docx)
+        "choreodp-auth-module": ("wso2-enterprise", "choreodp-auth-module", "Choreo dataplane authentication module"),
+        "choreodp-cicd": ("wso2-enterprise", "choreodp-cicd", "Choreo dataplane CI/CD components and Argo workflows"),
+        "choreodp-secret-manager": ("wso2-enterprise", "choreodp-secret-manager", "Choreo dataplane secret manager"),
+        "choreodp-mizzen": ("wso2-enterprise", "choreodp-mizzen", "Choreo dataplane mizzen and mizzen-agent"),
+        "choreodp-project-manager": ("wso2-enterprise", "choreodp-project-manager", "Choreo dataplane project manager"),
+        "choreodp-cloud-manager": ("wso2-enterprise", "choreodp-cloud-manager", "Choreo dataplane cloud manager"),
+        "choreodp-garbage-collector": ("wso2-enterprise", "choreodp-garbage-collector", "Choreo dataplane garbage collector"),
+        "choreodp-kv-resolver": ("wso2-enterprise", "choreodp-kv-resolver", "Choreo dataplane key-value resolver"),
+        "choreodp-git-runners": ("wso2-enterprise", "choreodp-git-runners", "Choreo dataplane GitHub runners"),
+
+        # Microgateway
+        "product-microgateway": ("wso2-enterprise", "product-microgateway", "WSO2 Microgateway used by Choreo"),
+
+        # Alert Configuration
+        "choreo-alert-configuration-service": ("wso2-enterprise", "choreo-alert-configuration-service", "Service for configuring alerts in Choreo"),
+
+        # Metered Usage
+        "choreo-metered-usage-handler": ("wso2-enterprise", "choreo-metered-usage-handler", "Service for handling metered usage in Choreo"),
+
+        # Growth Hacking
+        "growth-hacking": ("wso2-enterprise", "growth-hacking", "Growth hacking tools including BigQuery data pipeline"),
     }
 
     # Known aliases for components
@@ -312,6 +335,213 @@ class ChoreoRepoRegistry:
         "runtime": "choreo-runtime",
         "linker": "choreo-linker",
         "negotiator": "choreo-negotiator",
+    }
+
+    # Service name to Repository mapping
+    # Maps deployed service names to their source repositories
+    # Source: https://github.com/wso2-enterprise/choreo-ci-tools/blob/main/ci-webhook-server/cmd/server/build.go
+    SERVICE_TO_REPO = {
+        # AI Services
+        "anomaly-detector": "choreo-ai-anomaly-detector",
+        "anomaly-detector-init": "choreo-ai-anomaly-detector",
+        "capacity-planner": "choreo-ai-capacity-planner",
+        "capacity-planner-init": "choreo-ai-capacity-planner",
+        "datamapper": "choreo-ai-data-mapper",
+        "datamapper-balo-extractor": "choreo-ai-data-mapper",
+        "datamapper-init": "choreo-ai-data-mapper",
+        "deployment-optimizer": "choreo-ai-deployment-optimizer",
+        "deployment-optimizer-init": "choreo-ai-deployment-optimizer",
+        "data-collector": "choreo-ai-data-collector",
+        "lowcode-parser": "choreo-ai-data-collector",
+        "multivariate-anomaly-detector-notification-manager": "choreo-ai-multivariate-anomaly-detector",
+        "perfanalyzer-estimator": "choreo-ai-performance-analyzer",
+        "perfanalyzer-updater": "choreo-ai-performance-analyzer",
+        "programanalyzer": "choreo-ai-program-analyzer",
+        "test-assistant": "choreo-ai-test-assistant",
+        "test-assistant-init": "choreo-ai-test-assistant",
+        "choreo-ai-insights-assistant": "choreo-ai-insight-assistant",
+        "architect-agent-api-design": "choreo-ai-copilot",
+        "copilot-datacollector": "choreo-ai-copilot",
+
+        # Runtime Services
+        "api-server": "choreo-runtime",
+        "app-deployer": "choreo-runtime",
+        "app-service": "choreo-runtime",
+        "workspace-manager": "choreo-runtime",
+        "code-server-default-backend": "choreo-runtime",
+
+        # CI/CD Tools
+        "ast-archive": "choreo-ci-tools",
+        "ast-archiver": "choreo-ci-tools",
+        "choreo-programcleaner": "choreo-ci-tools",
+
+        # Connector Services
+        "choreo-connectords": "choreo-connector-data-service",
+
+        # APIM Services
+        "choreo-apim-service": "choreo-apim",
+        "choreo-mgw-adapter": "product-microgateway",
+        "choreo-mgw-enforcer": "product-microgateway",
+        "choreo-mgw-router": "product-microgateway",
+        "choreo-apk-adapter": "choreo-product-apim",
+        "choreo-apk-common-controller": "choreo-product-apim",
+        "choreo-apk-enforcer": "choreo-product-apim",
+        "choreo-apk-rate-limiter": "choreo-product-apim",
+        "choreo-apk-router": "choreo-product-apim",
+        "choreo-apk-config-deployer-service": "choreo-product-apim",
+        "choreo-analytics-api": "choreo-apim-analytics-api",
+
+        # Email and Notifications
+        "email-service": "choreo-email",
+        "alert-notification-service": "choreo-alert-notification-service",
+        "alert-configuration-service": "choreo-alert-configuration-service",
+
+        # Language Server
+        "lang-server": "choreo-lang-server",
+
+        # Observability
+        "observability-api": "choreo-obsapi",
+        "observability-api-dp": "choreo-obsapi",
+        "observability-data-generator": "choreo-demo-tools",
+        "choreo-sys-obsapi-dp": "choreo-sys-obsapi",
+        "choreo-alerting-api": "choreo-alerting",
+
+        # Data Plane Services
+        "dp-auth-module": "choreodp-auth-module",
+        "dp-cicd": "choreodp-cicd",
+        "dp-cicd-runners-cleaner": "choreodp-cicd",
+        "dp-cicd-build-status-cleaner": "choreodp-cicd",
+        "argo-base-image": "choreodp-cicd",
+        "argo-checkov-scan": "choreodp-cicd",
+        "argo-environment-cleanup": "choreodp-cicd",
+        "argo-environment-setup": "choreodp-cicd",
+        "argo-validations": "choreodp-cicd",
+        "argo-buildpack-build": "choreodp-cicd",
+        "argo-docker-build": "choreodp-cicd",
+        "argo-image-push": "choreodp-cicd",
+        "argo-trivy-scan": "choreodp-cicd",
+        "dp-rudder": "choreodp-rudder",
+        "dp-rudder-migration-service": "choreodp-rudder",
+        "dp-rudder-cilium": "choreodp-rudder",
+        "dp-secret-manager": "choreodp-secret-manager",
+        "dp-mizzen": "choreodp-mizzen",
+        "dp-mizzen-agent": "choreodp-mizzen",
+        "dp-project-manager": "choreodp-project-manager",
+        "dp-cloud-manager": "choreodp-cloud-manager",
+        "dp-garbage-collector": "choreodp-garbage-collector",
+        "dp-kv-resolver": "choreodp-kv-resolver",
+        "kube-rbac-proxy": "choreodp-kv-resolver",
+        "gh-runner": "choreodp-git-runners",
+
+        # Console
+        "choreo-console-next": "choreo-console",
+
+        # Delete and Cleanup
+        "delete-manager": "choreo-delete-manager",
+        "choreo-userapps-image-deleter": "choreo-userapp-image-deleter",
+
+        # Subscription and Billing
+        "analytics-subscription-mgt": "choreo-subscription-mgt",
+        "billing-service": "choreo-billing",
+        "choreo-aws-marketplace-client": "choreo-billing",
+        "stripe-salesforce-integrator": "choreo-billing",
+        "cost-optimizer": "choreo-billing",
+        "cost-optimizer-cp-service": "choreo-billing",
+        "cost-optimizer-cronjobs": "choreo-billing",
+        "cost-optimizer-dp-daily-cron": "choreo-billing",
+        "cost-optimizer-dp-monthly-cron": "choreo-billing",
+        "cloud-billing-api-service": "choreo-billing",
+        "cloud-billing-infra-publisher": "choreo-billing",
+
+        # CIO Dashboard
+        "cio-incident-configurator": "choreo-cio-dashboard",
+        "cio-incident-data-scraper": "choreo-cio-dashboard",
+        "cio-query-api": "choreo-cio-dashboard",
+        "cio-event-collector-service": "choreo-cio-dashboard",
+
+        # OpenTelemetry
+        "choreo-opentelemetry-collector": "choreo-opentelemetry",
+
+        # DevOps Portal
+        "choreo-devops-portal-api-native": "choreo-devops-portal-api",
+
+        # Global Adapter
+        "choreo-connect-global-adapter-v2": "choreo-connect-global-adapter",
+
+        # Marketplace
+        "endpoint-resolver": "choreo-marketplace",
+        "marketplace": "choreo-marketplace",
+        "resource-registry-service": "choreo-marketplace",
+        "connection-service": "choreo-marketplace",
+        "choreo-contract-service": "choreo-marketplace",
+
+        # PDP Manager
+        "pdp-manager": "choreo-pdp-manager",
+
+        # Platform Services
+        "platform-services-manager": "choreo-platform-services-manager",
+
+        # App Gateway
+        "app-gateway-oauth-agent": "choreo-app-gateway-oauth-agent",
+
+        # User Management and Authorization
+        "app-dev-user-mgt": "choreo-appdev-user-mgt",
+        "appdev-authorization": "choreo-appdev-authorization",
+
+        # Metered Usage
+        "metered-usage-handler-crons": "choreo-metered-usage-handler",
+        "metered-usage-handler-service": "choreo-metered-usage-handler",
+
+        # Control Plane Resiliency
+        "choreo-cp-sis": "choreo-cp-resiliency-framework",
+        "choreo-cp-rrs": "choreo-cp-resiliency-framework",
+        "choreo-cp-rrs-go": "choreo-cp-resiliency-framework",
+        "choreo-cp-resilient-invoker": "choreo-cp-resiliency-framework",
+
+        # Telemetry
+        "choreo-telemetry-go": "choreo-telemetry",
+
+        # Logging
+        "choreo-logging-dp": "choreo-logging",
+        "choreo-opensearch": "choreo-logging",
+        "choreo-logging-sidecar": "choreo-logging",
+        "choreo-log-enricher": "choreo-logging",
+        "choreo-logs-api": "choreo-logging",
+
+        # APIM AI
+        "marketplace-assistant": "apim-ai-deployments",
+        "spec-populator": "apim-ai-deployments",
+        "milvus-proxy": "apim-ai-deployments",
+
+        # Control Plane Declarative API
+        "choreo-cp-build-controller": "choreo-cp-declarative-api",
+        "choreo-cp-choreo-api": "choreo-cp-declarative-api",
+        "choreo-cp-environment-controller": "choreo-cp-declarative-api",
+        "choreo-cp-deployment-controller": "choreo-cp-declarative-api",
+        "choreo-cp-component-controller": "choreo-cp-declarative-api",
+        "choreo-cp-project-controller": "choreo-cp-declarative-api",
+
+        # Workflow Management
+        "workflow-mgt-service": "choreo-workflow-mgt",
+
+        # IAM
+        "api-key-service": "choreo-iam",
+        "sts-mgt-service": "choreo-iam",
+
+        # STS
+        "choreo-appdev-sts": "choreo-sts",
+
+        # Configuration Service
+        "configuration-schema-service": "choreo-cp-configuration-service",
+
+        # Gateway Adapter
+        "cp-gwadapter": "choreo-cp-gateway-adapter",
+
+        # CLI
+        "choreo-mcp-server-main": "choreo-cli",
+
+        # Growth Hacking
+        "choreo-bq-data-pipeline": "growth-hacking",
     }
 
     # Base GitHub URL
@@ -362,6 +592,9 @@ class ChoreoRepoRegistry:
         "wso2.com/choreo/docs/develop-components/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
         "wso2.com/choreo/docs/reference/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
         "wso2.com/choreo/docs/reference/faq/#choreo-cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/references/faq/#choreo-cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/getting-started/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/getting-started/cli/": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
     }
 
     # List of known INVALID documentation URL patterns (these don't exist)
@@ -382,6 +615,8 @@ class ChoreoRepoRegistry:
         "wso2.com/choreo/docs/develop-components/cli",
         "wso2.com/choreo/docs/reference/cli",
         "wso2.com/choreo/docs/reference/faq/#choreo-cli",
+        "wso2.com/choreo/docs/references/faq/#choreo-cli",
+        "wso2.com/choreo/docs/getting-started/cli",
     ]
 
     def __init__(self):
@@ -431,6 +666,16 @@ class ChoreoRepoRegistry:
             The correct URL if a correction exists, None otherwise
         """
         invalid_url_lower = invalid_url.lower()
+
+        # Regex-based corrections for common patterns
+        # This catches ALL CLI-related invalid URLs regardless of exact path
+        cli_pattern = re.compile(r'wso2\.com/choreo/docs/.*cli', re.IGNORECASE)
+        if cli_pattern.search(invalid_url_lower):
+            correct_url = "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/"
+            logger.info(f"Found CLI URL correction (regex): {invalid_url} -> {correct_url}")
+            return correct_url
+
+        # Static pattern matching for other URLs
         for pattern, correct_url in self.INVALID_DOC_URL_CORRECTIONS.items():
             if pattern.lower() in invalid_url_lower:
                 logger.info(f"Found doc URL correction: {invalid_url} -> {correct_url}")
@@ -451,6 +696,86 @@ class ChoreoRepoRegistry:
         if correct_url:
             return correct_url
         return url
+
+    def get_repo_for_service(self, service_name: str) -> Optional[str]:
+        """
+        Get the repository name for a given service name.
+
+        Args:
+            service_name: The name of the service (e.g., 'anomaly-detector', 'api-server')
+
+        Returns:
+            The repository name or None if not found
+        """
+        service_lower = service_name.lower().strip()
+        return self.SERVICE_TO_REPO.get(service_lower) or self.SERVICE_TO_REPO.get(service_name)
+
+    def get_github_url_for_service(self, service_name: str) -> Optional[str]:
+        """
+        Get the GitHub URL for a given service name.
+
+        Args:
+            service_name: The name of the service
+
+        Returns:
+            The GitHub URL or None if not found
+        """
+        repo_name = self.get_repo_for_service(service_name)
+        if repo_name:
+            # Look up the organization from OFFICIAL_REPOS
+            repo_info = self.OFFICIAL_REPOS.get(repo_name)
+            if repo_info:
+                org, repo, _ = repo_info
+                return f"{self.GITHUB_BASE}/{org}/{repo}"
+            # Default to wso2-enterprise if not in OFFICIAL_REPOS
+            return f"{self.GITHUB_BASE}/wso2-enterprise/{repo_name}"
+        return None
+
+    def get_service_info(self, service_name: str) -> Optional[Dict[str, str]]:
+        """
+        Get comprehensive information about a service including its repository.
+
+        Args:
+            service_name: The name of the service
+
+        Returns:
+            Dictionary with service info or None if not found
+        """
+        repo_name = self.get_repo_for_service(service_name)
+        if not repo_name:
+            return None
+
+        github_url = self.get_github_url_for_service(service_name)
+        repo_info = self.OFFICIAL_REPOS.get(repo_name)
+
+        return {
+            "service_name": service_name,
+            "repository": repo_name,
+            "github_url": github_url,
+            "description": repo_info[2] if repo_info else f"Repository for {service_name}",
+            "organization": repo_info[0] if repo_info else "wso2-enterprise",
+        }
+
+    def search_services(self, query: str) -> List[Dict[str, str]]:
+        """
+        Search for services matching a query.
+
+        Args:
+            query: Search query (partial match on service name)
+
+        Returns:
+            List of matching service info dictionaries
+        """
+        query_lower = query.lower()
+        results = []
+
+        for service_name, repo_name in self.SERVICE_TO_REPO.items():
+            if query_lower in service_name.lower() or query_lower in repo_name.lower():
+                info = self.get_service_info(service_name)
+                if info:
+                    results.append(info)
+
+        return results
 
     def _get_github_service(self):
         """
