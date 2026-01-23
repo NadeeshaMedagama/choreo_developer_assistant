@@ -129,6 +129,22 @@ configurations:
           required: false
           type: secret
 
+    # Google Search Grounding (Optional - enables real-time URL validation)
+    # When not configured, the system uses static URL correction mappings
+    - name: GOOGLE_API_KEY
+      valueFrom:
+        configForm:
+          displayName: Google API Key for Search Grounding (Optional)
+          required: false
+          type: secret
+
+    - name: GOOGLE_SEARCH_ENGINE_ID
+      valueFrom:
+        configForm:
+          displayName: Google Custom Search Engine ID (Optional)
+          required: false
+          type: string
+
     # Performance Tuning
     - name: ENABLE_LLM_SUMMARIZATION
       valueFrom:
