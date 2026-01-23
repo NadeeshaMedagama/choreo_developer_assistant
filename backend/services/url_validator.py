@@ -23,6 +23,14 @@ except ImportError:
     REGISTRY_AVAILABLE = False
     logger.warning("Choreo Repository Registry not available")
 
+# Import the URL Grounding Service
+try:
+    from .url_grounding_service import get_grounding_service
+    GROUNDING_AVAILABLE = True
+except ImportError:
+    GROUNDING_AVAILABLE = False
+    logger.warning("URL Grounding Service not available")
+
 
 class URLValidator:
     """Service to validate URLs and filter out broken/inaccessible ones."""
@@ -57,6 +65,10 @@ class URLValidator:
         'wso2.com/choreo/docs/api-management',      # Wrong - use Choreo APIM Setup Guide doc
         # Invalid Security paths - use internal docs instead
         'wso2.com/choreo/docs/security',            # Wrong - use Choreo Light-Weight STS doc
+        # Invalid Environment Management paths - use correct Choreo docs path
+        'wso2.com/choreo/docs/environment-management',  # Wrong - use devops-and-ci-cd/manage-environments
+        # Invalid Components Configuration paths - use correct Choreo docs path
+        'wso2.com/choreo/docs/components/configuration',  # Wrong - use develop-components/use-configuration-form
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -81,6 +93,12 @@ class URLValidator:
         'https://wso2.com/choreo/docs/security/service-authentication',
         'https://wso2.com/choreo/docs/api-management/security/',
         'https://wso2.com/choreo/docs/api-management/security',
+        # Invalid Environment Management URLs - correct is devops-and-ci-cd/manage-environments
+        'https://wso2.com/choreo/docs/environment-management/',
+        'https://wso2.com/choreo/docs/environment-management',
+        # Invalid Components Configuration URLs - correct is develop-components/use-configuration-form
+        'https://wso2.com/choreo/docs/components/configuration/',
+        'https://wso2.com/choreo/docs/components/configuration',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
@@ -92,6 +110,10 @@ class URLValidator:
         'wso2.com/choreo/docs/security': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
         'wso2.com/choreo/docs/security/service-authentication': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
         'wso2.com/choreo/docs/api-management/security': 'https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0',
+        # Environment Management - correct Choreo docs path
+        'wso2.com/choreo/docs/environment-management': 'https://wso2.com/choreo/docs/devops-and-ci-cd/manage-environments/',
+        # Components Configuration - correct Choreo docs path
+        'wso2.com/choreo/docs/components/configuration': 'https://wso2.com/choreo/docs/develop-components/use-configuration-form/',
     }
 
     # GitHub URLs that need special handling (authenticated access)
@@ -135,6 +157,11 @@ class URLValidator:
         self.choreo_registry = get_choreo_registry() if REGISTRY_AVAILABLE else None
         if self.choreo_registry:
             logger.info("Choreo Repository Registry integrated with URL validator")
+
+        # Initialize URL Grounding Service
+        self.grounding_service = get_grounding_service() if GROUNDING_AVAILABLE else None
+        if self.grounding_service:
+            logger.info("URL Grounding Service integrated with URL validator")
 
     def is_known_invalid_url(self, url: str) -> bool:
         """
@@ -685,6 +712,11 @@ class URLValidator:
 
         # Fix all wso2 public org URLs to wso2-enterprise
         auto_fixed_answer = self.auto_fix_all_choreo_urls(answer)
+
+        # STEP 0: Apply URL Grounding - correct known invalid URLs before validation
+        if self.grounding_service:
+            logger.info("Applying URL grounding to correct known invalid URLs")
+            auto_fixed_answer = await self.grounding_service.ground_text(auto_fixed_answer)
 
         # Extract URLs from the answer
         urls = self.extract_urls_from_text(auto_fixed_answer)
