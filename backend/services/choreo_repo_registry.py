@@ -356,6 +356,12 @@ class ChoreoRepoRegistry:
 
         # Invalid Components Configuration URLs -> Correct Choreo docs path
         "wso2.com/choreo/docs/components/configuration": "https://wso2.com/choreo/docs/develop-components/use-configuration-form/",
+
+        # Invalid CLI Documentation URL -> Correct Choreo CLI docs path
+        "wso2.com/choreo/docs/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/develop-components/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/reference/cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
+        "wso2.com/choreo/docs/reference/faq/#choreo-cli": "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/",
     }
 
     # List of known INVALID documentation URL patterns (these don't exist)
@@ -372,6 +378,10 @@ class ChoreoRepoRegistry:
         "wso2.com/choreo/docs/security",
         "wso2.com/choreo/docs/environment-management",
         "wso2.com/choreo/docs/components/configuration",
+        "wso2.com/choreo/docs/cli",
+        "wso2.com/choreo/docs/develop-components/cli",
+        "wso2.com/choreo/docs/reference/cli",
+        "wso2.com/choreo/docs/reference/faq/#choreo-cli",
     ]
 
     def __init__(self):
