@@ -75,6 +75,8 @@ class URLGroundingService:
         'wso2.com/choreo/docs/develop-components/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
         'wso2.com/choreo/docs/reference/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
         'wso2.com/choreo/docs/reference/faq/#choreo-cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
+        'wso2.com/choreo/docs/references/faq/#choreo-cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
+        'wso2.com/choreo/docs/getting-started/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
     }
 
     # Known invalid URL patterns that should be removed or corrected
@@ -95,6 +97,8 @@ class URLGroundingService:
         'wso2.com/choreo/docs/develop-components/cli',
         'wso2.com/choreo/docs/reference/cli',
         'wso2.com/choreo/docs/reference/faq/#choreo-cli',
+        'wso2.com/choreo/docs/references/faq/#choreo-cli',
+        'wso2.com/choreo/docs/getting-started/cli',
     ]
 
     # Topic to search query mapping for Google Search grounding
@@ -150,6 +154,16 @@ class URLGroundingService:
             Correct URL if found, None otherwise
         """
         url_lower = url.lower()
+
+        # Regex-based corrections for common patterns
+        # This catches ALL CLI-related invalid URLs regardless of exact path
+        cli_pattern = re.compile(r'wso2\.com/choreo/docs/.*cli', re.IGNORECASE)
+        if cli_pattern.search(url_lower):
+            correct_url = "https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/"
+            logger.info(f"Found CLI URL correction (regex): {url} -> {correct_url}")
+            return correct_url
+
+        # Static pattern matching for other URLs
         for pattern, correct_url in self.URL_CORRECTIONS.items():
             if pattern.lower() in url_lower:
                 logger.info(f"Found static URL correction: {url} -> {correct_url}")
