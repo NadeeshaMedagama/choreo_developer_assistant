@@ -570,6 +570,119 @@ class ChoreoRepoRegistry:
         "authentication": "https://docs.google.com/document/d/19NUdAdhpO-AqpCBdd8v7EegAZLrLPfREY-0PozXv3g0/edit?tab=t.0",
     }
 
+    # ==========================================
+    # STS RUNTIME FLOWS - DETAILED KNOWLEDGE BASE
+    # ==========================================
+    # This contains detailed information about STS runtime request flows
+    # Used when answering questions about OAuth2, OIDC, and STS routing
+    STS_RUNTIME_FLOWS = {
+        "description": """
+STS Runtime Flows Documentation
+
+All requests coming to the STS related to OAuth2, OIDC are considered as runtime requests.
+There are 2 ways this can happen:
+
+=== FIRST WAY: Requests from choreosts.dev domain ===
+
+Steps in this flow:
+1. The request comes to the nginx ingress controller in choreo-apim namespace
+2. If request has /auth or /commonauth paths:
+   → Request gets forwarded to sts.choreo.dev (APIM STS in Controlplane)
+3. For all other paths:
+   → Request gets forwarded to Choreo Appdev STS in choreodp-system namespace
+
+=== SECOND WAY: Requests from choreoapis.dev domain ===
+
+Steps in this flow:
+1. The request hits the choreoapis vhost in the ingress controller in choreo-apim namespace
+2. If request has /auth or /commonauth paths:
+   → Request gets forwarded to sts.choreo.dev (APIM STS in Controlplane)
+3. For all other paths:
+   → Request gets forwarded to the Gateway (Choreo Connect deployment) in choreo-apim namespace
+   → Gateway applies rate limiting and other policies
+   → Then forwards request to Choreo Appdev STS in choreodp-system namespace
+""",
+        "repositories": {
+            "choreo-sts": {
+                "url": "https://github.com/wso2-enterprise/choreo-sts",
+                "description": "Choreo Appdev STS - Security Token Service implementation",
+                "purpose": "Handles STS runtime requests in choreodp-system namespace"
+            },
+            "choreo-cp-env-overlay": {
+                "url": "https://github.com/wso2-enterprise/choreo-cp-env-overlay",
+                "description": "Environment overlays for Choreo control plane",
+                "purpose": "Contains ingress configurations for STS routing"
+            }
+        },
+        "ingress_configs": {
+            "appdev_sts_ingress": {
+                "url": "https://github.com/wso2-enterprise/choreo-cp-env-overlay/blob/prod/kustomize/prod-dataplane-us/choreodp-system/ingress/appdev-sts-ingress.yaml",
+                "description": "Appdev STS Ingress configuration for choreodp-system namespace",
+                "domain": "choreosts.dev"
+            },
+            "choreo_sts_ingress": {
+                "url": "https://github.com/wso2-enterprise/choreo-cp-env-overlay/blob/prod/kustomize/prod-dataplane-us/choreodp-system/ingress/choreo-sts-ingress.yaml",
+                "description": "Choreo STS Ingress configuration",
+                "domain": "choreosts.dev"
+            },
+            "choreoapis_vhost": {
+                "url": "https://github.com/wso2-enterprise/choreo-cp-env-overlay/blob/prod/helm/choreo-nginx-ingress-controller/choreoapis-vhost.conf",
+                "description": "Choreoapis VHost configuration for nginx ingress controller",
+                "domain": "choreoapis.dev"
+            }
+        },
+        "domains": {
+            "choreosts.dev": {
+                "description": "STS domain for OAuth2/OIDC requests",
+                "routing": {
+                    "/auth": "sts.choreo.dev (APIM STS in Controlplane)",
+                    "/commonauth": "sts.choreo.dev (APIM STS in Controlplane)",
+                    "other": "Choreo Appdev STS in choreodp-system namespace"
+                }
+            },
+            "choreoapis.dev": {
+                "description": "API domain for Choreo services",
+                "routing": {
+                    "/auth": "sts.choreo.dev (APIM STS in Controlplane)",
+                    "/commonauth": "sts.choreo.dev (APIM STS in Controlplane)",
+                    "other": "Gateway (Choreo Connect) → Choreo Appdev STS"
+                }
+            },
+            "sts.choreo.dev": {
+                "description": "APIM STS in Controlplane",
+                "purpose": "Handles /auth and /commonauth paths"
+            }
+        },
+        "namespaces": {
+            "choreo-apim": {
+                "description": "Contains nginx ingress controller and Gateway (Choreo Connect)",
+                "components": ["nginx ingress controller", "Choreo Connect deployment (Gateway)"]
+            },
+            "choreodp-system": {
+                "description": "Contains Choreo Appdev STS",
+                "components": ["Choreo Appdev STS"]
+            }
+        },
+        "key_paths": {
+            "/auth": "Forwarded to sts.choreo.dev (APIM STS in Controlplane)",
+            "/commonauth": "Forwarded to sts.choreo.dev (APIM STS in Controlplane)"
+        }
+    }
+
+    # Keywords that trigger STS runtime flow information
+    STS_RUNTIME_KEYWORDS = [
+        "sts runtime", "runtime flow", "oauth2 flow", "oidc flow",
+        "choreosts.dev", "choreoapis.dev", "sts.choreo.dev",
+        "/auth path", "/commonauth", "ingress controller",
+        "appdev sts", "apim sts", "token service flow",
+        "sts routing", "security token flow", "oauth request",
+        "oidc request", "choreo connect gateway",
+        "sts flow", "oauth flow", "oidc", "oauth2",
+        "choreodp-system", "choreo-apim namespace",
+        "nginx ingress", "vhost conf", "ingress yaml",
+        "appdev-sts-ingress", "choreo-sts-ingress"
+    ]
+
     # Mapping of INVALID documentation URL patterns to their CORRECT URLs
     # These are URLs that LLMs commonly hallucinate but don't actually exist
     INVALID_DOC_URL_CORRECTIONS = {
@@ -638,6 +751,80 @@ class ChoreoRepoRegistry:
         """
         topic_lower = topic.lower().strip()
         return self.INTERNAL_DOCS.get(topic_lower)
+
+    def is_sts_runtime_query(self, query: str) -> bool:
+        """
+        Check if a query is related to STS runtime flows.
+
+        Args:
+            query: User's question
+
+        Returns:
+            True if query is about STS runtime flows
+        """
+        query_lower = query.lower()
+        for keyword in self.STS_RUNTIME_KEYWORDS:
+            if keyword.lower() in query_lower:
+                return True
+        return False
+
+    def get_sts_runtime_flow_info(self, query: str = "") -> str:
+        """
+        Get detailed STS runtime flow information for LLM context.
+
+        Args:
+            query: Optional user query to customize the response
+
+        Returns:
+            Formatted string with STS runtime flow documentation and URLs
+        """
+        flows = self.STS_RUNTIME_FLOWS
+
+        info = f"""
+=== STS RUNTIME FLOWS KNOWLEDGE BASE ===
+
+{flows['description']}
+
+=== RELATED REPOSITORIES (VERIFIED URLS) ===
+
+1. **choreo-sts** - Choreo Appdev STS
+   - URL: {flows['repositories']['choreo-sts']['url']}
+   - Purpose: {flows['repositories']['choreo-sts']['purpose']}
+
+2. **choreo-cp-env-overlay** - Environment Overlays
+   - URL: {flows['repositories']['choreo-cp-env-overlay']['url']}
+   - Purpose: {flows['repositories']['choreo-cp-env-overlay']['purpose']}
+
+=== INGRESS CONFIGURATION FILES (VERIFIED URLS) ===
+
+1. **Appdev STS Ingress** (choreosts.dev):
+   - URL: {flows['ingress_configs']['appdev_sts_ingress']['url']}
+
+2. **Choreo STS Ingress** (choreosts.dev):
+   - URL: {flows['ingress_configs']['choreo_sts_ingress']['url']}
+
+3. **Choreoapis VHost Configuration** (choreoapis.dev):
+   - URL: {flows['ingress_configs']['choreoapis_vhost']['url']}
+
+=== DOMAIN ROUTING ===
+
+**choreosts.dev domain:**
+- /auth → sts.choreo.dev (APIM STS in Controlplane)
+- /commonauth → sts.choreo.dev (APIM STS in Controlplane)
+- Other paths → Choreo Appdev STS in choreodp-system namespace
+
+**choreoapis.dev domain:**
+- /auth → sts.choreo.dev (APIM STS in Controlplane)
+- /commonauth → sts.choreo.dev (APIM STS in Controlplane)
+- Other paths → Gateway (Choreo Connect) → Choreo Appdev STS
+
+=== NAMESPACES ===
+
+- **choreo-apim**: nginx ingress controller, Choreo Connect (Gateway)
+- **choreodp-system**: Choreo Appdev STS
+
+"""
+        return info
 
     def is_invalid_doc_url(self, url: str) -> bool:
         """
