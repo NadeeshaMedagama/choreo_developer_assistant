@@ -398,7 +398,11 @@ Use this context to answer the user's question accurately."""
                     max_tokens=max_tokens,
                     temperature=0.7
                 )
-                return response.choices[0].message.content
+                result = response.choices[0].message.content
+                # Apply URL grounding to correct any hallucinated URLs
+                if URL_GROUNDING_AVAILABLE:
+                    result = ground_response_urls(result)
+                return result
             except Exception as e:
                 logger.error(f"Azure OpenAI response failed: {e}")
                 return f"Error generating response: {str(e)}"
@@ -410,7 +414,11 @@ Use this context to answer the user's question accurately."""
                     max_tokens=max_tokens,
                     temperature=0.7
                 )
-                return response.choices[0].message.content
+                result = response.choices[0].message.content
+                # Apply URL grounding to correct any hallucinated URLs
+                if URL_GROUNDING_AVAILABLE:
+                    result = ground_response_urls(result)
+                return result
             except Exception as e:
                 logger.error(f"OpenAI response failed: {e}")
                 return f"Error generating response: {str(e)}"
