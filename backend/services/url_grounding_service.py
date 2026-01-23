@@ -69,6 +69,12 @@ class URLGroundingService:
 
         # Ballerina docs are at ballerina.io, not wso2.com
         'wso2.com/choreo/docs/ballerina': 'https://ballerina.io/learn/',
+
+        # Choreo CLI Documentation - correct path
+        'wso2.com/choreo/docs/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
+        'wso2.com/choreo/docs/develop-components/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
+        'wso2.com/choreo/docs/reference/cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
+        'wso2.com/choreo/docs/reference/faq/#choreo-cli': 'https://wso2.com/choreo/docs/choreo-cli/choreo-cli-overview/',
     }
 
     # Known invalid URL patterns that should be removed or corrected
@@ -85,6 +91,10 @@ class URLGroundingService:
         'wso2.com/choreo/docs/security',
         'wso2.com/choreo/docs/environment-management',
         'wso2.com/choreo/docs/components/configuration',
+        'wso2.com/choreo/docs/cli',
+        'wso2.com/choreo/docs/develop-components/cli',
+        'wso2.com/choreo/docs/reference/cli',
+        'wso2.com/choreo/docs/reference/faq/#choreo-cli',
     ]
 
     # Topic to search query mapping for Google Search grounding
