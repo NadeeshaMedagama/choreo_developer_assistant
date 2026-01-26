@@ -31,7 +31,7 @@ async def test_github_urls():
         "https://github.com/wso2-enterprise/choreo-ai-program-analyzer",
         "https://github.com/wso2-enterprise/choreo-linker",
         "https://github.com/wso2-enterprise/choreo-deployment",
-        "https://github.com/wso2-enterprise/choreo-observability",
+        # Removed: choreo-observability - does not exist
     ]
 
     print("\n1. Testing user-reported problematic URLs:")
