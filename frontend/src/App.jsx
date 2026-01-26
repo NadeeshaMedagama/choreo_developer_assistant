@@ -7,7 +7,7 @@ import { getApiUrl } from './config'
 const INITIAL_MESSAGE = {
   id: 1,
   role: "assistant",
-  content: "Hi, I'm **DevChoreo** – your AI assistant for the WSO2 Choreo platform! 🚀\n\nI can help you with:\n- 📚 Choreo platform concepts, features, and architecture\n- 🔧 Component development, deployment, and CI/CD workflows\n- 🔗 API management, integrations, and connectors\n- 📖 Documentation, code examples, and best practices\n- 🐛 Troubleshooting and debugging guidance\n- 🏗️ Internal implementation details and repository information\n\nWhat would you like to know about Choreo?",
+  content: "Hi, I'm **DevChoreo** – your AI assistant for the WSO2 Choreo platform! 🚀\n\nI can help you with:\n- 📚 Choreo platform concepts, features, and architecture\n- 🔧 Component development, deployment, and CI/CD workflows\n- 🔗 API management, integrations, and connectors\n- 📖 Documentation, code examples, and best practices\n- 🐛 Troubleshooting and debugging guidance\n- 🏗️ Internal implementation details and repository information\n- 📊 **Visual diagrams** for architecture, workflows, and data flows\n\nWhat would you like to know about Choreo?",
 };
 
 const STORAGE_KEY = 'devchoreo_conversations'
