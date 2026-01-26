@@ -69,6 +69,12 @@ class URLValidator:
         'wso2.com/choreo/docs/environment-management',  # Wrong - use devops-and-ci-cd/manage-environments
         # Invalid Components Configuration paths - use correct Choreo docs path
         'wso2.com/choreo/docs/components/configuration',  # Wrong - use develop-components/use-configuration-form
+        # Invalid Observability paths - do not exist
+        'wso2.com/choreo/docs/observability',            # Does not exist
+        # Invalid Alert Management paths - do not exist
+        'wso2.com/choreo/docs/alert-management',         # Does not exist
+        # Invalid Logging paths - do not exist
+        'wso2.com/choreo/docs/logging',                  # Does not exist
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -99,6 +105,15 @@ class URLValidator:
         # Invalid Components Configuration URLs - correct is develop-components/use-configuration-form
         'https://wso2.com/choreo/docs/components/configuration/',
         'https://wso2.com/choreo/docs/components/configuration',
+        # Invalid Observability URLs - do not exist
+        'https://wso2.com/choreo/docs/observability/',
+        'https://wso2.com/choreo/docs/observability',
+        # Invalid Alert Management URLs - do not exist
+        'https://wso2.com/choreo/docs/alert-management/',
+        'https://wso2.com/choreo/docs/alert-management',
+        # Invalid Logging URLs - do not exist
+        'https://wso2.com/choreo/docs/logging/',
+        'https://wso2.com/choreo/docs/logging',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
