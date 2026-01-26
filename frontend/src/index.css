@@ -48,6 +48,42 @@ html, body, #root {
   font-size: 0.9375rem; /* Slightly smaller than body text */
 }
 
+/* Mermaid diagram styling */
+.mermaid-diagram {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Make Mermaid diagrams responsive */
+.mermaid-diagram .node rect,
+.mermaid-diagram .node circle,
+.mermaid-diagram .node ellipse,
+.mermaid-diagram .node polygon {
+  fill: #f9fafb;
+  stroke: #4b5563;
+  stroke-width: 2px;
+}
+
+.mermaid-diagram .edgePath .path {
+  stroke: #6b7280;
+  stroke-width: 2px;
+}
+
+.mermaid-diagram .edgeLabel {
+  background-color: #f9fafb;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Dark mode Mermaid adjustments - handled by mermaid's theme */
+
 .prose p {
   margin-bottom: 1em;
   font-size: 1rem;
