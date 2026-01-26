@@ -33,10 +33,10 @@ That's it! Open http://localhost:5173 to use the application.
 
 ## Stack
 - Backend: FastAPI, Azure OpenAI, Milvus, LangChain, LangGraph
-- Frontend: React, Vite, Tailwind CSS
+- Frontend: React, Vite, Tailwind CSS, Mermaid.js (diagrams)
 - Monitoring: Prometheus, Grafana, Alertmanager, Structured Logging
 - Deployment: Docker, Choreo Platform
-- Advanced Features: Conversation Memory with Smart Summarization, Progressive Streaming Responses, Context-Aware Retrieval
+- Advanced Features: Conversation Memory with Smart Summarization, Progressive Streaming Responses, Context-Aware Retrieval, Automatic Diagram Generation
 
 ## ✨ Key Features
 
@@ -71,6 +71,14 @@ That's it! Open http://localhost:5173 to use the application.
 - **Smart Caching**: Caches validation results to avoid redundant checks
 - **Configurable**: Enable/disable validation and adjust timeout settings
 
+### 🎨 Mermaid Diagram Generation
+- **Automatic Diagram Detection**: AI detects when users ask about architecture, flows, or processes
+- **Multiple Diagram Types**: Flowcharts, sequence diagrams, architecture graphs, state diagrams
+- **Context-Aware**: Generates diagrams based on actual knowledge base content
+- **Interactive Rendering**: Beautiful, theme-aware diagrams with dark/light mode support
+- **Real-time Display**: Diagrams render instantly after streaming completes
+- **Error Handling**: Clear error messages with diagram code preview if rendering fails
+
 ### 📊 Production Monitoring
 - **23+ Metrics**: Infrastructure, application, AI, vector DB, and ingestion metrics
 - **Pre-built Dashboard**: Grafana dashboard with 8 key panels
@@ -104,6 +112,7 @@ That's it! Open http://localhost:5173 to use the application.
 - ⚡ **Progressive Streaming**: Answers appear word-by-word in real-time
 - 🔍 **Context-Aware Retrieval**: Uses conversation history to improve search results
 - 🚫 **Content Filtering**: Automatically excludes OpenChoreo content
+- 🎨 **Mermaid Diagrams**: Automatically generates visual diagrams for architecture and flows
 - 📊 **Memory Stats**: See token usage and summarization status
 
 **Using the API:**
@@ -123,9 +132,21 @@ curl -X POST "http://localhost:8000/api/ask" \
 # Streaming responses (progressive like ChatGPT)
 curl -X POST "http://localhost:8000/api/ask/stream?question=What%20is%20Choreo%3F"
 
+# Ask for diagrams (automatically generates Mermaid diagrams)
+curl -X POST "http://localhost:8000/api/ask/stream" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Show me the Choreo deployment architecture"}'
+
 # LangGraph-based query (advanced)
 curl -X POST "http://localhost:8000/api/ask_graph?question=What%20is%20Choreo%3F"
 ```
+
+**Example Diagram Queries:**
+- "Show me the Choreo deployment architecture"
+- "Explain how the CI/CD pipeline works"
+- "What's the authentication flow in Choreo?"
+- "Diagram the observability system components"
+
 ## 🚀 Deployment for Multiple Users
 
 ### ⚡ Quick Deploy (Easiest Method)
