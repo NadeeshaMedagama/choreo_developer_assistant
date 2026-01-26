@@ -18,6 +18,7 @@ from services.conversation_memory_manager import ConversationMemoryManager
 from services.url_validator import get_url_validator
 from services.choreo_repo_registry import get_choreo_registry
 from services.llm_repo_matcher import get_llm_repo_matcher
+from services.diagram_detection_service import get_diagram_detection_service
 from db.vector_client import VectorClient
 from utils.config import load_config
 from services.ingestion import IngestionService
@@ -346,7 +347,22 @@ async def ask_ai(request: AskRequest):
                 **memory_stats
             )
 
-        # 2. Enrich query with conversation context for better retrieval
+        # 2. Detect if query is asking for diagrams
+        diagram_service = get_diagram_detection_service()
+        is_diagram_query = diagram_service.is_diagram_query(question)
+        diagram_type = None
+        diagram_metadata = {}
+
+        if is_diagram_query:
+            diagram_type = diagram_service.detect_diagram_type(question)
+            monitoring.log_info(
+                f"Diagram query detected",
+                logger_type='ai',
+                diagram_type=diagram_type or "general",
+                query=question[:100]
+            )
+
+        # 3. Enrich query with conversation context for better retrieval
         enriched_query = question
         if summary or recent_messages:
             context_parts = []
@@ -366,7 +382,11 @@ async def ask_ai(request: AskRequest):
 
             enriched_query = f"{chr(10).join(context_parts)}\nCurrent question: {question}"
 
-        # 3. Retrieve context from vector DB
+        # Enhance query for diagram searches
+        if is_diagram_query:
+            enriched_query, diagram_metadata = diagram_service.enhance_query_for_diagrams(enriched_query)
+
+        # 4. Retrieve context from vector DB
         search_start = time.time()
         try:
             similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
@@ -562,6 +582,18 @@ async def ask_ai(request: AskRequest):
             context_urls=all_extracted_urls,
             source_urls=[]  # Already combined above
         )
+
+        # Add diagram generation enhancement if this is a diagram query
+        if is_diagram_query:
+            diagram_enhancement = diagram_service.generate_diagram_prompt_enhancement(
+                question, diagram_type
+            )
+            system_prompt += f"\n\n{diagram_enhancement}"
+            monitoring.log_info(
+                "Added diagram generation instructions to system prompt",
+                logger_type='ai',
+                diagram_type=diagram_type or "general"
+            )
 
         messages = conversation_memory_manager.build_llm_messages(
             question=question,
@@ -787,7 +819,22 @@ async def ask_ai_stream(request: AskRequest):
                 **memory_stats
             )
 
-        # 2. Enrich query with conversation context
+        # 2. Detect if query is asking for diagrams
+        diagram_service = get_diagram_detection_service()
+        is_diagram_query = diagram_service.is_diagram_query(question)
+        diagram_type = None
+        diagram_metadata = {}
+
+        if is_diagram_query:
+            diagram_type = diagram_service.detect_diagram_type(question)
+            monitoring.log_info(
+                f"Diagram query detected (streaming)",
+                logger_type='ai',
+                diagram_type=diagram_type or "general",
+                query=question[:100]
+            )
+
+        # 3. Enrich query with conversation context
         enriched_query = question
         if summary or recent_messages:
             context_parts = []
@@ -805,7 +852,11 @@ async def ask_ai_stream(request: AskRequest):
 
             enriched_query = f"{chr(10).join(context_parts)}\nCurrent question: {question}"
 
-        # 3. Retrieve context from vector DB
+        # Enhance query for diagram searches
+        if is_diagram_query:
+            enriched_query, diagram_metadata = diagram_service.enhance_query_for_diagrams(enriched_query)
+
+        # 4. Retrieve context from vector DB
         search_start = time.time()
         try:
             similar_rows = context_manager.retrieve_by_text(enriched_query, top_k=10)
@@ -964,6 +1015,18 @@ async def ask_ai_stream(request: AskRequest):
             context_urls=all_extracted_urls,
             source_urls=[]  # Already combined above
         )
+
+        # Add diagram generation enhancement if this is a diagram query
+        if is_diagram_query:
+            diagram_enhancement = diagram_service.generate_diagram_prompt_enhancement(
+                question, diagram_type
+            )
+            system_prompt += f"\n\n{diagram_enhancement}"
+            monitoring.log_info(
+                "Added diagram generation instructions to system prompt (streaming)",
+                logger_type='ai',
+                diagram_type=diagram_type or "general"
+            )
 
 
         messages = conversation_memory_manager.build_llm_messages(
