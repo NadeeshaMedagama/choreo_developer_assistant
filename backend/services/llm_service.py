@@ -13,6 +13,149 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 
+def get_mermaid_instructions() -> str:
+    """Get Mermaid diagram generation instructions for the system prompt."""
+    return """
+MERMAID DIAGRAM GENERATION:
+When users ask about architecture, workflows, sequences, data flows, component interactions, or system design:
+- **ALWAYS generate Mermaid diagrams** to visualize the concepts
+- Use the knowledge base context to create accurate, detailed diagrams
+- Place diagrams in markdown code blocks with ```mermaid syntax
+- Provide both textual explanation AND visual diagram
+
+**CRITICAL: Use ONLY these diagram types (tested and working):**
+1. **flowchart TD** (or LR/RL/BT) - Use for: processes, workflows, decision trees, CI/CD pipelines, data flows
+2. **sequenceDiagram** - Use for: API interactions, service communications, authentication flows
+3. **graph TD** (or LR/RL/BT) - Use for: architecture, component relationships, system design
+4. **stateDiagram-v2** - Use for: component lifecycles, deployment states, status transitions
+5. **classDiagram** - Use for: service relationships, data models (use sparingly)
+
+**DO NOT USE:** erDiagram, gitGraph, gantt, pie, journey (these cause rendering issues)
+
+**CRITICAL: Code Block Format - MUST FOLLOW EXACTLY:**
+
+❌ WRONG - Do NOT add text inside code block:
+```mermaid
+Here's a diagram showing the flow:
+flowchart TD
+    A --> B
+```
+
+✅ CORRECT - Only Mermaid syntax inside:
+```mermaid
+flowchart TD
+    A[Start] --> B[Process]
+    B --> C[End]
+```
+
+**Correct Format Structure:**
+1. Write explanation text BEFORE the code block
+2. Open code block with ```mermaid
+3. First line: diagram type + direction (flowchart TD, graph LR, etc.)
+4. Diagram nodes and connections
+5. Close code block with ```
+6. Write more explanation AFTER the code block
+
+**CORRECT Mermaid Syntax Examples:**
+
+Flowchart (ALWAYS specify direction: TD, LR, etc.):
+```mermaid
+flowchart TD
+    A[User Request] --> B{Authentication}
+    B -->|Valid| C[Process Request]
+    B -->|Invalid| D[Return Error]
+    C --> E[Query Database]
+    E --> F[Return Response]
+```
+
+Sequence Diagram:
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant Service
+    participant Database
+    User->>API: POST /api/deploy
+    API->>Service: Validate Request
+    Service->>Database: Store Config
+    Database-->>Service: Success
+    Service-->>API: Deployment Started
+    API-->>User: 202 Accepted
+```
+
+Architecture/Graph (ALWAYS specify direction):
+```mermaid
+graph LR
+    A[Frontend] --> B[API Gateway]
+    B --> C[Auth Service]
+    B --> D[Business Logic]
+    D --> E[Database]
+    D --> F[Cache]
+    C --> G[Identity Provider]
+```
+
+State Diagram (use stateDiagram-v2):
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Building
+    Building --> Testing
+    Testing --> Deployed: Success
+    Testing --> Failed: Error
+    Failed --> [*]
+    Deployed --> [*]
+```
+
+**SYNTAX RULES - MUST FOLLOW:**
+1. Always specify diagram type and direction (flowchart TD, graph LR, etc.)
+2. Use square brackets for labels: [Node Label]
+3. Use --> for solid arrows, -.-> for dotted arrows
+4. Use |Text| for edge labels: A -->|Success| B
+5. Use {} for decision nodes: B{Is Valid?}
+6. Keep node IDs simple (A, B, C or short words)
+7. Avoid special characters in node IDs
+8. Always use proper syntax - no shortcuts
+
+**When to Generate Diagrams:**
+✅ "How does X work?" → Generate flowchart TD
+✅ "What's the architecture of Y?" → Generate graph LR
+✅ "Explain the deployment process" → Generate flowchart TD
+✅ "How do components interact?" → Generate sequenceDiagram or graph
+✅ "What happens when a user does X?" → Generate sequenceDiagram
+✅ "Show me the data flow" → Generate flowchart TD
+✅ "What's the lifecycle?" → Generate stateDiagram-v2
+
+**Best Practices:**
+- ALWAYS test syntax mentally before generating
+- Keep diagrams focused (5-12 nodes optimal)
+- Use descriptive labels in square brackets
+- Include the most important components from the knowledge base
+- Prefer flowchart/graph for most use cases (most reliable)
+- Always explain the diagram in text before or after showing it
+
+**EXAMPLE - Complete Response with Diagram:**
+
+Here's how the Choreo deployment process works:
+
+```mermaid
+flowchart TD
+    A[Developer Pushes Code] --> B[GitHub Webhook]
+    B --> C[Choreo Workflow Manager]
+    C --> D[Build Container]
+    D --> E{Tests Pass?}
+    E -->|Yes| F[Push to Registry]
+    E -->|No| G[Notify Developer]
+    F --> H[Deploy to Runtime]
+    H --> I[Health Check]
+    I --> J[Production]
+```
+
+The deployment involves these key steps:
+1. Developer pushes code to GitHub...
+[detailed explanation]
+"""
+
+
 class LLMService:
     """Service for generating embeddings and LLM responses using various providers."""
 
@@ -298,7 +441,7 @@ Always provide complete, accurate answers about the Choreo platform."""
         max_tokens: int = 4096
     ) -> str:
         """Generate a text response using LLM with conversation history and retrieved context."""
-        system_prompt = """You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
 
 IMPORTANT INSTRUCTIONS:
 - You provide information about the Choreo platform (https://wso2.com/choreo/)
@@ -322,6 +465,8 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
+{get_mermaid_instructions()}
+
 🔴 CRITICAL URL POLICY - PREVENT WRONG URLS 🔴
 **PRIMARY INFORMATION SOURCES:**
 1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
@@ -340,7 +485,6 @@ When users ask about specific features, identify and explain the responsible Cho
 ✅ https://wso2.com/choreo/docs/
 ✅ https://wso2.com/choreo/docs/choreo-cli/get-started-with-the-choreo-cli/
 ✅ https://wso2.com/choreo/docs/devops/ci-pipelines/
-✅ https://wso2.com/choreo/docs/observability/monitoring/
 
 **What happens if you provide wrong URLs:**
 ❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
@@ -504,7 +648,7 @@ Always provide complete, accurate answers about the Choreo platform."""
         max_tokens: int = 10000
     ):
         """Generate a streaming text response using LLM with conversation history and retrieved context."""
-        system_prompt = """You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
+        system_prompt = f"""You are DevChoreo, an AI assistant for Choreo platform developers at WSO2.
 
 IMPORTANT INSTRUCTIONS:
 - You provide information about the Choreo platform (https://wso2.com/choreo/)
@@ -528,6 +672,8 @@ When users ask about specific features, identify and explain the responsible Cho
 - **Storage & Data**: choreo-key-value-storage, choreo-platform-services-manager
 - **Billing & Subscriptions**: choreo-billing, choreo-subscriptions, choreo-subscription-mgt
 
+{get_mermaid_instructions()}
+
 🔴 CRITICAL URL POLICY - PREVENT WRONG URLS 🔴
 **PRIMARY INFORMATION SOURCES:**
 1. Documentation source: https://github.com/wso2/docs-choreo-dev (public documentation repository)
@@ -546,7 +692,6 @@ When users ask about specific features, identify and explain the responsible Cho
 ✅ https://wso2.com/choreo/docs/
 ✅ https://wso2.com/choreo/docs/choreo-cli/get-started-with-the-choreo-cli/
 ✅ https://wso2.com/choreo/docs/devops/ci-pipelines/
-✅ https://wso2.com/choreo/docs/observability/monitoring/
 
 **What happens if you provide wrong URLs:**
 ❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
@@ -602,25 +747,35 @@ Use this context to answer the user's question accurately."""
                     model=self.deployment,
                     messages=messages,
                     max_tokens=max_tokens,
-                    temperature=0.7
+                    temperature=0.7,
+                    stream=True
                 )
-                return response.choices[0].message.content
+                for chunk in response:
+                    if chunk.choices and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, 'content') and delta.content:
+                            yield delta.content
             except Exception as e:
-                logger.error(f"Azure OpenAI response failed: {e}")
-                return f"Error generating response: {str(e)}"
+                logger.error(f"Azure OpenAI streaming failed: {e}")
+                yield f"Error generating response: {str(e)}"
         elif self.use_openai:
             try:
                 response = self.client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=messages,
                     max_tokens=max_tokens,
-                    temperature=0.7
+                    temperature=0.7,
+                    stream=True
                 )
-                return response.choices[0].message.content
+                for chunk in response:
+                    if chunk.choices and len(chunk.choices) > 0:
+                        delta = chunk.choices[0].delta
+                        if hasattr(delta, 'content') and delta.content:
+                            yield delta.content
             except Exception as e:
-                logger.error(f"OpenAI response failed: {e}")
-                return f"Error generating response: {str(e)}"
+                logger.error(f"OpenAI streaming failed: {e}")
+                yield f"Error generating response: {str(e)}"
         else:
-            return "LLM response generation not available with SentenceTransformer model."
+            yield "LLM response generation not available with SentenceTransformer model."
 
 
