@@ -163,48 +163,76 @@ class DiagramDetectionService:
 
         mermaid_syntax = mermaid_type_map.get(diagram_type, 'flowchart TD')
 
+        # Get example based on diagram type
+        examples = {
+            'flowchart TD': '''```mermaid
+flowchart TD
+    A[Start] --> B[Process]
+    B --> C{Decision}
+    C -->|Yes| D[Action 1]
+    C -->|No| E[Action 2]
+    D --> F[End]
+    E --> F
+```''',
+            'sequenceDiagram': '''```mermaid
+sequenceDiagram
+    participant A as Client
+    participant B as Server
+    A->>B: Request
+    B-->>A: Response
+```''',
+            'graph LR': '''```mermaid
+graph LR
+    A[Frontend] --> B[API Gateway]
+    B --> C[Service]
+    C --> D[Database]
+```''',
+            'stateDiagram-v2': '''```mermaid
+stateDiagram-v2
+    [*] --> Active
+    Active --> Inactive
+    Inactive --> Active
+    Active --> [*]
+```'''
+        }
+
+        example = examples.get(mermaid_syntax, examples['flowchart TD'])
+
         return f"""
 🎨 DIAGRAM GENERATION REQUIRED 🎨
 
-The user is asking for a visual explanation. You MUST:
-1. Generate a {mermaid_syntax} Mermaid diagram to answer this question
-2. Use the knowledge base context to make the diagram accurate and detailed
-3. Include all relevant components, flows, and interactions from the context
-4. Place the diagram in a ```mermaid code block
-5. Provide both the diagram AND a text explanation
+The user is asking for a visual explanation. Generate a {mermaid_syntax} Mermaid diagram.
 
-CRITICAL SYNTAX RULES:
-- Start with: {mermaid_syntax}
-- Use square brackets for labels: [Node Name]
-- Use --> for arrows (solid), -.-> for dotted
-- Use |Label| for arrow text: A -->|Success| B
-- Test syntax mentally before generating
-- Keep it simple and clear (5-12 nodes optimal)
+⚠️ CRITICAL SYNTAX RULES - VIOLATIONS WILL CAUSE RENDERING FAILURE:
 
-⚠️ CRITICAL: DO NOT PUT ANY TEXT INSIDE THE CODE BLOCK
-❌ WRONG:
+1. First line inside code block MUST be ONLY: {mermaid_syntax}
+   - NO descriptions, NO comments on the first line
+   
+2. NO text inside the mermaid code block except valid Mermaid syntax
+
+3. Node IDs: Use only letters, numbers, underscores (A, B1, UserService)
+   - ❌ WRONG: user-service, api.call, "my node"
+   - ✅ CORRECT: UserService, API_Call, MyNode
+
+4. Labels in brackets without quotes:
+   - ❌ WRONG: A["User Service"]
+   - ✅ CORRECT: A[User Service]
+
+5. Arrows must be exact:
+   - ✅ --> (solid), -.-> (dotted), -->|label| (with label)
+   - ❌ -> (wrong), -- > (spaces wrong)
+
+CORRECT EXAMPLE:
+{example}
+
+WRONG (DO NOT DO THIS):
 ```mermaid
-Here's a diagram:
-flowchart TD
-    A --> B
-```
-
-✅ CORRECT:
-Here's a diagram showing the flow:
-
-```mermaid
+Here is a diagram showing the architecture:
 {mermaid_syntax}
-    A[Start] --> B[Process]
-    B --> C[End]
+    A["Service"] -> B
 ```
 
-The diagram shows three steps...
-
-Remember: 
-- Text explanation goes OUTSIDE the code block
-- Only Mermaid syntax goes INSIDE
-- First line inside MUST be the diagram type
-- The diagram MUST be based on ACTUAL information from the retrieved context
+Generate the diagram based on ACTUAL information from the retrieved context.
 """
     
     def extract_diagram_keywords_from_context(self, context: str) -> List[str]:
