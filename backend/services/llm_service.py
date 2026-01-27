@@ -28,33 +28,54 @@ When users ask about architecture, workflows, sequences, data flows, component i
 2. **sequenceDiagram** - Use for: API interactions, service communications, authentication flows
 3. **graph TD** (or LR/RL/BT) - Use for: architecture, component relationships, system design
 4. **stateDiagram-v2** - Use for: component lifecycles, deployment states, status transitions
-5. **classDiagram** - Use for: service relationships, data models (use sparingly)
 
-**DO NOT USE:** erDiagram, gitGraph, gantt, pie, journey (these cause rendering issues)
+**DO NOT USE:** erDiagram, gitGraph, gantt, pie, journey, classDiagram (these cause rendering issues)
 
-**CRITICAL: Code Block Format - MUST FOLLOW EXACTLY:**
+**⚠️ CRITICAL SYNTAX RULES - MUST FOLLOW EXACTLY:**
 
-❌ WRONG - Do NOT add text inside code block:
-```mermaid
-Here's a diagram showing the flow:
-flowchart TD
-    A --> B
-```
+1. **First line MUST be diagram type + direction only:**
+   ✅ `flowchart TD`
+   ✅ `graph LR`
+   ✅ `sequenceDiagram`
+   ❌ `flowchart TD - This shows the flow` (NO descriptions on first line)
 
-✅ CORRECT - Only Mermaid syntax inside:
-```mermaid
-flowchart TD
-    A[Start] --> B[Process]
-    B --> C[End]
-```
+2. **NO descriptive text inside the code block:**
+   ❌ WRONG:
+   ```mermaid
+   Here's a diagram showing the architecture:
+   flowchart TD
+       A --> B
+   ```
+   
+   ✅ CORRECT:
+   ```mermaid
+   flowchart TD
+       A[Start] --> B[End]
+   ```
 
-**Correct Format Structure:**
-1. Write explanation text BEFORE the code block
-2. Open code block with ```mermaid
-3. First line: diagram type + direction (flowchart TD, graph LR, etc.)
-4. Diagram nodes and connections
-5. Close code block with ```
-6. Write more explanation AFTER the code block
+3. **Node IDs must be simple alphanumeric:**
+   ✅ `A`, `B1`, `UserService`, `API_Gateway`
+   ❌ `User-Service`, `api.gateway`, `my service`
+
+4. **Labels go in brackets, not quotes:**
+   ✅ `A[User Service]`
+   ✅ `B(Process Request)`
+   ✅ `C{Is Valid?}`
+   ❌ `A["User Service"]` (no quotes inside brackets)
+
+5. **Arrow syntax must be exact:**
+   ✅ `-->` (solid arrow)
+   ✅ `-.->` (dotted arrow)
+   ✅ `==>` (thick arrow)
+   ✅ `-->|label|` (arrow with label)
+   ❌ `-- >` (no spaces in arrows)
+   ❌ `->` (single dash doesn't work in flowchart)
+
+6. **Sequence diagram specific rules:**
+   ✅ `participant A as User`
+   ✅ `A->>B: Message`
+   ✅ `B-->>A: Response`
+   ❌ `participant A as "User"` (no quotes)
 
 **CORRECT Mermaid Syntax Examples:**
 
@@ -91,7 +112,6 @@ graph LR
     B --> D[Business Logic]
     D --> E[Database]
     D --> F[Cache]
-    C --> G[Identity Provider]
 ```
 
 State Diagram (use stateDiagram-v2):
@@ -106,32 +126,12 @@ stateDiagram-v2
     Deployed --> [*]
 ```
 
-**SYNTAX RULES - MUST FOLLOW:**
-1. Always specify diagram type and direction (flowchart TD, graph LR, etc.)
-2. Use square brackets for labels: [Node Label]
-3. Use --> for solid arrows, -.-> for dotted arrows
-4. Use |Text| for edge labels: A -->|Success| B
-5. Use {} for decision nodes: B{Is Valid?}
-6. Keep node IDs simple (A, B, C or short words)
-7. Avoid special characters in node IDs
-8. Always use proper syntax - no shortcuts
-
-**When to Generate Diagrams:**
-✅ "How does X work?" → Generate flowchart TD
-✅ "What's the architecture of Y?" → Generate graph LR
-✅ "Explain the deployment process" → Generate flowchart TD
-✅ "How do components interact?" → Generate sequenceDiagram or graph
-✅ "What happens when a user does X?" → Generate sequenceDiagram
-✅ "Show me the data flow" → Generate flowchart TD
-✅ "What's the lifecycle?" → Generate stateDiagram-v2
-
 **Best Practices:**
-- ALWAYS test syntax mentally before generating
-- Keep diagrams focused (5-12 nodes optimal)
-- Use descriptive labels in square brackets
-- Include the most important components from the knowledge base
-- Prefer flowchart/graph for most use cases (most reliable)
-- Always explain the diagram in text before or after showing it
+- Keep diagrams simple (5-10 nodes optimal)
+- Use clear, short labels
+- NO text descriptions inside code blocks
+- Write explanation BEFORE or AFTER the diagram
+- Always test syntax is valid before generating
 
 **EXAMPLE - Complete Response with Diagram:**
 
