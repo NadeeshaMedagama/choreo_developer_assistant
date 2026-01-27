@@ -233,7 +233,7 @@ class ChoreoRepoRegistry:
         "choreo-obs-manager": ("wso2-enterprise", "choreo-obs-manager", "Control plane logic for observability"),
         "choreo-obsapi": ("wso2-enterprise", "choreo-obsapi", "Observability API for Choreo"),
         "choreo-sys-obsapi": ("wso2-enterprise", "choreo-sys-obsapi", "API which retrieves system metrics of choreo user apps"),
-        "choreo-observability": ("wso2-enterprise", "choreo-observability", "Observability infrastructure"),
+        # Note: choreo-observability repo does not exist - removed from registry
         "choreo-telemetry": ("wso2-enterprise", "choreo-telemetry", "Telemetry and monitoring for Choreo"),
 
         # Organization Management
