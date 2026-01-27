@@ -73,11 +73,17 @@ That's it! Open http://localhost:5173 to use the application.
 
 ### 🎨 Mermaid Diagram Generation
 - **Automatic Diagram Detection**: AI detects when users ask about architecture, flows, or processes
-- **Multiple Diagram Types**: Flowcharts, sequence diagrams, architecture graphs, state diagrams
+- **Supported Diagram Types**:
+  - `flowchart TD/LR` - Workflows, CI/CD pipelines, data flows, decision trees
+  - `sequenceDiagram` - API interactions, authentication flows, service communications
+  - `graph TD/LR` - Architecture diagrams, component relationships, system design
+  - `stateDiagram-v2` - Component lifecycles, deployment states, status transitions
+- **Interactive Zoom Controls**: Zoom in/out (50%-300%), reset, and fullscreen view
+- **Fullscreen Mode**: Click expand button to view diagrams in a large modal overlay
 - **Context-Aware**: Generates diagrams based on actual knowledge base content
-- **Interactive Rendering**: Beautiful, theme-aware diagrams with dark/light mode support
-- **Real-time Display**: Diagrams render instantly after streaming completes
-- **Error Handling**: Clear error messages with diagram code preview if rendering fails
+- **Theme Support**: Beautiful diagrams with automatic dark/light mode adaptation
+- **Error Recovery**: Automatic syntax fixing and fallback mechanisms for robustness
+- **Resources**: [Mermaid Docs](https://mermaid.js.org/) | [Live Editor](https://mermaid.live/)
 
 ### 📊 Production Monitoring
 - **23+ Metrics**: Infrastructure, application, AI, vector DB, and ingestion metrics
