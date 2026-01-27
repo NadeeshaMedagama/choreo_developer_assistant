@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import mermaid from 'mermaid'
 
-// Initialize mermaid once with configuration
+// Initialize mermaid once with configuration - suppress error display
 mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
   securityLevel: 'loose',
-  logLevel: 'error',
+  logLevel: 'fatal', // Changed to fatal to suppress error messages
+  suppressErrorRendering: true, // Suppress the error diagram
   themeVariables: {
     fontSize: '14px',
     fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif'
@@ -17,6 +18,54 @@ mermaid.initialize({
     curve: 'basis'
   }
 })
+
+// Global cleanup function to remove Mermaid error elements
+function globalCleanupMermaidErrors() {
+  // Remove SVGs with error role
+  document.querySelectorAll('svg[aria-roledescription="error"]').forEach(el => el.remove())
+
+  // Remove elements containing error text
+  document.querySelectorAll('body > div, body > svg').forEach(el => {
+    const text = el.textContent || ''
+    if (text.includes('Syntax error in text') || text.includes('mermaid version')) {
+      el.remove()
+    }
+  })
+}
+
+// Set up a MutationObserver to catch and remove Mermaid errors as soon as they appear
+if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node
+          // Check if it's a mermaid error
+          if (el.tagName === 'SVG' && el.getAttribute('aria-roledescription') === 'error') {
+            el.remove()
+            continue
+          }
+          // Check if it contains mermaid error text
+          const text = el.textContent || ''
+          if (text.includes('Syntax error in text') || text.includes('mermaid version')) {
+            el.remove()
+          }
+        }
+      }
+    }
+  })
+
+  // Start observing when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      observer.observe(document.body, { childList: true, subtree: true })
+      globalCleanupMermaidErrors()
+    })
+  } else {
+    observer.observe(document.body, { childList: true, subtree: true })
+    globalCleanupMermaidErrors()
+  }
+}
 
 // Helper function to clean and fix mermaid code
 function cleanMermaidCode(chart) {
@@ -60,45 +109,76 @@ function fixCommonMermaidErrors(chart) {
 
   let fixed = chart
 
-  // Fix 1: Remove text descriptions that are not valid syntax (lines without arrows or keywords)
+  // Pre-fix: Remove any text before the diagram type declaration
+  const diagramTypeMatch = fixed.match(/(flowchart|graph|sequenceDiagram|stateDiagram-v2|stateDiagram|classDiagram|erDiagram|pie|gantt|gitGraph)/i)
+  if (diagramTypeMatch && diagramTypeMatch.index > 0) {
+    fixed = fixed.substring(diagramTypeMatch.index)
+  }
+
+  // Fix 0: Remove common LLM prefixes/descriptions on the first line
+  const firstLinePatterns = [
+    /^(Here's|Here is|Below is|The following|This is|I'll create|Let me create|Creating)[^]*?\n(flowchart|graph|sequenceDiagram|stateDiagram)/im,
+    /^[^]*?\n(flowchart|graph|sequenceDiagram|stateDiagram)/im
+  ]
+
+  for (const pattern of firstLinePatterns) {
+    const match = fixed.match(pattern)
+    if (match && match[1]) {
+      fixed = fixed.substring(fixed.indexOf(match[1]))
+      break
+    }
+  }
+
+  // Fix 1: Remove text descriptions that are not valid syntax
   const lines = fixed.split('\n')
-  const validKeywords = ['flowchart', 'graph', 'sequenceDiagram', 'stateDiagram', 'classDiagram', 'pie', 'gantt', 'gitGraph', 'erDiagram', 'subgraph', 'end', 'participant', 'actor', 'note', 'loop', 'alt', 'else', 'opt', 'par', 'critical', 'break', 'rect', 'style', 'linkStyle', 'classDef', 'class', 'direction', 'title', '%%']
+  const validKeywords = [
+    'flowchart', 'graph', 'sequenceDiagram', 'stateDiagram', 'classDiagram',
+    'pie', 'gantt', 'gitGraph', 'erDiagram', 'subgraph', 'end', 'participant',
+    'actor', 'note', 'loop', 'alt', 'else', 'opt', 'par', 'critical', 'break',
+    'rect', 'style', 'linkStyle', 'classDef', 'class', 'direction', 'title', '%%',
+    'activate', 'deactivate', 'autonumber', 'state', 'section'
+  ]
 
   const filteredLines = lines.filter((line, index) => {
     const trimmed = line.trim()
     if (!trimmed) return true // Keep empty lines
     if (index === 0) return true // Keep first line (diagram type)
 
-    // Keep lines with arrows, brackets, or valid keywords
-    const hasArrow = /-->|->|-.->|==>|--o|--x|<-->|<->|--\||o--|x--|->>|-->>|<<->>|<<-->>/.test(trimmed)
+    // Skip obvious description lines
+    if (/^(This|Here|The|Note|In this|Based on|Where|Each|Shows|Represents|Diagram|Figure)/i.test(trimmed)) {
+      return false
+    }
+
+    // Keep lines with valid Mermaid syntax patterns
+    const hasArrow = /-->|->|-.->|==>|--o|--x|<-->|<->|--\||o--|x--|->>|-->>|<<->>|<<-->>|~~~|--/.test(trimmed)
     const hasBrackets = /[\[\]\(\)\{\}]/.test(trimmed)
     const hasColon = trimmed.includes(':') && !trimmed.startsWith('http')
     const startsWithKeyword = validKeywords.some(kw => trimmed.toLowerCase().startsWith(kw.toLowerCase()))
-    const startsWithNodeId = /^[A-Za-z_][A-Za-z0-9_]*[\s\[\(\{]/.test(trimmed) || /^[A-Za-z_][A-Za-z0-9_]*$/.test(trimmed)
+    const startsWithNodeId = /^[A-Za-z_][A-Za-z0-9_]*[\s\[\(\{]/.test(trimmed) || /^[A-Za-z_][A-Za-z0-9_]*\s*-->/.test(trimmed)
     const isIndentedContent = line.startsWith('    ') || line.startsWith('\t')
+    const isStateTransition = /\[\*\]/.test(trimmed) // State diagram start/end
 
-    return hasArrow || hasBrackets || hasColon || startsWithKeyword || startsWithNodeId || isIndentedContent
+    return hasArrow || hasBrackets || hasColon || startsWithKeyword || startsWithNodeId || isIndentedContent || isStateTransition
   })
 
   fixed = filteredLines.join('\n')
 
   // Fix 2: Fix common arrow syntax issues
-  fixed = fixed.replace(/--\s*>/g, '-->') // "-- >" to "-->"
+  fixed = fixed.replace(/--\s+>/g, '-->') // "-- >" to "-->"
   fixed = fixed.replace(/-\s+->/g, '-->') // "- ->" to "-->"
-  fixed = fixed.replace(/\s*-{3,}\s*/g, '---') // Multiple dashes to three
+  fixed = fixed.replace(/\s+-{4,}\s+/g, ' --- ') // Multiple dashes to three
 
   // Fix 3: Ensure flowchart has direction if missing
-  if (fixed.match(/^flowchart\s*$/m)) {
-    fixed = fixed.replace(/^flowchart\s*$/m, 'flowchart TD')
-  }
+  fixed = fixed.replace(/^flowchart\s*$/m, 'flowchart TD')
+  fixed = fixed.replace(/^flowchart\s*\n/m, 'flowchart TD\n')
 
   // Fix 4: Ensure graph has direction if missing
-  if (fixed.match(/^graph\s*$/m)) {
-    fixed = fixed.replace(/^graph\s*$/m, 'graph TD')
-  }
+  fixed = fixed.replace(/^graph\s*$/m, 'graph TD')
+  fixed = fixed.replace(/^graph\s*\n/m, 'graph TD\n')
 
-  // Fix 5: Fix sequence diagram participant syntax
+  // Fix 5: Fix sequence diagram participant syntax - remove quotes
   fixed = fixed.replace(/participant\s+([A-Za-z0-9_]+)\s+as\s+"([^"]+)"/g, 'participant $1 as $2')
+  fixed = fixed.replace(/actor\s+([A-Za-z0-9_]+)\s+as\s+"([^"]+)"/g, 'actor $1 as $2')
 
   // Fix 6: Remove any HTML-like tags that LLMs sometimes add
   fixed = fixed.replace(/<[^>]*>/g, '')
@@ -108,7 +188,115 @@ function fixCommonMermaidErrors(chart) {
   fixed = fixed.replace(/\("([^"]+)"\)/g, '($1)')
   fixed = fixed.replace(/\{"([^"]+)"\}/g, '{$1}')
 
+  // Fix 8: Fix node IDs with special characters (replace with underscores)
+  fixed = fixed.replace(/([A-Za-z_])([A-Za-z0-9_]*)-([A-Za-z0-9_]+)\[/g, '$1$2_$3[')
+  fixed = fixed.replace(/([A-Za-z_])([A-Za-z0-9_]*)\.([A-Za-z0-9_]+)\[/g, '$1$2_$3[')
+
+  // Fix 9: Fix erDiagram relationship syntax issues
+  if (fixed.includes('erDiagram')) {
+    // Fix relationship lines - ensure proper syntax
+    fixed = fixed.replace(/\s+--\s+/g, ' -- ')
+    fixed = fixed.replace(/(\w+)\s*\|\|--o\{\s*(\w+)/g, '$1 ||--o{ $2')
+    fixed = fixed.replace(/(\w+)\s*\}o--\|\|\s*(\w+)/g, '$1 }o--|| $2')
+    fixed = fixed.replace(/(\w+)\s*\|\|--\|\|\s*(\w+)/g, '$1 ||--|| $2')
+    fixed = fixed.replace(/(\w+)\s*\}o--o\{\s*(\w+)/g, '$1 }o--o{ $2')
+  }
+
+  // Fix 10: Fix state diagram syntax
+  if (fixed.includes('stateDiagram')) {
+    // Ensure state names don't have spaces
+    fixed = fixed.replace(/state\s+"([^"]+)"\s+as\s+([A-Za-z0-9_]+)/g, 'state "$1" as $2')
+  }
+
+  // Fix 11: Remove markdown formatting that LLMs sometimes include
+  fixed = fixed.replace(/\*\*([^*]+)\*\*/g, '$1') // Bold
+  fixed = fixed.replace(/\*([^*]+)\*/g, '$1') // Italic
+  fixed = fixed.replace(/__([^_]+)__/g, '$1') // Bold
+  fixed = fixed.replace(/_([^_]+)_/g, '$1') // Italic
+
+  // Fix 12: Fix common typos in diagram types
+  fixed = fixed.replace(/^sequencediagram/im, 'sequenceDiagram')
+  fixed = fixed.replace(/^statediagram-v2/im, 'stateDiagram-v2')
+  fixed = fixed.replace(/^statediagram/im, 'stateDiagram')
+  fixed = fixed.replace(/^classdiagram/im, 'classDiagram')
+  fixed = fixed.replace(/^erdiagram/im, 'erDiagram')
+
+  // Fix 13: Remove trailing colons that cause issues
+  fixed = fixed.replace(/:\s*$/gm, '')
+
+  // Fix 14: Fix label text with problematic characters
+  fixed = fixed.replace(/\[([^\]]*[`'"][^\]]*)\]/g, (match, label) => {
+    return '[' + label.replace(/[`'"]/g, '') + ']'
+  })
+
+  // Fix 15: Remove common unicode characters that cause issues
+  fixed = fixed.replace(/[\u2018\u2019]/g, "'") // Smart single quotes
+  fixed = fixed.replace(/[\u201C\u201D]/g, '"') // Smart double quotes
+  fixed = fixed.replace(/[\u2013\u2014]/g, '-') // En/Em dashes
+  fixed = fixed.replace(/\u2026/g, '...') // Ellipsis
+
+  // Fix 16: Fix empty node definitions
+  fixed = fixed.replace(/\[\s*\]/g, '[Node]')
+  fixed = fixed.replace(/\(\s*\)/g, '(Node)')
+  fixed = fixed.replace(/\{\s*\}/g, '{Node}')
+
+  // Fix 17: Fix double arrows or malformed arrows
+  fixed = fixed.replace(/--+>/g, '-->')
+  fixed = fixed.replace(/-\.+->/g, '-.->')
+  fixed = fixed.replace(/=+>/g, '==>')
+
+  // Fix 18: Remove lines that are just dashes or equals
+  fixed = fixed.split('\n').filter(line => {
+    const trimmed = line.trim()
+    return !/^[-=]{2,}$/.test(trimmed)
+  }).join('\n')
+
+  // Fix 19: Fix subgraph labels
+  fixed = fixed.replace(/subgraph\s+"([^"]+)"/g, 'subgraph $1')
+
+  // Fix 20: Ensure no empty lines at start (after diagram type)
+  const fixedLines = fixed.split('\n')
+  let result = [fixedLines[0]]
+  let foundContent = false
+  for (let i = 1; i < fixedLines.length; i++) {
+    const line = fixedLines[i]
+    if (!foundContent && line.trim() === '') continue
+    foundContent = true
+    result.push(line)
+  }
+  fixed = result.join('\n')
+
   return fixed.trim()
+}
+
+// Pre-validate mermaid code before attempting to render
+async function validateMermaidCode(code) {
+  if (!code || typeof code !== 'string') {
+    return { valid: false, error: 'No code provided' }
+  }
+
+  const trimmed = code.trim()
+  const lines = trimmed.split('\n')
+
+  // Check minimum requirements
+  if (lines.length < 2) {
+    return { valid: false, error: 'Diagram too short' }
+  }
+
+  // Check first line is a valid diagram type
+  const firstLine = lines[0].trim().toLowerCase()
+  const validStarts = ['flowchart', 'graph', 'sequencediagram', 'statediagram', 'classdiagram', 'erdiagram', 'pie', 'gantt', 'gitgraph']
+  if (!validStarts.some(start => firstLine.startsWith(start))) {
+    return { valid: false, error: 'Invalid diagram type' }
+  }
+
+  // Try to parse
+  try {
+    await mermaid.parse(trimmed)
+    return { valid: true, error: null }
+  } catch (parseError) {
+    return { valid: false, error: parseError.message || 'Parse failed' }
+  }
 }
 
 // Helper to render with timeout and retry
@@ -117,6 +305,12 @@ async function renderWithTimeout(id, code, timeoutMs = 5000) {
   const lines = code.trim().split('\n')
   if (lines.length < 2) {
     throw new Error('Diagram code too short - needs at least diagram type and content')
+  }
+
+  // Pre-validate the syntax before rendering to prevent Mermaid error UI
+  const validation = await validateMermaidCode(code)
+  if (!validation.valid) {
+    throw new Error(`Invalid syntax: ${validation.error}`)
   }
 
   return Promise.race([
@@ -162,6 +356,58 @@ export default function MermaidDiagram({ chart, isDark }) {
   const [zoomLevel, setZoomLevel] = useState(1)
   const renderAttempted = useRef(false)
 
+  // Clean up any Mermaid error elements from the DOM
+  useEffect(() => {
+    const cleanupMermaidErrors = () => {
+      // Remove SVGs with error role
+      document.querySelectorAll('svg[aria-roledescription="error"]').forEach(el => {
+        el.remove()
+      })
+
+      // Remove any orphaned Mermaid error displays
+      const errorSelectors = [
+        '[id^="dmermaid"]',
+        '.mermaid-error',
+        '#mermaid-container-error',
+        '.error-icon',
+        '.error-text',
+        'text.error-text',
+        'g.error-icon'
+      ]
+      document.querySelectorAll(errorSelectors.join(', ')).forEach(el => {
+        el.remove()
+      })
+
+      // Remove any element containing "Syntax error in text" or "mermaid version"
+      document.querySelectorAll('body > div, body > svg').forEach(el => {
+        const text = el.textContent || ''
+        if (text.includes('Syntax error') || text.includes('mermaid version')) {
+          el.remove()
+        }
+      })
+
+      // Remove any fixed position elements that contain mermaid errors
+      document.querySelectorAll('body > div').forEach(el => {
+        const style = window.getComputedStyle(el)
+        if (style.position === 'fixed' || style.position === 'absolute') {
+          const text = el.textContent || ''
+          if (text.includes('mermaid') || text.includes('Syntax error')) {
+            el.remove()
+          }
+        }
+      })
+    }
+
+    // Run cleanup on mount and periodically
+    cleanupMermaidErrors()
+    const interval = setInterval(cleanupMermaidErrors, 500)
+
+    return () => {
+      clearInterval(interval)
+      cleanupMermaidErrors()
+    }
+  }, [])
+
   // Close fullscreen on Escape key - must be before any early returns
   useEffect(() => {
     const handleEscape = (e) => {
@@ -202,12 +448,34 @@ export default function MermaidDiagram({ chart, isDark }) {
           return
         }
 
-        // Update theme based on dark mode
+        // Early validation - check syntax before attempting render
+        const preValidation = await validateMermaidCode(cleanChart)
+        if (!preValidation.valid) {
+          // Try to use fallback diagram instead
+          const fallback = createFallbackDiagram(cleanChart)
+          if (fallback) {
+            const fallbackValidation = await validateMermaidCode(fallback)
+            if (!fallbackValidation.valid) {
+              setError(`Diagram syntax error: ${preValidation.error}`)
+              setIsRendering(false)
+              return
+            }
+            // Continue with fallback
+            console.log('Using fallback diagram due to syntax errors')
+          } else {
+            setError(`Diagram syntax error: ${preValidation.error}`)
+            setIsRendering(false)
+            return
+          }
+        }
+
+        // Update theme based on dark mode - also suppress errors
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',
           securityLevel: 'loose',
-          logLevel: 'error',
+          logLevel: 'fatal',
+          suppressErrorRendering: true,
           themeVariables: {
             fontSize: '14px',
             fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
@@ -254,6 +522,17 @@ export default function MermaidDiagram({ chart, isDark }) {
         console.error('Mermaid rendering error:', err)
         setError(err.message || 'Failed to render diagram')
         setIsRendering(false)
+
+        // Immediately cleanup any error elements Mermaid may have created
+        setTimeout(() => {
+          document.querySelectorAll('svg[aria-roledescription="error"]').forEach(el => el.remove())
+          document.querySelectorAll('body > div, body > svg').forEach(el => {
+            const text = el.textContent || ''
+            if (text.includes('Syntax error') || text.includes('mermaid version')) {
+              el.remove()
+            }
+          })
+        }, 0)
       }
     }
 
