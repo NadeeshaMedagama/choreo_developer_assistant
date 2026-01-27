@@ -114,6 +114,9 @@ class URLValidator:
         # Invalid Logging URLs - do not exist
         'https://wso2.com/choreo/docs/logging/',
         'https://wso2.com/choreo/docs/logging',
+        # Invalid GitHub repos - do not exist
+        'https://github.com/wso2-enterprise/choreo-observability',
+        'https://github.com/wso2/choreo-observability',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
