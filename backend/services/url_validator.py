@@ -37,10 +37,11 @@ class URLValidator:
     
     # Trusted domains that should bypass validation (only for non-GitHub URLs)
     # GitHub URLs should ALWAYS be validated to ensure repos actually exist
-    # NOTE: wso2.com is NOT trusted - we validate documentation URLs to ensure they're not 404
+    # NOTE: wso2.com/choreo/docs paths are validated, but main wso2.com/choreo is trusted
     TRUSTED_DOMAINS = [
         'console.choreo.dev',          # Choreo console
         'docs.choreo.dev',             # Choreo docs (alternative domain)
+        'wso2.com/choreo',             # Choreo main platform page (valid)
     ]
 
     # Known INVALID documentation URL patterns that LLMs often hallucinate
