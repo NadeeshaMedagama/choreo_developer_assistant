@@ -16,6 +16,27 @@ MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB per file
 API_CALL_DELAY = 0.02  # Reduced from 0.1 to 0.02 (20ms) for faster scanning
 MAX_PARALLEL_REQUESTS = 10  # Number of parallel directory scans
 
+# API Definition file patterns (keywords to look for in YAML/JSON file paths)
+API_KEYWORDS_IN_PATH = [
+    "openapi", "swagger", "api", "spec", "specification",
+    "rest", "graphql", "grpc", "schema", "endpoint",
+    "asyncapi", "raml", "wadl", "wsdl"
+]
+
+# Directories that typically contain API definitions
+API_DIRECTORIES = [
+    "api", "apis", "schema", "schemas", "graphql",
+    "proto", "protos", "specification", "specifications",
+    "openapi", "swagger", "grpc", "definitions"
+]
+
+# API Definition file extensions
+API_DEFINITION_EXTENSIONS = (
+    ".graphql",      # GraphQL schema files
+    ".gql",          # GraphQL shorthand extension
+    ".proto",        # Protocol Buffers (gRPC)
+)
+
 
 class GitHubService:
     """Service for interacting with GitHub API to fetch markdown files."""
@@ -357,8 +378,10 @@ class GitHubService:
         ULTRA-FAST version: Find all API definition files using GitHub Tree API (single API call).
 
         Searches for:
-        - OpenAPI/Swagger files: .yaml, .yml, .json (with 'openapi', 'swagger', or 'api' in path/name)
-        - API specification files
+        - GraphQL schema files: .graphql, .gql
+        - Protocol Buffer files: .proto (gRPC definitions)
+        - OpenAPI/Swagger files: .yaml, .yml, .json (with API-related keywords in path)
+        - AsyncAPI, RAML, WADL, WSDL specification files
 
         Args:
             owner: Repository owner
@@ -368,6 +391,7 @@ class GitHubService:
             List of dicts with 'path', 'name', 'sha', 'url', and 'file_type' for each API file
         """
         logger.info(f"🚀 Using ULTRA-FAST tree API to find API definition files in {owner}/{repo}")
+        logger.info(f"📋 Searching for: .graphql, .gql, .proto, and API-related .yaml/.yml/.json files")
 
         try:
             # Get the default branch
@@ -386,31 +410,50 @@ class GitHubService:
 
             # Filter for API definition files
             api_files = []
+            graphql_count = 0
+            proto_count = 0
+            yaml_json_count = 0
+
             for item in tree_items:
                 if item.get("type") == "blob":
-                    item_path = item.get("path", "").lower()
+                    original_path = item.get("path", "")
+                    item_path_lower = original_path.lower()
                     item_size = item.get("size", 0)
 
                     # Check if it's an API definition file
                     is_api_file = False
+                    file_type_detail = "api_definition"
 
-                    # Check for YAML/YML files with API indicators
-                    if item_path.endswith((".yaml", ".yml", ".json")):
-                        # Look for API-related keywords in path or filename
-                        if any(keyword in item_path for keyword in [
-                            "openapi", "swagger", "api", "spec", "specification",
-                            "rest", "graphql", "grpc"
-                        ]):
+                    # 1. GraphQL schema files (.graphql, .gql) - ALWAYS include
+                    if item_path_lower.endswith((".graphql", ".gql")):
+                        is_api_file = True
+                        file_type_detail = "graphql_schema"
+                        graphql_count += 1
+
+                    # 2. Protocol Buffer files (.proto) - ALWAYS include
+                    elif item_path_lower.endswith(".proto"):
+                        is_api_file = True
+                        file_type_detail = "protobuf"
+                        proto_count += 1
+
+                    # 3. YAML/YML/JSON files with API indicators
+                    elif item_path_lower.endswith((".yaml", ".yml", ".json")):
+                        # Check for API-related keywords in path or filename
+                        if any(keyword in item_path_lower for keyword in API_KEYWORDS_IN_PATH):
                             is_api_file = True
+                            yaml_json_count += 1
+                        # Also check if file is in an API-related directory
+                        elif any(f"/{api_dir}/" in item_path_lower or item_path_lower.startswith(f"{api_dir}/")
+                                 for api_dir in API_DIRECTORIES):
+                            is_api_file = True
+                            yaml_json_count += 1
 
                     if is_api_file:
                         # Check file size
                         if item_size > MAX_FILE_SIZE_BYTES:
-                            logger.warning(f"⚠️  Skipping large API file ({item_size} bytes): {item_path}")
+                            logger.warning(f"⚠️  Skipping large API file ({item_size} bytes): {original_path}")
                             continue
 
-                        # Get original path (with correct case)
-                        original_path = item.get("path", "")
                         file_name = original_path.split("/")[-1] if "/" in original_path else original_path
 
                         api_files.append({
@@ -419,12 +462,15 @@ class GitHubService:
                             "url": f"https://github.com/{owner}/{repo}/blob/{default_branch}/{original_path}",
                             "sha": item.get("sha", ""),
                             "size": item_size,
-                            "file_type": "api_definition"
+                            "file_type": file_type_detail
                         })
 
-                        logger.debug(f"✓ Found API file: {original_path} ({item_size} bytes)")
+                        logger.debug(f"✓ Found API file [{file_type_detail}]: {original_path} ({item_size} bytes)")
 
-            logger.info(f"🎉 ULTRA-FAST API search complete! Found {len(api_files)} API definition files")
+            logger.info(f"🎉 ULTRA-FAST API search complete! Found {len(api_files)} API definition files:")
+            logger.info(f"   📊 GraphQL schemas: {graphql_count}")
+            logger.info(f"   📊 Protocol Buffers: {proto_count}")
+            logger.info(f"   📊 YAML/JSON API specs: {yaml_json_count}")
             return api_files
 
         except Exception as e:
@@ -438,8 +484,10 @@ class GitHubService:
         Recursively find all API definition files in a repository with safety limits.
 
         Searches for:
-        - OpenAPI/Swagger files: .yaml, .yml, .json (with 'openapi', 'swagger', or 'api' in path/name)
-        - API specification files
+        - GraphQL schema files: .graphql, .gql
+        - Protocol Buffer files: .proto (gRPC definitions)
+        - OpenAPI/Swagger files: .yaml, .yml, .json (with API-related keywords in path)
+        - AsyncAPI, RAML, WADL, WSDL specification files
 
         Args:
             owner: Repository owner
@@ -454,8 +502,8 @@ class GitHubService:
         # Initialize shared files list on first call
         if _files_found is None:
             _files_found = []
-            logger.info(f"🔍 Searching for API DEFINITION FILES (.yaml, .yml, .json)")
-            logger.info(f"ℹ️  Looking for files with 'openapi', 'swagger', 'api', 'spec' in path")
+            logger.info(f"🔍 Searching for API DEFINITION FILES")
+            logger.info(f"📋 File types: .graphql, .gql, .proto, .yaml, .yml, .json (with API keywords)")
             logger.info(f"⚡ Using FAST PARALLEL SEARCH for speed optimization")
 
         api_files = []
@@ -489,19 +537,32 @@ class GitHubService:
                 item_path = item.get("path", "")
                 item_type = item.get("type", "")
                 item_name = item.get("name", "").lower()
+                item_path_lower = item_path.lower()
                 item_size = item.get("size", 0)
 
                 # Check for API definition files
                 if item_type == "file":
                     is_api_file = False
+                    file_type_detail = "api_definition"
 
-                    # Check for YAML/YML/JSON files with API indicators
-                    if item_name.endswith((".yaml", ".yml", ".json")):
+                    # 1. GraphQL schema files (.graphql, .gql) - ALWAYS include
+                    if item_name.endswith((".graphql", ".gql")):
+                        is_api_file = True
+                        file_type_detail = "graphql_schema"
+
+                    # 2. Protocol Buffer files (.proto) - ALWAYS include
+                    elif item_name.endswith(".proto"):
+                        is_api_file = True
+                        file_type_detail = "protobuf"
+
+                    # 3. YAML/YML/JSON files with API indicators
+                    elif item_name.endswith((".yaml", ".yml", ".json")):
                         # Look for API-related keywords
-                        if any(keyword in item_path.lower() for keyword in [
-                            "openapi", "swagger", "api", "spec", "specification",
-                            "rest", "graphql", "grpc"
-                        ]):
+                        if any(keyword in item_path_lower for keyword in API_KEYWORDS_IN_PATH):
+                            is_api_file = True
+                        # Also check if file is in an API-related directory
+                        elif any(f"/{api_dir}/" in item_path_lower or item_path_lower.startswith(f"{api_dir}/")
+                                 for api_dir in API_DIRECTORIES):
                             is_api_file = True
 
                     if is_api_file:
@@ -516,10 +577,10 @@ class GitHubService:
                             "url": item.get("html_url", ""),
                             "sha": item.get("sha", ""),
                             "size": item_size,
-                            "file_type": "api_definition"
+                            "file_type": file_type_detail
                         })
                         _files_found.append(item_path)
-                        logger.info(f"✓ Found API file: {item_path} ({item_size} bytes)")
+                        logger.info(f"✓ Found API file [{file_type_detail}]: {item_path} ({item_size} bytes)")
 
                 elif item_type == "dir":
                     directories.append(item_path)
@@ -569,6 +630,11 @@ class GitHubService:
         ULTRA-FAST version: Find both .md files AND API definition files using GitHub Tree API.
         Uses a single API call to get entire repository tree.
 
+        Searches for API files:
+        - GraphQL schema files: .graphql, .gql
+        - Protocol Buffer files: .proto (gRPC definitions)
+        - OpenAPI/Swagger files: .yaml, .yml, .json (with API-related keywords in path)
+
         Args:
             owner: Repository owner
             repo: Repository name
@@ -577,6 +643,7 @@ class GitHubService:
             Dict with 'markdown_files' and 'api_files' lists
         """
         logger.info(f"🚀 Using ULTRA-FAST tree API to find ALL files (markdown + API) in {owner}/{repo}")
+        logger.info(f"📋 API files include: .graphql, .gql, .proto, and API-related .yaml/.yml/.json")
 
         try:
             # Get the default branch
@@ -596,6 +663,9 @@ class GitHubService:
             # Filter for both markdown and API files
             markdown_files = []
             api_files = []
+            graphql_count = 0
+            proto_count = 0
+            yaml_json_count = 0
 
             for item in tree_items:
                 if item.get("type") == "blob":
@@ -612,7 +682,7 @@ class GitHubService:
                     file_name = item_path.split("/")[-1] if "/" in item_path else item_path
 
                     # Check if it's a markdown file
-                    if item_path.endswith(".md"):
+                    if item_path_lower.endswith(".md"):
                         markdown_files.append({
                             "path": item_path,
                             "name": file_name,
@@ -623,12 +693,44 @@ class GitHubService:
                         })
                         logger.debug(f"✓ Found markdown file: {item_path} ({item_size} bytes)")
 
-                    # Check if it's an API definition file
+                    # 1. GraphQL schema files (.graphql, .gql) - ALWAYS include
+                    elif item_path_lower.endswith((".graphql", ".gql")):
+                        api_files.append({
+                            "path": item_path,
+                            "name": file_name,
+                            "url": f"https://github.com/{owner}/{repo}/blob/{default_branch}/{item_path}",
+                            "sha": item.get("sha", ""),
+                            "size": item_size,
+                            "file_type": "graphql_schema"
+                        })
+                        graphql_count += 1
+                        logger.debug(f"✓ Found GraphQL schema: {item_path} ({item_size} bytes)")
+
+                    # 2. Protocol Buffer files (.proto) - ALWAYS include
+                    elif item_path_lower.endswith(".proto"):
+                        api_files.append({
+                            "path": item_path,
+                            "name": file_name,
+                            "url": f"https://github.com/{owner}/{repo}/blob/{default_branch}/{item_path}",
+                            "sha": item.get("sha", ""),
+                            "size": item_size,
+                            "file_type": "protobuf"
+                        })
+                        proto_count += 1
+                        logger.debug(f"✓ Found Proto file: {item_path} ({item_size} bytes)")
+
+                    # 3. YAML/YML/JSON files with API indicators
                     elif item_path_lower.endswith((".yaml", ".yml", ".json")):
-                        if any(keyword in item_path_lower for keyword in [
-                            "openapi", "swagger", "api", "spec", "specification",
-                            "rest", "graphql", "grpc"
-                        ]):
+                        is_api_file = False
+                        # Check for API-related keywords in path or filename
+                        if any(keyword in item_path_lower for keyword in API_KEYWORDS_IN_PATH):
+                            is_api_file = True
+                        # Also check if file is in an API-related directory
+                        elif any(f"/{api_dir}/" in item_path_lower or item_path_lower.startswith(f"{api_dir}/")
+                                 for api_dir in API_DIRECTORIES):
+                            is_api_file = True
+
+                        if is_api_file:
                             api_files.append({
                                 "path": item_path,
                                 "name": file_name,
@@ -637,9 +739,15 @@ class GitHubService:
                                 "size": item_size,
                                 "file_type": "api_definition"
                             })
+                            yaml_json_count += 1
                             logger.debug(f"✓ Found API file: {item_path} ({item_size} bytes)")
 
-            logger.info(f"🎉 ULTRA-FAST search complete! Found {len(markdown_files)} markdown files and {len(api_files)} API files")
+            logger.info(f"🎉 ULTRA-FAST search complete!")
+            logger.info(f"   📄 Markdown files: {len(markdown_files)}")
+            logger.info(f"   📊 GraphQL schemas: {graphql_count}")
+            logger.info(f"   📊 Protocol Buffers: {proto_count}")
+            logger.info(f"   📊 YAML/JSON API specs: {yaml_json_count}")
+            logger.info(f"   📊 Total API files: {len(api_files)}")
 
             return {
                 "markdown_files": markdown_files,
