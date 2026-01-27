@@ -225,4 +225,55 @@ html, body, #root {
   }
 }
 
+/* Hide Mermaid's global error display - comprehensive selectors */
+/* Mermaid creates error SVGs with specific patterns */
+svg[aria-roledescription="error"],
+svg[id*="mermaid"][aria-roledescription="error"],
+div[id*="mermaid"] svg[aria-roledescription="error"],
+#d[id^="mermaid"],
+.mermaid-error,
+#mermaid-container-error,
+.error-icon,
+.error-text {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide any inline mermaid error messages */
+[class*="mermaid"][class*="error"],
+svg[id^="mermaid"] + div[style*="position: absolute"],
+body > div:not([id]):not([class]) > svg[id^="mermaid"],
+body > div:not([id]):not([class]):has(> svg[id^="mermaid"]) {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide the mermaid error toast/overlay at the bottom of the page */
+body > div[style*="bottom"]:not([id]):not([class]),
+body > div[style*="fixed"]:not([id]):not([class]),
+body > div[style*="position: fixed"]:not([id]):not([class]) {
+  display: none !important;
+}
+
+/* Hide error text that Mermaid renders */
+text.error-text,
+.error-text,
+g.error-icon,
+.label.error {
+  display: none !important;
+}
+
+/* Specifically target Mermaid's error container styling */
+div:has(> svg[aria-roledescription="error"]) {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
 
