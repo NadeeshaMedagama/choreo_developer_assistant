@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 """
-Standalone script to ingest all markdown files from wso2-enterprise organization repositories
-filtered by the keyword 'choreo' into the Milvus database.
+Standalone script to ingest files from organization repositories into the Milvus database.
 
-This script:
-1. Searches for all repositories in wso2-enterprise organization containing 'choreo'
-2. Fetches all .md files from each repository
-3. Chunks the markdown content
-4. Generates embeddings using Azure OpenAI
-5. Stores embeddings in Milvus database
+This script supports two modes:
+1. DEFAULT MODE: Ingests markdown (.md) and API definition files (.yaml, .yml, .json, .graphql, .proto)
+2. ALL FILES MODE (--all-files): Ingests ALL text-based files including:
+   - Source code (.py, .js, .ts, .java, .go, .rs, .bal, etc.)
+   - Configuration files (.yaml, .yml, .json, .toml, .ini, etc.)
+   - Documentation (.md, .rst, .txt, etc.)
+   - Build files (Dockerfile, Makefile, pom.xml, etc.)
+   - Shell scripts (.sh, .bash, etc.)
+   - And many more text-based files
+   Binary files (images, archives, executables) are excluded.
 
 Usage:
+    # Default mode (markdown + API files only)
     python backend/scripts/ingest/ingest_wso2_choreo_repos.py
 
-    # Or with options:
-    python backend/scripts/ingest/ingest_wso2_choreo_repos.py --max-repos 5  # Limit to first 5 repos
+    # Ingest ALL files from repositories
+    python backend/scripts/ingest/ingest_wso2_choreo_repos.py --all-files
+
+    # With options:
+    python backend/scripts/ingest/ingest_wso2_choreo_repos.py --org wso2-enterprise --keyword choreo --all-files
+    python backend/scripts/ingest/ingest_wso2_choreo_repos.py --max-repos 5 --all-files
 """
 
 import sys
@@ -38,7 +46,7 @@ logger = get_logger(__name__)
 def main():
     """Main function to run the ingestion."""
     parser = argparse.ArgumentParser(
-        description="Ingest markdown files from wso2-enterprise organization repositories filtered by 'choreo'"
+        description="Ingest files from organization repositories filtered by keyword"
     )
     parser.add_argument(
         "--org",
@@ -58,6 +66,12 @@ def main():
         default=None,
         help="Maximum number of repositories to process (default: all)"
     )
+    parser.add_argument(
+        "--all-files",
+        action="store_true",
+        default=False,
+        help="Retrieve ALL files (code, config, docs, etc.) instead of just markdown and API files"
+    )
 
     args = parser.parse_args()
 
@@ -67,6 +81,10 @@ def main():
     logger.info(f"Organization: {args.org}")
     logger.info(f"Keyword filter: {args.keyword}")
     logger.info(f"Max repositories: {args.max_repos or 'All'}")
+    if args.all_files:
+        logger.info("📋 Mode: ALL FILES (code, config, docs, etc.)")
+    else:
+        logger.info("📋 Mode: MARKDOWN + API FILES only")
     logger.info("=" * 80)
 
     # Start keyboard monitor for manual skip feature
@@ -165,11 +183,21 @@ def main():
     logger.info("=" * 80)
 
     try:
-        result = ingestion_service.ingest_org_repositories(
-            org=args.org,
-            keyword=args.keyword,
-            max_repos=args.max_repos
-        )
+        # Choose the ingestion method based on --all-files flag
+        if args.all_files:
+            logger.info("🚀 Using ALL FILES mode - will retrieve all text-based files")
+            result = ingestion_service.ingest_org_repositories_all_files(
+                org=args.org,
+                keyword=args.keyword,
+                max_repos=args.max_repos
+            )
+        else:
+            logger.info("📄 Using default mode - will retrieve markdown and API files only")
+            result = ingestion_service.ingest_org_repositories(
+                org=args.org,
+                keyword=args.keyword,
+                max_repos=args.max_repos
+            )
 
         # Display results
         logger.info("\n" + "=" * 80)
@@ -186,6 +214,13 @@ def main():
         if result.get('total_files_dropped_memory', 0) > 0:
             logger.info(f"Total files dropped (memory): {result.get('total_files_dropped_memory', 0)}")
         logger.info(f"Total embeddings stored: {result.get('total_embeddings_stored', 0)}")
+
+        # Display file type breakdown for --all-files mode
+        if args.all_files and result.get('processed_by_type'):
+            logger.info("\nFiles processed by type:")
+            for ft, count in sorted(result.get('processed_by_type', {}).items()):
+                logger.info(f"  📁 {ft}: {count}")
+
         logger.info("=" * 80)
 
         # Display details for each repository
