@@ -763,6 +763,340 @@ class GitHubService:
                 "api_files": self.find_all_api_files(owner, repo)
             }
 
+    def find_all_files_fast(self, owner: str, repo: str, include_binary: bool = False) -> List[Dict[str, str]]:
+        """
+        ULTRA-FAST version: Find ALL files in a repository using GitHub Tree API.
+        Uses a single API call to get entire repository tree.
+
+        This method retrieves ALL file types including:
+        - Source code files (.py, .js, .ts, .java, .go, .rs, .c, .cpp, .rb, .php, .bal, etc.)
+        - Configuration files (.yaml, .yml, .json, .toml, .ini, .cfg, .conf, .env, etc.)
+        - Documentation files (.md, .rst, .txt, .adoc, etc.)
+        - API definition files (.graphql, .gql, .proto, .wsdl, etc.)
+        - Build files (Dockerfile, Makefile, pom.xml, build.gradle, package.json, etc.)
+        - Shell scripts (.sh, .bash, .zsh, etc.)
+        - And many more text-based files
+
+        Binary files (images, archives, executables) are excluded by default.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            include_binary: Whether to include binary files (default: False)
+
+        Returns:
+            List of dicts with 'path', 'name', 'sha', 'url', 'size', and 'file_type' for each file
+        """
+        logger.info(f"🚀 Using ULTRA-FAST tree API to find ALL files in {owner}/{repo}")
+        logger.info(f"📋 Retrieving all text-based files (code, config, docs, etc.)")
+
+        # File extensions that are typically binary and should be skipped by default
+        BINARY_EXTENSIONS = (
+            # Images
+            '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg', '.webp', '.tiff', '.tif',
+            # Archives
+            '.zip', '.tar', '.gz', '.bz2', '.xz', '.7z', '.rar', '.jar', '.war', '.ear',
+            # Executables and binaries
+            '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.a', '.lib', '.class', '.pyc', '.pyo',
+            # Media
+            '.mp3', '.mp4', '.avi', '.mov', '.wmv', '.flv', '.wav', '.ogg', '.webm',
+            # Fonts
+            '.ttf', '.otf', '.woff', '.woff2', '.eot',
+            # Documents (binary)
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+            # Database
+            '.db', '.sqlite', '.sqlite3', '.mdb',
+            # Other binary
+            '.lock', '.map', '.wasm',
+        )
+
+        # Text file extensions we explicitly want (for clarity in logs)
+        TEXT_EXTENSIONS = (
+            # Programming languages
+            '.py', '.pyw', '.pyx',  # Python
+            '.js', '.mjs', '.cjs', '.jsx',  # JavaScript
+            '.ts', '.tsx', '.mts', '.cts',  # TypeScript
+            '.java',  # Java
+            '.go',  # Go
+            '.rs',  # Rust
+            '.c', '.h', '.cpp', '.hpp', '.cc', '.cxx', '.hxx',  # C/C++
+            '.cs',  # C#
+            '.rb', '.rake', '.gemspec',  # Ruby
+            '.php', '.phtml',  # PHP
+            '.swift',  # Swift
+            '.kt', '.kts',  # Kotlin
+            '.scala', '.sc',  # Scala
+            '.bal',  # Ballerina
+            '.lua',  # Lua
+            '.r', '.rmd',  # R
+            '.pl', '.pm',  # Perl
+            '.ex', '.exs',  # Elixir
+            '.erl', '.hrl',  # Erlang
+            '.hs', '.lhs',  # Haskell
+            '.clj', '.cljs', '.cljc', '.edn',  # Clojure
+            '.dart',  # Dart
+            '.groovy', '.gvy', '.gy', '.gsh',  # Groovy
+            # Web
+            '.html', '.htm', '.xhtml',
+            '.css', '.scss', '.sass', '.less', '.styl',
+            '.vue', '.svelte',
+            # Configuration
+            '.yaml', '.yml',
+            '.json', '.jsonc', '.json5',
+            '.toml',
+            '.ini', '.cfg', '.conf', '.config',
+            '.env', '.env.example', '.env.sample', '.env.local',
+            '.properties',
+            '.xml', '.xsd', '.xsl', '.xslt',
+            # Documentation
+            '.md', '.markdown', '.mdx',
+            '.rst', '.txt', '.text',
+            '.adoc', '.asciidoc',
+            '.org',
+            '.tex', '.latex',
+            # API definitions
+            '.graphql', '.gql',
+            '.proto',
+            '.wsdl', '.wadl',
+            # Shell and scripts
+            '.sh', '.bash', '.zsh', '.fish',
+            '.ps1', '.psm1', '.psd1',  # PowerShell
+            '.bat', '.cmd',  # Windows batch
+            # Build and CI/CD
+            '.gradle',
+            '.cmake',
+            # Data formats
+            '.csv', '.tsv',
+            '.sql',
+            # Other
+            '.tf', '.tfvars',  # Terraform
+            '.hcl',  # HashiCorp
+            '.nix',  # Nix
+            '.vim', '.vimrc',
+            '.el', '.elisp',  # Emacs Lisp
+        )
+
+        # Files without extension that are typically text
+        TEXT_FILENAMES = (
+            'dockerfile', 'makefile', 'gnumakefile', 'rakefile', 'gemfile', 'guardfile',
+            'procfile', 'vagrantfile', 'jenkinsfile', 'berksfile', 'brewfile',
+            'cakefile', 'fastfile', 'podfile', 'cartfile', 'snapfile', 'appfile',
+            '.gitignore', '.gitattributes', '.gitmodules', '.dockerignore', '.npmignore',
+            '.eslintignore', '.prettierignore', '.hgignore', '.bzrignore',
+            'license', 'licence', 'copying', 'readme', 'changelog', 'history',
+            'authors', 'contributors', 'maintainers', 'thanks', 'credits',
+            'todo', 'fixme', 'notes', 'news', 'install', 'hacking',
+            '.editorconfig', '.babelrc', '.eslintrc', '.prettierrc', '.stylelintrc',
+            'requirements', 'requirements-dev', 'constraints',
+            'cargo.lock', 'package-lock', 'yarn.lock', 'go.sum', 'go.mod',
+            'pom.xml', 'build.gradle', 'build.gradle.kts', 'settings.gradle',
+        )
+
+        try:
+            # Get the default branch
+            repo_url = f"{self.base_url}/repos/{owner}/{repo}"
+            repo_data = self._make_request(repo_url)
+            default_branch = repo_data.get("default_branch", "main")
+
+            # Get the tree recursively (single API call for entire repo!)
+            tree_url = f"{self.base_url}/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1"
+            logger.info(f"📡 Fetching entire repository tree in ONE API call...")
+
+            tree_data = self._make_request(tree_url, use_cache=False)
+            tree_items = tree_data.get("tree", [])
+
+            logger.info(f"✓ Retrieved {len(tree_items)} items from repository tree")
+
+            # File counters by category
+            all_files = []
+            file_counts = {
+                "code": 0,
+                "config": 0,
+                "docs": 0,
+                "api_definition": 0,
+                "build": 0,
+                "other": 0,
+                "binary_skipped": 0,
+            }
+
+            for item in tree_items:
+                if item.get("type") == "blob":
+                    item_path = item.get("path", "")
+                    item_path_lower = item_path.lower()
+                    item_size = item.get("size", 0)
+
+                    # Extract filename from path
+                    file_name = item_path.split("/")[-1] if "/" in item_path else item_path
+                    file_name_lower = file_name.lower()
+
+                    # Check file size first
+                    if item_size > MAX_FILE_SIZE_BYTES:
+                        logger.warning(f"⚠️  Skipping large file ({item_size} bytes): {item_path}")
+                        continue
+
+                    # Check if it's a binary file
+                    if not include_binary and item_path_lower.endswith(BINARY_EXTENSIONS):
+                        file_counts["binary_skipped"] += 1
+                        logger.debug(f"⏭️  Skipping binary file: {item_path}")
+                        continue
+
+                    # Determine file type for categorization
+                    file_type = "code"  # Default
+                    if item_path_lower.endswith(('.md', '.markdown', '.mdx', '.rst', '.txt', '.adoc')):
+                        file_type = "documentation"
+                        file_counts["docs"] += 1
+                    elif item_path_lower.endswith(('.yaml', '.yml', '.json', '.toml', '.ini', '.cfg', '.conf', '.properties', '.xml', '.env')):
+                        file_type = "configuration"
+                        file_counts["config"] += 1
+                    elif item_path_lower.endswith(('.graphql', '.gql', '.proto', '.wsdl', '.wadl')):
+                        file_type = "api_definition"
+                        file_counts["api_definition"] += 1
+                    elif file_name_lower in ('dockerfile', 'makefile', 'jenkinsfile', 'vagrantfile') or item_path_lower.endswith(('.gradle', '.cmake')):
+                        file_type = "build"
+                        file_counts["build"] += 1
+                    elif item_path_lower.endswith(TEXT_EXTENSIONS):
+                        file_type = "code"
+                        file_counts["code"] += 1
+                    elif file_name_lower in TEXT_FILENAMES or any(file_name_lower.startswith(prefix) for prefix in ('.git', '.docker', '.eslint', '.prettier')):
+                        file_type = "other"
+                        file_counts["other"] += 1
+                    else:
+                        # Check if file has no extension or unknown extension
+                        # Include files without extension (often text files) unless they look binary
+                        if '.' not in file_name or item_path_lower.endswith(TEXT_EXTENSIONS):
+                            file_type = "other"
+                            file_counts["other"] += 1
+                        else:
+                            # Unknown extension - skip if we're being conservative
+                            # But let's include it anyway as "other" for completeness
+                            file_type = "other"
+                            file_counts["other"] += 1
+
+                    all_files.append({
+                        "path": item_path,
+                        "name": file_name,
+                        "url": f"https://github.com/{owner}/{repo}/blob/{default_branch}/{item_path}",
+                        "sha": item.get("sha", ""),
+                        "size": item_size,
+                        "file_type": file_type
+                    })
+
+                    logger.debug(f"✓ Found [{file_type}]: {item_path} ({item_size} bytes)")
+
+            logger.info(f"🎉 ULTRA-FAST search complete! Found {len(all_files)} files:")
+            logger.info(f"   💻 Code files: {file_counts['code']}")
+            logger.info(f"   📄 Documentation: {file_counts['docs']}")
+            logger.info(f"   ⚙️  Configuration: {file_counts['config']}")
+            logger.info(f"   🔧 API definitions: {file_counts['api_definition']}")
+            logger.info(f"   🏗️  Build files: {file_counts['build']}")
+            logger.info(f"   📁 Other: {file_counts['other']}")
+            if file_counts['binary_skipped'] > 0:
+                logger.info(f"   ⏭️  Binary skipped: {file_counts['binary_skipped']}")
+
+            return all_files
+
+        except Exception as e:
+            logger.warning(f"⚠️  Tree API failed: {e}")
+            logger.info(f"📂 Falling back to traditional directory scanning...")
+            # Fallback to regular directory scanning for all files
+            return self._find_all_files_recursive(owner, repo)
+
+    def _find_all_files_recursive(self, owner: str, repo: str, path: str = "", _depth: int = 0, _files_found: List = None) -> List[Dict[str, str]]:
+        """
+        Fallback method: Recursively find all text files in a repository.
+        Used when the tree API is not available.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            path: Starting path (empty for root)
+            _depth: Current recursion depth (internal)
+            _files_found: Shared list for tracking total files (internal)
+
+        Returns:
+            List of dicts with file information
+        """
+        if _files_found is None:
+            _files_found = []
+            logger.info(f"🔍 Using fallback recursive search for all files")
+
+        all_files = []
+
+        # Same binary extensions as above
+        BINARY_EXTENSIONS = (
+            '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.svg', '.webp',
+            '.zip', '.tar', '.gz', '.bz2', '.xz', '.7z', '.rar', '.jar',
+            '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.a', '.class', '.pyc',
+            '.mp3', '.mp4', '.avi', '.mov', '.wav', '.ogg',
+            '.ttf', '.otf', '.woff', '.woff2',
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+            '.db', '.sqlite', '.sqlite3',
+            '.lock', '.map', '.wasm',
+        )
+
+        if _depth > MAX_RECURSION_DEPTH:
+            logger.warning(f"⚠️  Max recursion depth reached at path: {path}")
+            return all_files
+
+        if len(_files_found) >= MAX_FILES_PER_SCAN:
+            logger.warning(f"⚠️  Max file limit reached")
+            return all_files
+
+        try:
+            contents = self.get_repo_contents(owner, repo, path)
+
+            if not contents:
+                return []
+
+            directories = []
+
+            for item in contents:
+                if len(_files_found) >= MAX_FILES_PER_SCAN:
+                    break
+
+                item_path = item.get("path", "")
+                item_type = item.get("type", "")
+                item_name = item.get("name", "")
+                item_size = item.get("size", 0)
+
+                if item_type == "file":
+                    # Skip binary files
+                    if item_path.lower().endswith(BINARY_EXTENSIONS):
+                        continue
+
+                    # Skip large files
+                    if item_size > MAX_FILE_SIZE_BYTES:
+                        continue
+
+                    file_type = "code"  # Default
+                    if item_path.lower().endswith(('.md', '.rst', '.txt', '.adoc')):
+                        file_type = "documentation"
+                    elif item_path.lower().endswith(('.yaml', '.yml', '.json', '.toml', '.ini', '.cfg', '.xml')):
+                        file_type = "configuration"
+
+                    all_files.append({
+                        "path": item_path,
+                        "name": item_name,
+                        "url": item.get("html_url", ""),
+                        "sha": item.get("sha", ""),
+                        "size": item_size,
+                        "file_type": file_type
+                    })
+                    _files_found.append(item_path)
+
+                elif item_type == "dir":
+                    directories.append(item_path)
+
+            # Process directories
+            for dir_path in directories:
+                sub_files = self._find_all_files_recursive(owner, repo, dir_path, _depth + 1, _files_found)
+                all_files.extend(sub_files)
+
+        except Exception as e:
+            logger.error(f"Error processing path {path}: {e}")
+
+        return all_files
+
     def fetch_all_markdown_contents(self, owner: str, repo: str) -> List[Dict[str, str]]:
         """
         Fetch all markdown files and their contents from a repository.
