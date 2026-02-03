@@ -115,6 +115,15 @@ Visual representations of S-SDLC integration using Mermaid diagrams.
 
 **Visualize the security integration.**
 
+### **[S-SDLC Quick Reference](../S-SDLC_QUICK_REFERENCE.md)**
+Quick reference guide for developers using AI throughout the SDLC.
+- Phase-by-phase query examples
+- Common security scenarios
+- Daily security checklist
+- Emergency response guide
+
+**Your everyday security companion.**
+
 ## 🚀 Quick Navigation
 
 ### I want to...
@@ -160,6 +169,9 @@ Visual representations of S-SDLC integration using Mermaid diagrams.
 
 **See S-SDLC diagrams**
 → [S-SDLC Diagrams](../S-SDLC_DIAGRAMS.md)
+
+**Quick S-SDLC reference**
+→ [S-SDLC Quick Reference](../S-SDLC_QUICK_REFERENCE.md)
 
 ## 📋 Complete Document List by Category
 
