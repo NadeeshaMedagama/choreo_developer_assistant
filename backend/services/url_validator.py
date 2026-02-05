@@ -76,6 +76,14 @@ class URLValidator:
         'wso2.com/choreo/docs/alert-management',         # Does not exist
         # Invalid Logging paths - do not exist
         'wso2.com/choreo/docs/logging',                  # Does not exist
+        # Invalid/hallucinated GitHub repository paths - these repos do not exist
+        'github.com/wso2-enterprise/choreo-alert-configuration-service',
+        'github.com/wso2-enterprise/choreo-alerts-service',
+        'github.com/wso2-enterprise/choreo-notification-service',
+        'github.com/wso2-enterprise/choreo-config-service',
+        'github.com/wso2-enterprise/choreo-settings-service',
+        'github.com/wso2-enterprise/choreo-observability',
+        'github.com/wso2/choreo-observability',
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -115,9 +123,14 @@ class URLValidator:
         # Invalid Logging URLs - do not exist
         'https://wso2.com/choreo/docs/logging/',
         'https://wso2.com/choreo/docs/logging',
-        # Invalid GitHub repos - do not exist
+        # Invalid GitHub repos - do not exist / hallucinated by LLMs
         'https://github.com/wso2-enterprise/choreo-observability',
         'https://github.com/wso2/choreo-observability',
+        'https://github.com/wso2-enterprise/choreo-alert-configuration-service',
+        'https://github.com/wso2-enterprise/choreo-alerts-service',
+        'https://github.com/wso2-enterprise/choreo-notification-service',
+        'https://github.com/wso2-enterprise/choreo-config-service',
+        'https://github.com/wso2-enterprise/choreo-settings-service',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
@@ -398,8 +411,9 @@ class URLValidator:
 
             if invalid_url in filtered_text:
                 logger.warning(f"Removing known invalid URL from text: {invalid_url}")
-                filtered_text = re.sub(re.escape(invalid_url), "[removed invalid URL]", filtered_text)
-                # Also handle markdown format
+                # Remove the URL completely without placeholder text
+                filtered_text = re.sub(re.escape(invalid_url), "", filtered_text)
+                # Also handle markdown format - keep only the link text
                 markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(invalid_url) + r'\)'
                 filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
 
@@ -414,8 +428,9 @@ class URLValidator:
             matches = re.findall(url_pattern, filtered_text, re.IGNORECASE)
             for match in matches:
                 logger.warning(f"Removing URL matching invalid pattern '{pattern}': {match}")
-                filtered_text = filtered_text.replace(match, "[removed invalid URL]")
-                # Also handle markdown format
+                # Remove the URL completely without placeholder text
+                filtered_text = filtered_text.replace(match, "")
+                # Also handle markdown format - keep only the link text
                 markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(match) + r'\)'
                 filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
 
@@ -621,11 +636,11 @@ class URLValidator:
                 # FIRST: Check if this is a known invalid URL - ALWAYS remove these
                 if self.is_known_invalid_url(url):
                     logger.warning(f"Removing known invalid URL: {url}")
-                    # Remove invalid URLs from text
-                    filtered_text = re.sub(re.escape(url), "[URL removed - invalid documentation path]", filtered_text)
-                    # Also remove markdown links containing this URL
+                    # Remove invalid URLs from text completely without placeholder
+                    filtered_text = re.sub(re.escape(url), "", filtered_text)
+                    # Also remove markdown links containing this URL - keep only the link text
                     markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(url) + r'\)'
-                    filtered_text = re.sub(markdown_pattern, r'\1 [link removed - invalid path]', filtered_text)
+                    filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
                     continue
 
                 # Keep valid Choreo documentation URLs
@@ -643,14 +658,14 @@ class URLValidator:
                 # Only remove non-Choreo URLs that failed validation
                 logger.warning(f"Removing invalid non-Choreo URL: {url}")
 
-                # Remove invalid URLs from text
+                # Remove invalid URLs from text completely without placeholder
                 # Handle both plain URLs and markdown format
-                filtered_text = re.sub(re.escape(url), "[URL removed - not accessible]", filtered_text)
-                
-                # Also remove markdown links containing this URL
+                filtered_text = re.sub(re.escape(url), "", filtered_text)
+
+                # Also remove markdown links containing this URL - keep only the link text
                 markdown_pattern = r'\[([^\]]+)\]\(' + re.escape(url) + r'\)'
-                filtered_text = re.sub(markdown_pattern, r'\1 [link removed - not accessible]', filtered_text)
-        
+                filtered_text = re.sub(markdown_pattern, r'\1', filtered_text)
+
         return filtered_text
     
     async def validate_and_filter_sources(self, sources: List[Dict]) -> List[Dict]:
