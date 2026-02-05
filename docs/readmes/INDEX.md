@@ -95,6 +95,35 @@ Version history and feature additions.
 
 **Track changes and updates.**
 
+## 📖 Root Documentation
+
+### **[S-SDLC Integration](../S-SDLC_INTEGRATION.md)**
+Comprehensive guide on how the AI agent is incorporated into the Secure Software Development Life Cycle.
+- Integration across all SDLC phases
+- Security testing and validation
+- CI/CD pipeline integration
+- Best practices and workflows
+
+**Essential for security-conscious development.**
+
+### **[S-SDLC Diagrams](../S-SDLC_DIAGRAMS.md)**
+Visual representations of S-SDLC integration using Mermaid diagrams.
+- Phase-by-phase integration diagrams
+- Security pipeline workflows
+- Architecture diagrams
+- Interactive viewing options
+
+**Visualize the security integration.**
+
+### **[S-SDLC Quick Reference](../S-SDLC_QUICK_REFERENCE.md)**
+Quick reference guide for developers using AI throughout the SDLC.
+- Phase-by-phase query examples
+- Common security scenarios
+- Daily security checklist
+- Emergency response guide
+
+**Your everyday security companion.**
+
 ## 🚀 Quick Navigation
 
 ### I want to...
@@ -134,6 +163,15 @@ Version history and feature additions.
 
 **View recent changes**
 → [10-changelog/](./10-changelog/)
+
+**Understand S-SDLC integration**
+→ [S-SDLC Integration](../S-SDLC_INTEGRATION.md)
+
+**See S-SDLC diagrams**
+→ [S-SDLC Diagrams](../S-SDLC_DIAGRAMS.md)
+
+**Quick S-SDLC reference**
+→ [S-SDLC Quick Reference](../S-SDLC_QUICK_REFERENCE.md)
 
 ## 📋 Complete Document List by Category
 
