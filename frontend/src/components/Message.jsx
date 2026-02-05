@@ -404,6 +404,82 @@ export default function Message({ message, isDark, onRegenerate, onEdit }) {
                       )}
                     </div>
                   )}
+
+                  {/* Related URLs Section */}
+                  {message.related_urls && (
+                    (message.related_urls.documentation?.length > 0 || message.related_urls.repositories?.length > 0) && (
+                      <div className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                        <div className={`text-sm font-medium mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                          📚 Related URLs
+                        </div>
+
+                        {/* Documentation URLs */}
+                        {message.related_urls.documentation?.length > 0 && (
+                          <div className="mb-3">
+                            <div className={`text-xs font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                              Documentation
+                            </div>
+                            <div className="space-y-1">
+                              {message.related_urls.documentation.map((urlItem, idx) => (
+                                <a
+                                  key={idx}
+                                  href={urlItem.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center gap-2 text-xs hover:underline p-2 rounded ${
+                                    isDark
+                                      ? 'text-blue-400 hover:bg-gray-700/50'
+                                      : 'text-blue-600 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">
+                                    {urlItem.title || urlItem.url}
+                                  </span>
+                                  {urlItem.category && (
+                                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                      isDark ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+                                    }`}>
+                                      {urlItem.category.replace('_', ' ')}
+                                    </span>
+                                  )}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Repository URLs */}
+                        {message.related_urls.repositories?.length > 0 && (
+                          <div>
+                            <div className={`text-xs font-medium mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                              Repositories
+                            </div>
+                            <div className="space-y-1">
+                              {message.related_urls.repositories.map((urlItem, idx) => (
+                                <a
+                                  key={idx}
+                                  href={urlItem.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center gap-2 text-xs hover:underline p-2 rounded ${
+                                    isDark
+                                      ? 'text-green-400 hover:bg-gray-700/50'
+                                      : 'text-green-600 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                  <span className="truncate">
+                                    {urlItem.title || urlItem.url}
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  )}
                 </>
               )}
             </>
