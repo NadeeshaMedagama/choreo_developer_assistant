@@ -31,6 +31,9 @@ That's it! Open http://localhost:5173 to use the application.
 > 🚀 **NEW: Choreo Platform Support**  
 > Now fully optimized for Choreo deployment! See [CHOREO_DEPLOYMENT.md](./CHOREO_DEPLOYMENT.md) for deployment guide.
 
+> 🔒 **NEW: S-SDLC Integration**  
+> See [S-SDLC Integration](./docs/S-SDLC_INTEGRATION.md) to understand how this AI agent is incorporated into the Secure Software Development Life Cycle.
+
 ## Stack
 - Backend: FastAPI, Azure OpenAI, Milvus, LangChain, LangGraph
 - Frontend: React, Vite, Tailwind CSS, Mermaid.js (diagrams)
