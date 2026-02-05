@@ -391,13 +391,14 @@ export default function App() {
         const data = await res.json().catch(() => ({}))
         const answer = data?.answer ?? 'No answer returned.'
         const sources = data?.sources ?? []
+        const relatedUrls = data?.related_urls ?? null
         const summary = data?.summary || current?.summary
         const memoryStats = data?.memory_stats || current?.memoryStats
         updateConversation(c => ({
           ...c,
           messages: c.messages.map(m =>
             m.id === assistantMsgId
-              ? { ...m, content: String(answer), streaming: false, sources }
+              ? { ...m, content: String(answer), streaming: false, sources, related_urls: relatedUrls }
               : m
           ),
           summary: summary,
