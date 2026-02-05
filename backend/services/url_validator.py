@@ -76,6 +76,12 @@ class URLValidator:
         'wso2.com/choreo/docs/alert-management',         # Does not exist
         # Invalid Logging paths - do not exist
         'wso2.com/choreo/docs/logging',                  # Does not exist
+        # Invalid/hallucinated GitHub repository paths - these repos don't exist
+        'github.com/wso2-enterprise/choreo-alert-configuration-service',
+        'github.com/wso2-enterprise/choreo-alerts-service',
+        'github.com/wso2-enterprise/choreo-notification-service',
+        'github.com/wso2-enterprise/choreo-config-service',
+        'github.com/wso2-enterprise/choreo-settings-service',
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -118,6 +124,12 @@ class URLValidator:
         # Invalid GitHub repos - do not exist
         'https://github.com/wso2-enterprise/choreo-observability',
         'https://github.com/wso2/choreo-observability',
+        # Invalid/hallucinated Choreo service repos - these don't exist
+        'https://github.com/wso2-enterprise/choreo-alert-configuration-service',
+        'https://github.com/wso2-enterprise/choreo-alerts-service',
+        'https://github.com/wso2-enterprise/choreo-notification-service',
+        'https://github.com/wso2-enterprise/choreo-config-service',
+        'https://github.com/wso2-enterprise/choreo-settings-service',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
