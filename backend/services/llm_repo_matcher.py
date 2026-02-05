@@ -194,9 +194,10 @@ IMPORTANT INSTRUCTIONS:
    - Explain what the repository contains
 
 5. ✅ When Repository is NOT in Available List:
-   - Say: "The repository URL is not available in my current knowledge base."
-   - Explain these are internal/private repositories
-   - Provide other helpful information from the context
+   - Do NOT mention the repository URL at all
+   - Do NOT say the URL is "not available" or provide placeholder text
+   - Simply omit the URL and provide other helpful information from the context
+   - You can still mention the component name without the URL
 
 6. 🎯 What You CAN Always Share:
    - Component names and descriptions
@@ -217,7 +218,7 @@ IMPORTANT INSTRUCTIONS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ⚠️ REMEMBER: Only use repository URLs from the "AVAILABLE REPOSITORY URLs" list above.
-If a URL is not in that list, say it's not available in your knowledge base.
+If a URL is not in that list, simply omit it - do not mention it or say it's unavailable.
 """
         return prompt
 
