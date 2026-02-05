@@ -19,6 +19,7 @@ from services.url_validator import get_url_validator
 from services.choreo_repo_registry import get_choreo_registry
 from services.llm_repo_matcher import get_llm_repo_matcher
 from services.diagram_detection_service import get_diagram_detection_service
+from services.url_extractor_service import get_url_extractor
 from db.vector_client import VectorClient
 from utils.config import load_config
 from services.ingestion import IngestionService
@@ -695,6 +696,42 @@ async def ask_ai(request: AskRequest):
         # 8. Validate URLs in sources
         sources = await url_validator.validate_and_filter_sources(sources)
 
+        # 9. Extract all related URLs from context and answer
+        url_extractor = get_url_extractor()
+
+        # Extract URLs from context documents
+        context_extracted_urls = url_extractor.extract_urls_from_sources(
+            context_rows,
+            include_content_urls=True
+        )
+
+        # Extract URLs from the answer itself
+        answer_extracted_urls = url_extractor.extract_urls_from_content(
+            filtered_answer,
+            include_context=False,
+            deduplicate=True
+        )
+
+        # Combine all extracted URLs
+        all_extracted_urls = context_extracted_urls + answer_extracted_urls
+
+        # Get documentation URLs specifically
+        doc_urls = url_extractor.get_documentation_urls(all_extracted_urls)
+        repo_urls = url_extractor.get_repository_urls(all_extracted_urls)
+
+        # Format related URLs for response
+        related_urls = {
+            "documentation": [
+                {"url": u.url, "title": u.title, "category": u.category.value}
+                for u in doc_urls[:10]  # Limit to 10 doc URLs
+            ],
+            "repositories": [
+                {"url": u.url, "title": u.title, "category": u.category.value}
+                for u in repo_urls[:10]  # Limit to 10 repo URLs
+            ],
+            "all_urls": url_extractor.format_urls_for_response(all_extracted_urls, max_per_category=5)
+        }
+
         # Record metrics
         inference_duration = time.time() - start_time
         monitoring.record_ai_inference(
@@ -708,13 +745,15 @@ async def ask_ai(request: AskRequest):
             f"AI request completed",
             logger_type='ai',
             duration=f"{inference_duration:.2f}s",
-            context_count=len(similar_rows)
+            context_count=len(similar_rows),
+            related_urls_count=len(all_extracted_urls)
         )
 
         # Return response with summary for next request
         response_data = {
             "answer": filtered_answer,
             "sources": sources,
+            "related_urls": related_urls,
             "context_count": len(similar_rows),
         }
 
@@ -1228,6 +1267,50 @@ async def ask_ai_stream(request: AskRequest):
                         }
                     }
                     yield f"data: {json.dumps(url_metadata)}\n\n"
+
+                # Extract and send all related URLs
+                url_extractor = get_url_extractor()
+
+                # Extract URLs from context documents
+                context_extracted_urls = url_extractor.extract_urls_from_sources(
+                    context_rows,
+                    include_content_urls=True
+                )
+
+                # Extract URLs from the answer itself
+                answer_extracted_urls = url_extractor.extract_urls_from_content(
+                    filtered_answer,
+                    include_context=False,
+                    deduplicate=True
+                )
+
+                # Combine all extracted URLs
+                all_related_urls = context_extracted_urls + answer_extracted_urls
+
+                # Get documentation URLs specifically
+                doc_urls = url_extractor.get_documentation_urls(all_related_urls)
+                repo_urls = url_extractor.get_repository_urls(all_related_urls)
+
+                # Format related URLs for response
+                related_urls_data = {
+                    "related_urls": {
+                        "documentation": [
+                            {"url": u.url, "title": u.title, "category": u.category.value}
+                            for u in doc_urls[:10]
+                        ],
+                        "repositories": [
+                            {"url": u.url, "title": u.title, "category": u.category.value}
+                            for u in repo_urls[:10]
+                        ],
+                        "total_count": len(all_related_urls)
+                    }
+                }
+                yield f"data: {json.dumps(related_urls_data)}\n\n"
+
+                monitoring.log_info(
+                    f"Sent {len(all_related_urls)} related URLs in streaming response",
+                    logger_type='ai'
+                )
 
                 # Send done signal
                 yield "data: [DONE]\n\n"
