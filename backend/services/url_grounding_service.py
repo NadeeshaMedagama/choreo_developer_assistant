@@ -99,6 +99,12 @@ class URLGroundingService:
         'wso2.com/choreo/docs/reference/faq/#choreo-cli',
         'wso2.com/choreo/docs/references/faq/#choreo-cli',
         'wso2.com/choreo/docs/getting-started/cli',
+        # Invalid/hallucinated GitHub repository URLs
+        'github.com/wso2-enterprise/choreo-alert-configuration-service',
+        'github.com/wso2-enterprise/choreo-alerts-service',
+        'github.com/wso2-enterprise/choreo-notification-service',
+        'github.com/wso2-enterprise/choreo-config-service',
+        'github.com/wso2-enterprise/choreo-settings-service',
     ]
 
     # Topic to search query mapping for Google Search grounding
