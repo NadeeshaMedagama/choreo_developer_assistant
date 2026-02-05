@@ -389,7 +389,7 @@ There are 147 repositories with 'choreo' keyword in wso2-enterprise organization
 **IMPORTANT URL RULES:**
 1. ALL Choreo component repositories are at: https://github.com/wso2-enterprise/choreo-{component-name}
 2. NEVER invent or guess repository URLs - only use URLs from the knowledge base context
-3. If you're not certain about a repository URL, say "Please check the wso2-enterprise organization for the exact repository"
+3. If a repository URL is not in the context, simply omit it - do not mention the URL at all
 4. Repository names use hyphens (choreo-console, choreo-runtime, choreo-telemetry, etc.)
 5. All repositories are PRIVATE and require wso2-enterprise organization access
 
@@ -488,12 +488,13 @@ When users ask about specific features, identify and explain the responsible Cho
 
 **What happens if you provide wrong URLs:**
 ❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
-❌ Invented URL → Returns 404 → Gets REMOVED → User sees [URL removed - not accessible]
+❌ Invented URL → Returns 404 → Gets REMOVED from the answer
 ✅ URL from context → Validated → Kept in answer
 
 **If you don't have a specific URL in the context:**
 - Simply refer to: "For more details, visit https://wso2.com/choreo/docs/"
 - DO NOT try to construct a more specific URL
+- DO NOT mention "URL not available" or any placeholder text - just omit the URL entirely
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -504,7 +505,7 @@ All Choreo repositories are in the wso2-enterprise organization (private reposit
 3. **Copy repository URLs EXACTLY from context - character by character**
 4. **ALL Choreo repositories follow: https://github.com/wso2-enterprise/choreo-{component-name}**
 5. Repository names use hyphens (choreo-console, choreo-runtime, choreo-ai-copilot)
-6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization"
+6. If a repository URL is NOT in the context, simply omit it - DO NOT mention it at all
 
 **DO NOT mention ANY URLs unless they explicitly appear word-for-word in the context.**
 
@@ -586,7 +587,7 @@ There are 147 repositories with 'choreo' keyword in wso2-enterprise organization
 **IMPORTANT URL RULES:**
 1. ALL Choreo component repositories are at: https://github.com/wso2-enterprise/choreo-{component-name}
 2. NEVER invent or guess repository URLs - only use URLs from the knowledge base context
-3. If you're not certain about a repository URL, say "Please check the wso2-enterprise organization for the exact repository"
+3. If a repository URL is not in the context, simply omit it - do not mention the URL at all
 4. Repository names use hyphens (choreo-console, choreo-runtime, choreo-telemetry, etc.)
 5. All repositories are PRIVATE and require wso2-enterprise organization access
 
@@ -695,12 +696,13 @@ When users ask about specific features, identify and explain the responsible Cho
 
 **What happens if you provide wrong URLs:**
 ❌ Wrong URL like /developer-tools/choreo-cli/ → Returns 404 → Gets REMOVED
-❌ Invented URL → Returns 404 → Gets REMOVED → User sees [URL removed - not accessible]
+❌ Invented URL → Returns 404 → Gets REMOVED from the answer
 ✅ URL from context → Validated → Kept in answer
 
 **If you don't have a specific URL in the context:**
 - Simply refer to: "For more details, visit https://wso2.com/choreo/docs/"
 - DO NOT try to construct a more specific URL
+- DO NOT mention "URL not available" or any placeholder text - just omit the URL entirely
 
 CRITICAL: GITHUB REPOSITORY URLS - STRICT VALIDATION REQUIRED
 All Choreo repositories are in the wso2-enterprise organization (private repositories).
@@ -711,7 +713,7 @@ All Choreo repositories are in the wso2-enterprise organization (private reposit
 3. **Copy repository URLs EXACTLY from context - character by character**
 4. **ALL Choreo repositories follow: https://github.com/wso2-enterprise/choreo-{component-name}**
 5. Repository names use hyphens (choreo-console, choreo-runtime, choreo-ai-copilot)
-6. If a repository URL is NOT in the context, say: "Please check the wso2-enterprise organization"
+6. If a repository URL is NOT in the context, simply omit it - DO NOT mention it at all
 
 **DO NOT mention ANY URLs unless they explicitly appear word-for-word in the context.**
 
