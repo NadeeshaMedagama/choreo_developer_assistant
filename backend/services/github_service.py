@@ -16,6 +16,63 @@ MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB per file
 API_CALL_DELAY = 0.02  # Reduced from 0.1 to 0.02 (20ms) for faster scanning
 MAX_PARALLEL_REQUESTS = 10  # Number of parallel directory scans
 
+# Directories to EXCLUDE from ingestion (dependency/system directories)
+# These directories contain third-party code, IDE settings, or system files that should not be ingested
+EXCLUDED_DIRECTORIES = [
+    "node_modules",     # NPM dependencies (JavaScript/TypeScript)
+    ".git",             # Git internal directory
+    ".idea",            # JetBrains IDE settings
+    ".vscode",          # VS Code settings
+    "__pycache__",      # Python bytecode cache
+    ".pytest_cache",    # Pytest cache
+    ".mypy_cache",      # MyPy cache
+    "venv",             # Python virtual environment
+    ".venv",            # Python virtual environment (alternate)
+    "env",              # Python virtual environment (alternate)
+    ".env",             # Environment files directory
+    "vendor",           # Go/PHP dependencies
+    "target",           # Maven/Cargo build output
+    "dist",             # Build output
+    "build",            # Build output
+    ".gradle",          # Gradle cache
+    ".mvn",             # Maven wrapper
+    ".next",            # Next.js build
+    ".nuxt",            # Nuxt.js build
+    "coverage",         # Test coverage reports
+    ".coverage",        # Coverage data
+    ".tox",             # Tox testing
+    ".eggs",            # Python eggs
+    "*.egg-info",       # Python egg info
+    ".sass-cache",      # Sass cache
+    "bower_components", # Bower dependencies
+    "jspm_packages",    # JSPM packages
+]
+
+
+def should_exclude_path(file_path: str) -> bool:
+    """
+    Check if a file path should be excluded from ingestion.
+
+    Args:
+        file_path: The file path to check
+
+    Returns:
+        True if the path should be excluded, False otherwise
+    """
+    # Split path into components
+    path_parts = file_path.replace("\\", "/").split("/")
+
+    # Check if any directory in the path matches excluded directories
+    for part in path_parts:
+        if part in EXCLUDED_DIRECTORIES:
+            return True
+        # Handle wildcard patterns like *.egg-info
+        for excluded in EXCLUDED_DIRECTORIES:
+            if excluded.startswith("*") and part.endswith(excluded[1:]):
+                return True
+
+    return False
+
 # API Definition file patterns (keywords to look for in YAML/JSON file paths)
 API_KEYWORDS_IN_PATH = [
     "openapi", "swagger", "api", "spec", "specification",
@@ -247,6 +304,15 @@ class GitHubService:
                 item_name = item.get("name", "")
                 item_size = item.get("size", 0)
 
+                # Skip excluded directories (node_modules, .git, .idea, etc.)
+                if item_type == "dir" and item_name in EXCLUDED_DIRECTORIES:
+                    logger.debug(f"⏭️  Skipping excluded directory: {item_path}")
+                    continue
+
+                # Skip files in excluded paths
+                if should_exclude_path(item_path):
+                    continue
+
                 # ONLY PROCESS .md FILES - NO API DEFINITION FILES
                 if item_type == "file" and item_name.endswith(".md"):
                     # Check file size before adding
@@ -368,6 +434,7 @@ class GitHubService:
             all_files = []
             skipped_large = 0
             skipped_binary = 0
+            skipped_excluded = 0
 
             for item in tree_items:
                 if item.get("type") != "blob":
@@ -376,6 +443,11 @@ class GitHubService:
                 item_path = item.get("path", "")
                 item_size = item.get("size", 0)
                 file_name = item_path.split("/")[-1] if "/" in item_path else item_path
+
+                # Check if path is in excluded directories (node_modules, .git, .idea, etc.)
+                if should_exclude_path(item_path):
+                    skipped_excluded += 1
+                    continue
 
                 # Check file size (skip very large files)
                 if item_size > MAX_FILE_SIZE_BYTES:
@@ -422,6 +494,7 @@ class GitHubService:
 
             logger.info(f"🎉 ULTRA-FAST search complete!")
             logger.info(f"   ✓ Found {len(all_files)} files to process")
+            logger.info(f"   ⚠️  Skipped {skipped_excluded} files in excluded dirs (node_modules, .git, .idea, etc.)")
             logger.info(f"   ⚠️  Skipped {skipped_large} large files (>{MAX_FILE_SIZE_BYTES} bytes)")
             logger.info(f"   ⚠️  Skipped {skipped_binary} binary/media files")
 
@@ -473,10 +546,16 @@ class GitHubService:
 
             # Filter for .md files only
             markdown_files = []
+            skipped_excluded = 0
             for item in tree_items:
                 if item.get("type") == "blob" and item.get("path", "").endswith(".md"):
                     item_path = item.get("path", "")
                     item_size = item.get("size", 0)
+
+                    # Check if path is in excluded directories (node_modules, .git, .idea, etc.)
+                    if should_exclude_path(item_path):
+                        skipped_excluded += 1
+                        continue
 
                     # Check file size
                     if item_size > MAX_FILE_SIZE_BYTES:
@@ -497,6 +576,8 @@ class GitHubService:
                     logger.debug(f"✓ Found markdown file: {item_path} ({item_size} bytes)")
 
             logger.info(f"🎉 ULTRA-FAST search complete! Found {len(markdown_files)} markdown files")
+            if skipped_excluded > 0:
+                logger.info(f"   ⚠️  Skipped {skipped_excluded} files in excluded dirs (node_modules, .git, .idea, etc.)")
             return markdown_files
 
         except Exception as e:
@@ -545,12 +626,18 @@ class GitHubService:
             graphql_count = 0
             proto_count = 0
             yaml_json_count = 0
+            skipped_excluded = 0
 
             for item in tree_items:
                 if item.get("type") == "blob":
                     original_path = item.get("path", "")
                     item_path_lower = original_path.lower()
                     item_size = item.get("size", 0)
+
+                    # Check if path is in excluded directories (node_modules, .git, .idea, etc.)
+                    if should_exclude_path(original_path):
+                        skipped_excluded += 1
+                        continue
 
                     # Check if it's an API definition file
                     is_api_file = False
@@ -603,6 +690,8 @@ class GitHubService:
             logger.info(f"   📊 GraphQL schemas: {graphql_count}")
             logger.info(f"   📊 Protocol Buffers: {proto_count}")
             logger.info(f"   📊 YAML/JSON API specs: {yaml_json_count}")
+            if skipped_excluded > 0:
+                logger.info(f"   ⚠️  Skipped {skipped_excluded} files in excluded dirs (node_modules, .git, .idea, etc.)")
             return api_files
 
         except Exception as e:
@@ -671,6 +760,15 @@ class GitHubService:
                 item_name = item.get("name", "").lower()
                 item_path_lower = item_path.lower()
                 item_size = item.get("size", 0)
+
+                # Skip excluded directories (node_modules, .git, .idea, etc.)
+                if item_type == "dir" and item.get("name", "") in EXCLUDED_DIRECTORIES:
+                    logger.debug(f"⏭️  Skipping excluded directory: {item_path}")
+                    continue
+
+                # Skip files in excluded paths
+                if should_exclude_path(item_path):
+                    continue
 
                 # Check for API definition files
                 if item_type == "file":
@@ -798,12 +896,18 @@ class GitHubService:
             graphql_count = 0
             proto_count = 0
             yaml_json_count = 0
+            skipped_excluded = 0
 
             for item in tree_items:
                 if item.get("type") == "blob":
                     item_path = item.get("path", "")
                     item_path_lower = item_path.lower()
                     item_size = item.get("size", 0)
+
+                    # Check if path is in excluded directories (node_modules, .git, .idea, etc.)
+                    if should_exclude_path(item_path):
+                        skipped_excluded += 1
+                        continue
 
                     # Check file size first
                     if item_size > MAX_FILE_SIZE_BYTES:
@@ -880,6 +984,8 @@ class GitHubService:
             logger.info(f"   📊 Protocol Buffers: {proto_count}")
             logger.info(f"   📊 YAML/JSON API specs: {yaml_json_count}")
             logger.info(f"   📊 Total API files: {len(api_files)}")
+            if skipped_excluded > 0:
+                logger.info(f"   ⚠️  Skipped {skipped_excluded} files in excluded dirs (node_modules, .git, .idea, etc.)")
 
             return {
                 "markdown_files": markdown_files,
@@ -1102,6 +1208,15 @@ class GitHubService:
                 item_type = item.get("type", "")
                 item_name = item.get("name", "")
                 item_size = item.get("size", 0)
+
+                # Skip excluded directories (node_modules, .git, .idea, etc.)
+                if item_type == "dir" and item_name in EXCLUDED_DIRECTORIES:
+                    logger.debug(f"⏭️  Skipping excluded directory: {item_path}")
+                    continue
+
+                # Skip files in excluded paths
+                if should_exclude_path(item_path):
+                    continue
 
                 if item_type == "file" and item_name.lower().endswith(image_extensions):
                     # Check file size
