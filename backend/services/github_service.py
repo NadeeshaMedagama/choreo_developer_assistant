@@ -1,7 +1,7 @@
 import requests
 import base64
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
@@ -306,6 +306,138 @@ class GitHubService:
                 raise
 
         return markdown_files
+
+    def find_all_repo_files_fast(self, owner: str, repo: str, extensions: List[str] = None) -> List[Dict[str, str]]:
+        """
+        ULTRA-FAST version: Find ALL files in a repository using GitHub Tree API (single API call).
+
+        This fetches all code files, documentation, configs, etc. - the entire repository.
+
+        Args:
+            owner: Repository owner
+            repo: Repository name
+            extensions: Optional list of file extensions to filter (e.g., ['.py', '.go', '.md'])
+                       If None, includes all text-based files (excludes binaries/images)
+
+        Returns:
+            List of dicts with 'path', 'name', 'sha', 'url', 'size', and 'file_type' for each file
+        """
+        logger.info(f"🚀 Using ULTRA-FAST tree API to find ALL files in {owner}/{repo}")
+
+        # Default extensions for code/text files (exclude binary/media files)
+        if extensions is None:
+            extensions = [
+                # Documentation
+                '.md', '.rst', '.txt', '.adoc',
+                # Code files
+                '.py', '.go', '.java', '.js', '.ts', '.jsx', '.tsx',
+                '.rs', '.rb', '.php', '.cs', '.cpp', '.c', '.h', '.hpp',
+                '.swift', '.kt', '.kts', '.scala', '.clj',
+                '.sh', '.bash', '.zsh', '.ps1', '.bat', '.cmd',
+                '.bal',  # Ballerina
+                # Config files
+                '.yaml', '.yml', '.json', '.toml', '.ini', '.cfg', '.conf',
+                '.xml', '.properties', '.env.example',
+                # API definitions
+                '.graphql', '.gql', '.proto',
+                # Web files
+                '.html', '.htm', '.css', '.scss', '.sass', '.less',
+                # Build files
+                '.gradle', '.gradle.kts', '.maven', '.pom',
+                'Dockerfile', 'Makefile', 'CMakeLists.txt',
+                # Other
+                '.sql', '.graphql', '.tf', '.hcl',
+            ]
+
+        try:
+            # Get the default branch
+            repo_url = f"{self.base_url}/repos/{owner}/{repo}"
+            repo_data = self._make_request(repo_url)
+            default_branch = repo_data.get("default_branch", "main")
+
+            # Get the tree recursively (single API call for entire repo!)
+            tree_url = f"{self.base_url}/repos/{owner}/{repo}/git/trees/{default_branch}?recursive=1"
+            logger.info(f"📡 Fetching entire repository tree in ONE API call...")
+
+            tree_data = self._make_request(tree_url, use_cache=False)
+            tree_items = tree_data.get("tree", [])
+
+            logger.info(f"✓ Retrieved {len(tree_items)} items from repository tree")
+
+            # Filter for specified file types
+            all_files = []
+            skipped_large = 0
+            skipped_binary = 0
+
+            for item in tree_items:
+                if item.get("type") != "blob":
+                    continue
+
+                item_path = item.get("path", "")
+                item_size = item.get("size", 0)
+                file_name = item_path.split("/")[-1] if "/" in item_path else item_path
+
+                # Check file size (skip very large files)
+                if item_size > MAX_FILE_SIZE_BYTES:
+                    skipped_large += 1
+                    continue
+
+                # Check if file matches allowed extensions
+                file_ext = None
+                for ext in extensions:
+                    if item_path.endswith(ext) or file_name == ext:
+                        file_ext = ext
+                        break
+
+                if file_ext is None:
+                    # Check for files without extensions that we want (Dockerfile, Makefile, etc.)
+                    if file_name not in ['Dockerfile', 'Makefile', 'CMakeLists.txt', 'Jenkinsfile', 'Vagrantfile']:
+                        skipped_binary += 1
+                        continue
+                    file_ext = file_name
+
+                # Determine file type category
+                if file_ext in ['.md', '.rst', '.txt', '.adoc']:
+                    file_type = 'documentation'
+                elif file_ext in ['.yaml', '.yml', '.json', '.toml', '.ini', '.cfg', '.conf', '.xml', '.properties']:
+                    file_type = 'config'
+                elif file_ext in ['.graphql', '.gql', '.proto']:
+                    file_type = 'api_definition'
+                elif file_ext in ['.py', '.go', '.java', '.js', '.ts', '.rs', '.rb', '.php', '.cs', '.cpp', '.c', '.bal']:
+                    file_type = 'source_code'
+                elif file_ext in ['Dockerfile', 'Makefile', '.gradle', '.pom']:
+                    file_type = 'build'
+                else:
+                    file_type = 'other'
+
+                all_files.append({
+                    "path": item_path,
+                    "name": file_name,
+                    "url": f"https://github.com/{owner}/{repo}/blob/{default_branch}/{item_path}",
+                    "sha": item.get("sha", ""),
+                    "size": item_size,
+                    "file_type": file_type,
+                    "extension": file_ext
+                })
+
+            logger.info(f"🎉 ULTRA-FAST search complete!")
+            logger.info(f"   ✓ Found {len(all_files)} files to process")
+            logger.info(f"   ⚠️  Skipped {skipped_large} large files (>{MAX_FILE_SIZE_BYTES} bytes)")
+            logger.info(f"   ⚠️  Skipped {skipped_binary} binary/media files")
+
+            # Log breakdown by type
+            type_counts = {}
+            for f in all_files:
+                ft = f.get('file_type', 'other')
+                type_counts[ft] = type_counts.get(ft, 0) + 1
+            for ft, count in sorted(type_counts.items()):
+                logger.info(f"   📁 {ft}: {count} files")
+
+            return all_files
+
+        except Exception as e:
+            logger.error(f"⚠️  Tree API failed: {e}")
+            raise
 
     def find_all_markdown_files_fast(self, owner: str, repo: str) -> List[Dict[str, str]]:
         """
@@ -800,19 +932,27 @@ class GitHubService:
         logger.info(f"Successfully fetched {len(results)} markdown files")
         return results
 
-    def search_org_repositories(self, org: str, keyword: str = "", per_page: int = 100) -> List[Dict[str, Any]]:
+    def search_org_repositories(self, org: str, keyword: Union[str, List[str]] = "", per_page: int = 100) -> List[Dict[str, Any]]:
         """
-        Search for all repositories (public and private) under an organization, optionally filtered by keyword.
+        Search for all repositories (public and private) under an organization, optionally filtered by keyword(s).
 
         Args:
             org: Organization name
-            keyword: Optional keyword to filter repositories
+            keyword: Optional keyword(s) to filter repositories. Can be a single string or list of strings.
+                     If list, ALL keywords must match (AND logic).
             per_page: Number of results per page (max 100)
 
         Returns:
             List of repository information including name, description, url, etc.
         """
-        logger.info(f"Searching repositories in organization '{org}' with keyword '{keyword}'")
+        # Normalize keyword to list
+        if isinstance(keyword, str):
+            keywords = [keyword] if keyword else []
+        else:
+            keywords = keyword if keyword else []
+
+        keywords_str = " AND ".join(keywords) if keywords else "none"
+        logger.info(f"Searching repositories in organization '{org}' with keyword(s): {keywords_str}")
 
         repositories = []
         page = 1
@@ -829,16 +969,21 @@ class GitHubService:
                     # No more repositories
                     break
 
-                # Filter by keyword if provided
+                # Filter by keywords if provided
                 for repo in repos_data:
                     repo_name = repo.get("name", "").lower()
                     repo_desc = repo.get("description", "") or ""
                     repo_desc_lower = repo_desc.lower()
 
-                    # If keyword is provided, check if it matches name or description
-                    if keyword:
-                        keyword_lower = keyword.lower()
-                        if keyword_lower not in repo_name and keyword_lower not in repo_desc_lower:
+                    # If keywords are provided, check if ALL keywords match name or description (AND logic)
+                    if keywords:
+                        all_keywords_match = True
+                        for kw in keywords:
+                            kw_lower = kw.lower()
+                            if kw_lower not in repo_name and kw_lower not in repo_desc_lower:
+                                all_keywords_match = False
+                                break
+                        if not all_keywords_match:
                             continue
 
                     # Add repository info
