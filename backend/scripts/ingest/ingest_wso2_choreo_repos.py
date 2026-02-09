@@ -49,8 +49,9 @@ def main():
     parser.add_argument(
         "--keyword",
         type=str,
-        default="choreo",
-        help="Keyword to filter repositories (default: choreo)"
+        action="append",
+        dest="keywords",
+        help="Keyword to filter repositories. Can be used multiple times for AND logic (e.g., --keyword choreo --keyword api)"
     )
     parser.add_argument(
         "--max-repos",
@@ -58,15 +59,26 @@ def main():
         default=None,
         help="Maximum number of repositories to process (default: all)"
     )
+    parser.add_argument(
+        "--all-files",
+        action="store_true",
+        dest="all_files",
+        help="Ingest ALL files from repositories, not just markdown files (includes .py, .go, .java, .yaml, .json, etc.)"
+    )
 
     args = parser.parse_args()
+
+    # Default to 'choreo' if no keywords provided
+    keywords = args.keywords if args.keywords else ["choreo"]
+    keywords_str = " AND ".join(keywords)
 
     logger.info("=" * 80)
     logger.info("WSO2 Choreo Repositories Ingestion Script")
     logger.info("=" * 80)
     logger.info(f"Organization: {args.org}")
-    logger.info(f"Keyword filter: {args.keyword}")
+    logger.info(f"Keyword filter: {keywords_str}")
     logger.info(f"Max repositories: {args.max_repos or 'All'}")
+    logger.info(f"Include API files: {args.all_files}")
     logger.info("=" * 80)
 
     # Start keyboard monitor for manual skip feature
@@ -167,8 +179,9 @@ def main():
     try:
         result = ingestion_service.ingest_org_repositories(
             org=args.org,
-            keyword=args.keyword,
-            max_repos=args.max_repos
+            keyword=keywords,  # Pass list of keywords
+            max_repos=args.max_repos,
+            include_api_files=args.all_files  # Include API definition files
         )
 
         # Display results
@@ -177,7 +190,7 @@ def main():
         logger.info("=" * 80)
         logger.info(f"Status: {result.get('status', 'unknown')}")
         logger.info(f"Organization: {result.get('organization', args.org)}")
-        logger.info(f"Keyword filter: {result.get('keyword', args.keyword)}")
+        logger.info(f"Keyword filter: {result.get('keyword', keywords_str)}")
         logger.info(f"Repositories found: {result.get('repositories_found', 0)}")
         logger.info(f"Repositories processed: {result.get('repositories_processed', 0)}")
         logger.info(f"Repositories failed: {result.get('repositories_failed', 0)}")
