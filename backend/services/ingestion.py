@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import re
 import gc
 import psutil
@@ -359,15 +359,17 @@ class IngestionService:
         self.image_service = image_service
         self.chunker = DocumentChunker(chunk_size, chunk_overlap)
 
-    def ingest_from_github(self, owner: str, repo: str) -> Dict[str, Any]:
+    def ingest_from_github(self, owner: str, repo: str, include_api_files: bool = False) -> Dict[str, Any]:
         """
-        Ingest all markdown files AND API definition files from a GitHub repository in a memory-efficient way.
+        Ingest all markdown files from a GitHub repository in a memory-efficient way.
+        Optionally also ingests API definition files.
         Processes files and embeddings in small batches to avoid RAM spikes.
         Skips files that have already been processed (same SHA hash).
 
         Args:
             owner: Repository owner
             repo: Repository name
+            include_api_files: If True, also ingest API definition files (.yaml, .yml, .json, .graphql, .proto)
 
         Returns:
             Summary statistics of the ingestion process
@@ -375,48 +377,64 @@ class IngestionService:
         logger.info(f"Starting ingestion from GitHub: {owner}/{repo}")
         logger.info(f"Initial memory usage: {get_memory_usage()}")
         logger.info("=" * 60)
-        logger.info("📋 INGESTION MODE: MARKDOWN + API DEFINITION FILES")
-        logger.info("✅ Will process: .md files AND API files (.yaml, .yml, .json)")
+        if include_api_files:
+            logger.info("📋 INGESTION MODE: MARKDOWN + API DEFINITION FILES")
+            logger.info("✅ Will process: .md files AND API files (.yaml, .yml, .json, .graphql, .proto)")
+        else:
+            logger.info("📋 INGESTION MODE: MARKDOWN FILES ONLY")
+            logger.info("✅ Will process: .md files only")
+            logger.info("💡 Use --all-files flag to include API definition files")
         logger.info("=" * 60)
         repository_id = f"{owner}/{repo}"
 
-        # Step 1: Find ALL markdown AND API files using ultra-fast method
-        logger.info("Step 1: Finding all markdown + API files in GitHub repository...")
-        logger.info("🚀 Attempting ULTRA-FAST tree API search for BOTH file types...")
+        # Step 1: Find files based on include_api_files setting
+        if include_api_files:
+            # Fetch ALL files from the repository (code, configs, docs, etc.)
+            logger.info("Step 1: Finding ALL files in GitHub repository...")
+            logger.info("🚀 Attempting ULTRA-FAST tree API search for ALL file types...")
 
-        try:
-            # Try ultra-fast combined method (single API call for everything)
-            result = self.github_service.find_all_markdown_and_api_files_fast(owner, repo)
-            markdown_files = result.get("markdown_files", [])
-            api_files = result.get("api_files", [])
+            try:
+                # Use the new method that fetches ALL repository files
+                all_files = self.github_service.find_all_repo_files_fast(owner, repo)
 
-            # Combine both lists with proper file_type marking
-            for md_file in markdown_files:
-                if "file_type" not in md_file:
-                    md_file["file_type"] = "markdown"
-            for api_file in api_files:
-                if "file_type" not in api_file:
-                    api_file["file_type"] = "api_definition"
+            except Exception as e:
+                logger.error(f"Failed to fetch all repository files: {e}")
+                # Fallback to markdown + API files only
+                logger.warning("Falling back to markdown + API files only...")
+                try:
+                    result = self.github_service.find_all_markdown_and_api_files_fast(owner, repo)
+                    markdown_files = result.get("markdown_files", [])
+                    api_files = result.get("api_files", [])
+                    for md_file in markdown_files:
+                        if "file_type" not in md_file:
+                            md_file["file_type"] = "markdown"
+                    for api_file in api_files:
+                        if "file_type" not in api_file:
+                            api_file["file_type"] = "api_definition"
+                    all_files = markdown_files + api_files
+                except Exception as e2:
+                    logger.error(f"Fallback also failed: {e2}")
+                    all_files = []
+        else:
+            # Markdown files only
+            logger.info("Step 1: Finding all markdown files in GitHub repository...")
+            logger.info("🚀 Attempting ULTRA-FAST tree API search...")
 
-            all_files = markdown_files + api_files
-
-        except Exception as e:
-            logger.warning(f"Ultra-fast combined search failed, using standard method: {e}")
-            # Fallback to regular parallel methods
-            markdown_files = self.github_service.find_all_markdown_files(owner, repo)
-            api_files = self.github_service.find_all_api_files(owner, repo)
+            try:
+                markdown_files = self.github_service.find_all_markdown_files_fast(owner, repo)
+            except Exception as e:
+                logger.warning(f"Ultra-fast search failed, using standard method: {e}")
+                markdown_files = self.github_service.find_all_markdown_files(owner, repo)
 
             # Mark file types
             for md_file in markdown_files:
-                md_file["file_type"] = "markdown"
-            for api_file in api_files:
-                if "file_type" not in api_file:
-                    api_file["file_type"] = "api_definition"
+                if "file_type" not in md_file:
+                    md_file["file_type"] = "markdown"
 
-            all_files = markdown_files + api_files
+            all_files = markdown_files
 
         if not all_files:
-            logger.warning(f"No markdown or API files found in the repository {owner}/{repo}")
+            logger.warning(f"No files found in the repository {owner}/{repo}")
             return {
                 "status": "completed",
                 "files_fetched": 0,
@@ -427,12 +445,14 @@ class IngestionService:
             }
 
         # Count file types
-        md_count = sum(1 for f in all_files if f.get("file_type") == "markdown")
-        api_count = sum(1 for f in all_files if f.get("file_type") == "api_definition")
+        type_counts = {}
+        for f in all_files:
+            ft = f.get("file_type", "other")
+            type_counts[ft] = type_counts.get(ft, 0) + 1
 
         logger.info(f"Found {len(all_files)} total files to process:")
-        logger.info(f"  📄 {md_count} markdown files (.md)")
-        logger.info(f"  🔧 {api_count} API definition files (.yaml, .yml, .json)")
+        for ft, count in sorted(type_counts.items()):
+            logger.info(f"  📁 {ft}: {count} files")
 
         # Step 2: Process each file one at a time
         logger.info("Step 2: Processing files one at a time...")
@@ -1001,21 +1021,34 @@ class IngestionService:
             "total_embeddings": md_result.get("embeddings_stored", 0) + img_result.get("embeddings_stored", 0)
         }
 
-    def ingest_org_repositories(self, org: str, keyword: str = "", max_repos: int = None) -> Dict[str, Any]:
+    def ingest_org_repositories(self, org: str, keyword: Union[str, List[str]] = "", max_repos: int = None, include_api_files: bool = False) -> Dict[str, Any]:
         """
         Ingest all markdown files from multiple repositories in an organization,
-        optionally filtered by a keyword.
+        optionally filtered by keyword(s).
 
         Args:
             org: Organization name (e.g., 'wso2-enterprise')
-            keyword: Optional keyword to filter repositories (e.g., 'choreo')
+            keyword: Optional keyword(s) to filter repositories. Can be a single string or list of strings.
+                     If list, ALL keywords must match (AND logic).
             max_repos: Optional maximum number of repositories to process
+            include_api_files: If True, ingest ALL files from repositories (code, configs, docs, etc.)
+                              If False, only markdown (.md) files are ingested
 
         Returns:
             Summary statistics of the bulk ingestion process
         """
+        # Normalize keyword to string for logging
+        if isinstance(keyword, list):
+            keywords_str = " AND ".join(keyword) if keyword else "none"
+        else:
+            keywords_str = keyword if keyword else "none"
+
         logger.info("=" * 80)
-        logger.info(f"Starting bulk organization ingestion: {org} (keyword: '{keyword}')")
+        logger.info(f"Starting bulk organization ingestion: {org} (keyword: '{keywords_str}')")
+        if include_api_files:
+            logger.info(f"📋 Mode: ALL FILES (code, configs, docs, APIs, etc.)")
+        else:
+            logger.info(f"📋 Mode: MARKDOWN FILES ONLY (.md)")
         logger.info("=" * 80)
         logger.info(f"Initial memory usage: {get_memory_usage()}")
 
@@ -1034,7 +1067,7 @@ class IngestionService:
             }
 
         if not repositories:
-            logger.warning(f"No repositories found in organization '{org}' with keyword '{keyword}'")
+            logger.warning(f"No repositories found in organization '{org}' with keyword '{keywords_str}'")
             return {
                 "status": "completed",
                 "message": "No repositories found",
@@ -1089,7 +1122,7 @@ class IngestionService:
                 )
 
                 # Ingest this repository
-                result = self.ingest_from_github(owner, repo_name)
+                result = self.ingest_from_github(owner, repo_name, include_api_files=include_api_files)
 
                 repos_processed += 1
                 total_files_processed += result.get("files_fetched", 0)
