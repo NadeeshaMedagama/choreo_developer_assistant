@@ -1115,7 +1115,7 @@ class IngestionService:
             try:
                 # Wait for memory to be available before processing next repo
                 wait_for_memory(
-                    threshold_percent=96.0,  # Adjusted for systems with high baseline memory usage
+                    threshold_percent=97.5,  # Adjusted for systems with high baseline memory usage
                     check_interval=2.0,
                     timeout=120.0,
                     raise_on_timeout=True
