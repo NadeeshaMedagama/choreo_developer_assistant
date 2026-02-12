@@ -19,6 +19,8 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -26,7 +28,6 @@ jobs:
         timeout-minutes: 10
         with:
           fetch-depth: 0
-          persist-credentials: false
         env:
           GIT_TERMINAL_PROMPT: 0
 
@@ -128,6 +129,13 @@ jobs:
           # Report disk usage
           df -h
 
+      - name: List build artifacts
+        run: |
+          echo "=== Backend dist files ==="
+          ls -la backend/dist/ || echo "No backend/dist directory"
+          echo "=== Frontend dist ==="
+          ls -la frontend-dist.tar.gz || echo "No frontend-dist.tar.gz"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -136,9 +144,10 @@ jobs:
           body_path: CHANGELOG.md
           draft: false
           prerelease: false
+          fail_on_unmatched_files: false
           files: |
-            dist/*.tar.gz
-            dist/*.whl
+            backend/dist/*.tar.gz
+            backend/dist/*.whl
             frontend-dist.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
