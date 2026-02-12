@@ -92,11 +92,15 @@ export default function Message({ message, isDark, onRegenerate, onEdit }) {
       }`}
     >
       <div className="max-w-3xl mx-auto flex gap-4 overflow-hidden">
-        <div className={`w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 text-white font-semibold ${
-          isAssistant ? 'bg-green-600' : 'bg-purple-600'
-        }`}>
-          {isAssistant ? 'D' : 'U'}
-        </div>
+        {isAssistant ? (
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
+            <img src="/choreo-logo.png" alt="Choreo" className="w-8 h-8 object-contain" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 text-white font-semibold bg-purple-600">
+            U
+          </div>
+        )}
         <div className="flex-1 pt-1 min-w-0 overflow-hidden">
           {isEditing ? (
             <div className="space-y-2">
