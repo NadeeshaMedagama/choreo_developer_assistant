@@ -163,45 +163,124 @@ class DiagramDetectionService:
 
         mermaid_syntax = mermaid_type_map.get(diagram_type, 'flowchart TD')
 
-        # Get example based on diagram type
+        # Get comprehensive examples based on diagram type
         examples = {
             'flowchart TD': '''```mermaid
 flowchart TD
-    A[Start] --> B[Process]
-    B --> C{Decision}
-    C -->|Yes| D[Action 1]
-    C -->|No| E[Action 2]
-    D --> F[End]
-    E --> F
+    subgraph Client Layer
+        A[Developer] --> B[Choreo Console]
+        B --> C[CLI Tool]
+    end
+    
+    subgraph Control Plane
+        D[API Gateway] --> E[Auth Service]
+        E --> F[Project Manager]
+        F --> G[Build Orchestrator]
+    end
+    
+    subgraph Runtime Layer
+        H[Container Registry] --> I[Kubernetes Cluster]
+        I --> J[Running Services]
+        J --> K[Observability Stack]
+    end
+    
+    C --> D
+    G --> H
+    K --> B
 ```''',
             'sequenceDiagram': '''```mermaid
 sequenceDiagram
-    participant A as Client
-    participant B as Server
-    A->>B: Request
-    B-->>A: Response
+    autonumber
+    participant Dev as Developer
+    participant Console as Choreo Console
+    participant API as API Gateway
+    participant Auth as Auth Service
+    participant Build as Build Service
+    participant Registry as Container Registry
+    participant K8s as Kubernetes
+    
+    Dev->>Console: Push code to repository
+    Console->>API: Trigger build webhook
+    API->>Auth: Validate credentials
+    Auth-->>API: Token validated
+    API->>Build: Start build pipeline
+    Build->>Build: Clone repository
+    Build->>Build: Run tests
+    Build->>Registry: Push container image
+    Registry-->>Build: Image pushed successfully
+    Build->>K8s: Deploy to cluster
+    K8s-->>Build: Deployment complete
+    Build-->>Console: Build status update
+    Console-->>Dev: Deployment successful notification
 ```''',
             'graph LR': '''```mermaid
 graph LR
-    A[Frontend] --> B[API Gateway]
-    B --> C[Service]
-    C --> D[Database]
+    subgraph External
+        A[Users] --> B[Load Balancer]
+    end
+    
+    subgraph API Layer
+        B --> C[API Gateway]
+        C --> D[Rate Limiter]
+        D --> E[Auth Middleware]
+    end
+    
+    subgraph Services
+        E --> F[User Service]
+        E --> G[Order Service]
+        E --> H[Payment Service]
+        F --> I[(User DB)]
+        G --> J[(Order DB)]
+        H --> K[Payment Gateway]
+    end
+    
+    subgraph Observability
+        F & G & H --> L[Metrics Collector]
+        L --> M[Grafana Dashboard]
+    end
 ```''',
             'stateDiagram-v2': '''```mermaid
 stateDiagram-v2
-    [*] --> Active
-    Active --> Inactive
-    Inactive --> Active
-    Active --> [*]
+    [*] --> Created: New deployment
+    
+    Created --> Building: Build triggered
+    Building --> Testing: Build success
+    Building --> Failed: Build error
+    
+    Testing --> Staging: Tests pass
+    Testing --> Failed: Tests fail
+    
+    Staging --> Production: Promote
+    Staging --> Rollback: Issues found
+    
+    Production --> Active: Health check pass
+    Active --> Scaling: Auto-scale triggered
+    Scaling --> Active: Scale complete
+    
+    Active --> Maintenance: Scheduled
+    Maintenance --> Active: Complete
+    
+    Failed --> Created: Retry
+    Rollback --> Staging: Fix applied
+    
+    Active --> [*]: Terminated
 ```'''
         }
 
         example = examples.get(mermaid_syntax, examples['flowchart TD'])
 
         return f"""
-🎨 DIAGRAM GENERATION REQUIRED 🎨
+🎨 PROFESSIONAL DIAGRAM GENERATION REQUIRED 🎨
 
-The user is asking for a visual explanation. Generate a {mermaid_syntax} Mermaid diagram.
+The user is asking for a visual explanation. You MUST generate a COMPREHENSIVE, DETAILED {mermaid_syntax} Mermaid diagram.
+
+📋 DIAGRAM QUALITY REQUIREMENTS:
+- Generate COMPLETE diagrams with 8-15 nodes minimum (not simple 3-node diagrams)
+- Use SUBGRAPHS to organize related components logically
+- Include ACTUAL component names from the context (not generic "Start/Process/End")
+- Show REAL relationships and data flows between components
+- Add meaningful LABELS on connections to explain what data/actions flow between nodes
+- Use appropriate node shapes: [rectangles], (rounded), {"{"}diamonds{"}"}, [(cylinders for databases)]
 
 ⚠️ CRITICAL SYNTAX RULES - VIOLATIONS WILL CAUSE RENDERING FAILURE:
 
@@ -219,20 +298,38 @@ The user is asking for a visual explanation. Generate a {mermaid_syntax} Mermaid
    - ✅ CORRECT: A[User Service]
 
 5. Arrows must be exact:
-   - ✅ --> (solid), -.-> (dotted), -->|label| (with label)
+   - ✅ --> (solid), -.-> (dotted), -->|label| (with label), ==> (thick)
    - ❌ -> (wrong), -- > (spaces wrong)
 
-CORRECT EXAMPLE:
+6. Use subgraphs to group related components:
+   - ✅ subgraph GroupName
+           A --> B
+       end
+
+📊 PROFESSIONAL EXAMPLE (Follow this level of detail):
 {example}
 
-WRONG (DO NOT DO THIS):
+❌ WRONG - DO NOT generate simple diagrams like this:
 ```mermaid
-Here is a diagram showing the architecture:
-{mermaid_syntax}
-    A["Service"] -> B
+flowchart TD
+    A[Start] --> B[Process]
+    B --> C[End]
 ```
 
-Generate the diagram based on ACTUAL information from the retrieved context.
+✅ CORRECT - Generate detailed diagrams showing actual architecture:
+- Include ALL relevant components from the context
+- Show the COMPLETE flow/architecture, not just a summary
+- Use descriptive labels that explain each component's role
+- Group related components using subgraphs
+- Show error paths, alternative flows where applicable
+
+🎯 CONTEXT-AWARE GENERATION:
+- Extract ACTUAL service names, component names, and technologies from the retrieved context
+- Use REAL Choreo component names (e.g., "Choreo Console", "API Gateway", "Build Service", "STS", "IAM")
+- Show REALISTIC data flows based on the documentation
+- Include relevant details like authentication, data transformation, error handling
+
+Generate the diagram based on ACTUAL information from the retrieved context. Make it professional, complete, and informative.
 """
     
     def extract_diagram_keywords_from_context(self, context: str) -> List[str]:
