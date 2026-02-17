@@ -1,4 +1,4 @@
-name: Build and Test Docker Image
+name: Build and Push Docker Image
 
 on:
   push:
@@ -10,13 +10,22 @@ on:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      push_to_dockerhub:
+        description: 'Push image to Docker Hub'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_USERNAME }}/choreo-ai-assistant
 
 jobs:
   # ============================================
-  # Build and Test Docker Image (No Push)
+  # Build and Push Docker Image
   # ============================================
-  build-and-test:
-    name: Build and Test Docker Image
+  build-and-push:
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
     
     steps:
@@ -47,14 +56,38 @@ jobs:
             image=moby/buildkit:latest
             network=host
 
-      - name: Build Docker image
+      - name: Login to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_REPOSITORY }}
+          tags: |
+            # Set latest tag for main/master branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+            # Git short SHA
+            type=sha,prefix=
+            # Branch name
+            type=ref,event=branch
+            # Semver tags (if you use tags like v1.0.0)
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and Push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: false
-          load: true
-          tags: choreo-ai-assistant:test
+          push: ${{ github.event_name != 'pull_request' && (github.event.inputs.push_to_dockerhub != 'false') }}
+          load: ${{ github.event_name == 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -62,13 +95,25 @@ jobs:
             BUILDKIT_INLINE_CACHE=1
 
       - name: Test Docker image
+        if: github.event_name == 'pull_request'
         run: |
           echo "Testing Docker image..."
           docker images | grep choreo-ai-assistant
           
           # Check image size
-          IMAGE_SIZE=$(docker images choreo-ai-assistant:test --format "{{.Size}}")
+          IMAGE_SIZE=$(docker images --format "{{.Size}}" | head -1)
           echo "Image size: $IMAGE_SIZE"
-          
-          echo "✅ Build successful! Deploy to Choreo manually."
+
+      - name: Print image details
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "✅ Docker image pushed successfully to Docker Hub!"
+          echo ""
+          echo "📦 Image Tags:"
+          echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n'
+          echo ""
+          echo "🔗 Docker Hub URL: https://hub.docker.com/r/${{ env.DOCKERHUB_REPOSITORY }}"
+          echo ""
+          echo "To pull the image:"
+          echo "  docker pull ${{ env.DOCKERHUB_REPOSITORY }}:latest"
 
