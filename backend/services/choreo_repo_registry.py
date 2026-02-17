@@ -72,11 +72,12 @@ class ChoreoRepoRegistry:
         "choreo-ai-multivariate-anomaly-detector": ("wso2-enterprise", "choreo-ai-multivariate-anomaly-detector", "AI service to detect performance related anomalies in Choreo services by monitoring multiple types of metrics"),
         "choreo-ai-obs-assistant": ("wso2-enterprise", "choreo-ai-obs-assistant", "Choreo AI observability assistant for interactive natural language queries"),
         "choreo-ai-test-assistant": ("wso2-enterprise", "choreo-ai-test-assistant", "Repository for the AI-based testing solutions of Choreo"),
-        "choreo-ai-data-mapper": ("wso2-enterprise", "choreo-ai-data-mapper", "AI-powered data mapping"),
-        "choreo-ai-data-mapper-vscode-plugin": ("wso2-enterprise", "choreo-ai-data-mapper-vscode-plugin", "VS Code plugin for data mapper"),
-        "choreo-ai-performance-analyzer": ("wso2-enterprise", "choreo-ai-performance-analyzer", "AI-powered performance analysis"),
-        "choreo-ai-program-analyzer": ("wso2-enterprise", "choreo-ai-program-analyzer", "AI-powered program analysis"),
-        "choreo-ai-deployment-optimizer": ("wso2-enterprise", "choreo-ai-deployment-optimizer", "AI-powered deployment optimization"),
+        # NOTE: The following AI repos DO NOT EXIST (404 errors) - removed from registry:
+        # - choreo-ai-data-mapper
+        # - choreo-ai-data-mapper-vscode-plugin
+        # - choreo-ai-performance-analyzer
+        # - choreo-ai-program-analyzer
+        # - choreo-ai-deployment-optimizer
 
         # Alerting and Notifications
         "choreo-alert-notification-service": ("wso2-enterprise", "choreo-alert-notification-service", "Microservice that accepts notifications from multiple components"),
@@ -339,17 +340,10 @@ class ChoreoRepoRegistry:
         "anomaly-detector-init": "choreo-ai-anomaly-detector",
         "capacity-planner": "choreo-ai-capacity-planner",
         "capacity-planner-init": "choreo-ai-capacity-planner",
-        "datamapper": "choreo-ai-data-mapper",
-        "datamapper-balo-extractor": "choreo-ai-data-mapper",
-        "datamapper-init": "choreo-ai-data-mapper",
-        "deployment-optimizer": "choreo-ai-deployment-optimizer",
-        "deployment-optimizer-init": "choreo-ai-deployment-optimizer",
+        # NOTE: datamapper, deployment-optimizer, perfanalyzer, programanalyzer mappings removed - repos do not exist
         "data-collector": "choreo-ai-data-collector",
         "lowcode-parser": "choreo-ai-data-collector",
         "multivariate-anomaly-detector-notification-manager": "choreo-ai-multivariate-anomaly-detector",
-        "perfanalyzer-estimator": "choreo-ai-performance-analyzer",
-        "perfanalyzer-updater": "choreo-ai-performance-analyzer",
-        "programanalyzer": "choreo-ai-program-analyzer",
         "test-assistant": "choreo-ai-test-assistant",
         "test-assistant-init": "choreo-ai-test-assistant",
         "choreo-ai-insights-assistant": "choreo-ai-insight-assistant",
