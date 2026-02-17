@@ -328,20 +328,43 @@ function createFallbackDiagram(originalCode) {
 
   if (firstLine.startsWith('flowchart') || firstLine.startsWith('graph')) {
     return `${firstLine}
-    A[Start] --> B[Process]
-    B --> C[End]
+    subgraph Diagram
+        A[Component 1] --> B[Component 2]
+        B --> C{Decision}
+        C -->|Option 1| D[Action A]
+        C -->|Option 2| E[Action B]
+        D --> F[Result]
+        E --> F
+    end
 
-    %% Original diagram had syntax errors`
+    %% Note: Original diagram had syntax errors - this is a simplified version`
   }
 
   if (firstLine.startsWith('sequenceDiagram')) {
     return `sequenceDiagram
-    participant A as Component A
-    participant B as Component B
-    A->>B: Request
-    B-->>A: Response
+    autonumber
+    participant Client
+    participant Service
+    participant Database
 
-    %% Original diagram had syntax errors`
+    Client->>Service: Request
+    Service->>Database: Query
+    Database-->>Service: Data
+    Service-->>Client: Response
+
+    %% Note: Original diagram had syntax errors - this is a simplified version`
+  }
+
+  if (firstLine.startsWith('stateDiagram')) {
+    return `stateDiagram-v2
+    [*] --> Initial
+    Initial --> Processing
+    Processing --> Complete: Success
+    Processing --> Error: Failure
+    Complete --> [*]
+    Error --> Initial: Retry
+
+    %% Note: Original diagram had syntax errors - this is a simplified version`
   }
 
   return null
