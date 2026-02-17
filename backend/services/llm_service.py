@@ -16,12 +16,20 @@ logger = get_logger(__name__)
 def get_mermaid_instructions() -> str:
     """Get Mermaid diagram generation instructions for the system prompt."""
     return """
-MERMAID DIAGRAM GENERATION:
+MERMAID DIAGRAM GENERATION - PROFESSIONAL QUALITY REQUIRED:
 When users ask about architecture, workflows, sequences, data flows, component interactions, or system design:
-- **ALWAYS generate Mermaid diagrams** to visualize the concepts
-- Use the knowledge base context to create accurate, detailed diagrams
+- **ALWAYS generate COMPREHENSIVE Mermaid diagrams** to visualize the concepts
+- Use the knowledge base context to create accurate, DETAILED diagrams with 8-15+ nodes
 - Place diagrams in markdown code blocks with ```mermaid syntax
 - Provide both textual explanation AND visual diagram
+
+📋 DIAGRAM QUALITY REQUIREMENTS:
+- Generate COMPLETE diagrams with 8-15 nodes minimum (NOT simple 3-node diagrams)
+- Use SUBGRAPHS to organize related components logically
+- Include ACTUAL component names from the context (not generic "Start/Process/End")
+- Show REAL relationships and data flows between components
+- Add meaningful LABELS on connections to explain what data/actions flow between nodes
+- Use appropriate node shapes: [rectangles], (rounded), {diamonds}, [(cylinders for databases)]
 
 **CRITICAL: Use ONLY these diagram types (tested and working):**
 1. **flowchart TD** (or LR/RL/BT) - Use for: processes, workflows, decision trees, CI/CD pipelines, data flows
@@ -77,82 +85,140 @@ When users ask about architecture, workflows, sequences, data flows, component i
    ✅ `B-->>A: Response`
    ❌ `participant A as "User"` (no quotes)
 
-**CORRECT Mermaid Syntax Examples:**
+7. **Use subgraphs for organization:**
+   ✅ `subgraph GroupName`
+   ✅ `    A --> B`
+   ✅ `end`
 
-Flowchart (ALWAYS specify direction: TD, LR, etc.):
+**PROFESSIONAL Mermaid Syntax Examples (Follow this level of detail):**
+
+Flowchart with Subgraphs (REQUIRED for architecture):
 ```mermaid
 flowchart TD
-    A[User Request] --> B{Authentication}
-    B -->|Valid| C[Process Request]
-    B -->|Invalid| D[Return Error]
-    C --> E[Query Database]
-    E --> F[Return Response]
+    subgraph Client Layer
+        A[Developer] --> B[Choreo Console]
+        B --> C[CLI Tool]
+    end
+    
+    subgraph Control Plane
+        D[API Gateway] --> E[Auth Service]
+        E --> F[Project Manager]
+        F --> G[Build Orchestrator]
+    end
+    
+    subgraph Runtime Layer
+        H[Container Registry] --> I[Kubernetes Cluster]
+        I --> J[Running Services]
+        J --> K[Observability Stack]
+    end
+    
+    C --> D
+    G --> H
+    K --> B
 ```
 
-Sequence Diagram:
+Detailed Sequence Diagram:
 ```mermaid
 sequenceDiagram
-    participant User
-    participant API
-    participant Service
-    participant Database
-    User->>API: POST /api/deploy
-    API->>Service: Validate Request
-    Service->>Database: Store Config
-    Database-->>Service: Success
-    Service-->>API: Deployment Started
-    API-->>User: 202 Accepted
+    autonumber
+    participant Dev as Developer
+    participant Console as Choreo Console
+    participant API as API Gateway
+    participant Auth as Auth Service
+    participant Build as Build Service
+    participant Registry as Container Registry
+    participant K8s as Kubernetes
+    
+    Dev->>Console: Push code to repository
+    Console->>API: Trigger build webhook
+    API->>Auth: Validate credentials
+    Auth-->>API: Token validated
+    API->>Build: Start build pipeline
+    Build->>Build: Clone repository
+    Build->>Build: Run tests
+    Build->>Registry: Push container image
+    Registry-->>Build: Image pushed successfully
+    Build->>K8s: Deploy to cluster
+    K8s-->>Build: Deployment complete
+    Build-->>Console: Build status update
+    Console-->>Dev: Deployment successful notification
 ```
 
-Architecture/Graph (ALWAYS specify direction):
+Architecture Graph with Services:
 ```mermaid
 graph LR
-    A[Frontend] --> B[API Gateway]
-    B --> C[Auth Service]
-    B --> D[Business Logic]
-    D --> E[Database]
-    D --> F[Cache]
+    subgraph External
+        A[Users] --> B[Load Balancer]
+    end
+    
+    subgraph API Layer
+        B --> C[API Gateway]
+        C --> D[Rate Limiter]
+        D --> E[Auth Middleware]
+    end
+    
+    subgraph Services
+        E --> F[User Service]
+        E --> G[Order Service]
+        E --> H[Payment Service]
+        F --> I[(User DB)]
+        G --> J[(Order DB)]
+        H --> K[Payment Gateway]
+    end
+    
+    subgraph Observability
+        F & G & H --> L[Metrics Collector]
+        L --> M[Grafana Dashboard]
+    end
 ```
 
-State Diagram (use stateDiagram-v2):
+State Diagram with Full Lifecycle:
 ```mermaid
 stateDiagram-v2
-    [*] --> Pending
-    Pending --> Building
-    Building --> Testing
-    Testing --> Deployed: Success
-    Testing --> Failed: Error
-    Failed --> [*]
-    Deployed --> [*]
+    [*] --> Created: New deployment
+    
+    Created --> Building: Build triggered
+    Building --> Testing: Build success
+    Building --> Failed: Build error
+    
+    Testing --> Staging: Tests pass
+    Testing --> Failed: Tests fail
+    
+    Staging --> Production: Promote
+    Staging --> Rollback: Issues found
+    
+    Production --> Active: Health check pass
+    Active --> Scaling: Auto-scale triggered
+    Scaling --> Active: Scale complete
+    
+    Active --> Maintenance: Scheduled
+    Maintenance --> Active: Complete
+    
+    Failed --> Created: Retry
+    Rollback --> Staging: Fix applied
+    
+    Active --> [*]: Terminated
 ```
 
-**Best Practices:**
-- Keep diagrams simple (5-10 nodes optimal)
-- Use clear, short labels
-- NO text descriptions inside code blocks
-- Write explanation BEFORE or AFTER the diagram
-- Always test syntax is valid before generating
-
-**EXAMPLE - Complete Response with Diagram:**
-
-Here's how the Choreo deployment process works:
-
+❌ WRONG - DO NOT generate simple diagrams like this:
 ```mermaid
 flowchart TD
-    A[Developer Pushes Code] --> B[GitHub Webhook]
-    B --> C[Choreo Workflow Manager]
-    C --> D[Build Container]
-    D --> E{Tests Pass?}
-    E -->|Yes| F[Push to Registry]
-    E -->|No| G[Notify Developer]
-    F --> H[Deploy to Runtime]
-    H --> I[Health Check]
-    I --> J[Production]
+    A[Start] --> B[Process]
+    B --> C[End]
 ```
 
-The deployment involves these key steps:
-1. Developer pushes code to GitHub...
-[detailed explanation]
+✅ ALWAYS generate detailed diagrams showing:
+- ALL relevant components from the context
+- COMPLETE flow/architecture, not just a summary
+- DESCRIPTIVE labels explaining each component's role
+- SUBGRAPHS to group related components
+- ERROR paths and alternative flows where applicable
+
+🎯 CONTEXT-AWARE GENERATION:
+- Extract ACTUAL service names from the retrieved context
+- Use REAL Choreo component names (Choreo Console, API Gateway, Build Service, STS, IAM, etc.)
+- Show REALISTIC data flows based on the documentation
+- Include authentication, data transformation, error handling details
 """
 
 
