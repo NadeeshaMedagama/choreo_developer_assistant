@@ -59,7 +59,7 @@ class URLExtractorService:
     """
 
     # Known INVALID repository URLs that should NEVER be returned
-    # These are hallucinated/incorrect URLs that don't exist
+    # These are hallucinated/incorrect URLs that don't exist (404 errors)
     INVALID_REPO_URLS = {
         # Known hallucinated repos - add more as discovered
         "https://github.com/wso2-enterprise/choreo-alert-configuration-service",
@@ -67,6 +67,20 @@ class URLExtractorService:
         "https://github.com/wso2-enterprise/choreo-notification-service",
         "https://github.com/wso2-enterprise/choreo-config-service",
         "https://github.com/wso2-enterprise/choreo-settings-service",
+        "https://github.com/wso2-enterprise/choreo-observability",
+        # Invalid dataplane repos - 404 errors
+        "https://github.com/wso2-enterprise/choreodp-auth-module",
+        "https://github.com/wso2-enterprise/choreodp-cicd",
+        "https://github.com/wso2-enterprise/choreodp-secret-manager",
+        "https://github.com/wso2-enterprise/choreodp-mizzen",
+        "https://github.com/wso2-enterprise/choreodp-project-manager",
+        "https://github.com/wso2-enterprise/choreodp-cloud-manager",
+        "https://github.com/wso2-enterprise/choreodp-garbage-collector",
+        "https://github.com/wso2-enterprise/choreodp-kv-resolver",
+        "https://github.com/wso2-enterprise/choreodp-git-runners",
+        # Other invalid repos - 404 errors
+        "https://github.com/wso2-enterprise/product-microgateway",
+        "https://github.com/wso2-enterprise/growth-hacking",
     }
 
     # Patterns for invalid/hallucinated repo names
@@ -76,6 +90,20 @@ class URLExtractorService:
         r'choreo-notification-service',
         r'choreo-config-service',
         r'choreo-settings-service',
+        r'choreo-observability',
+        # Invalid dataplane repos
+        r'choreodp-auth-module',
+        r'choreodp-cicd',
+        r'choreodp-secret-manager',
+        r'choreodp-mizzen',
+        r'choreodp-project-manager',
+        r'choreodp-cloud-manager',
+        r'choreodp-garbage-collector',
+        r'choreodp-kv-resolver',
+        r'choreodp-git-runners',
+        # Other invalid repos
+        r'product-microgateway',
+        r'growth-hacking',
     ]
 
     # URL patterns for different categories
