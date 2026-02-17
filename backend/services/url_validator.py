@@ -84,6 +84,19 @@ class URLValidator:
         'github.com/wso2-enterprise/choreo-settings-service',
         'github.com/wso2-enterprise/choreo-observability',
         'github.com/wso2/choreo-observability',
+        # Invalid dataplane repos - 404 errors
+        'github.com/wso2-enterprise/choreodp-auth-module',
+        'github.com/wso2-enterprise/choreodp-cicd',
+        'github.com/wso2-enterprise/choreodp-secret-manager',
+        'github.com/wso2-enterprise/choreodp-mizzen',
+        'github.com/wso2-enterprise/choreodp-project-manager',
+        'github.com/wso2-enterprise/choreodp-cloud-manager',
+        'github.com/wso2-enterprise/choreodp-garbage-collector',
+        'github.com/wso2-enterprise/choreodp-kv-resolver',
+        'github.com/wso2-enterprise/choreodp-git-runners',
+        # Other invalid repos - 404 errors
+        'github.com/wso2-enterprise/product-microgateway',
+        'github.com/wso2-enterprise/growth-hacking',
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -131,6 +144,19 @@ class URLValidator:
         'https://github.com/wso2-enterprise/choreo-notification-service',
         'https://github.com/wso2-enterprise/choreo-config-service',
         'https://github.com/wso2-enterprise/choreo-settings-service',
+        # Invalid dataplane repos - do not exist (404 errors)
+        'https://github.com/wso2-enterprise/choreodp-auth-module',
+        'https://github.com/wso2-enterprise/choreodp-cicd',
+        'https://github.com/wso2-enterprise/choreodp-secret-manager',
+        'https://github.com/wso2-enterprise/choreodp-mizzen',
+        'https://github.com/wso2-enterprise/choreodp-project-manager',
+        'https://github.com/wso2-enterprise/choreodp-cloud-manager',
+        'https://github.com/wso2-enterprise/choreodp-garbage-collector',
+        'https://github.com/wso2-enterprise/choreodp-kv-resolver',
+        'https://github.com/wso2-enterprise/choreodp-git-runners',
+        # Other invalid repos - do not exist (404 errors)
+        'https://github.com/wso2-enterprise/product-microgateway',
+        'https://github.com/wso2-enterprise/growth-hacking',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
@@ -251,10 +277,54 @@ class URLValidator:
         """Check if URL is a GitHub URL."""
         return 'github.com' in url.lower()
 
+    def is_url_in_registry(self, url: str) -> bool:
+        """
+        Check if a GitHub URL exists in the Choreo repository registry.
+        This is CRITICAL to prevent wrong URLs from being provided to users.
+
+        Args:
+            url: GitHub URL to check
+
+        Returns:
+            True if URL is in the registry, False otherwise
+        """
+        if not self.choreo_registry:
+            return True  # If no registry, can't validate - assume valid
+
+        # Extract repo name from URL
+        pattern = r'github\.com/wso2-enterprise/([^/\?#]+)'
+        match = re.search(pattern, url, re.IGNORECASE)
+
+        if not match:
+            return True  # Not a wso2-enterprise URL, don't apply registry check
+
+        repo_name = match.group(1).lower().rstrip('/')
+
+        # Check if this repo exists in the official repos registry
+        if repo_name in self.choreo_registry.OFFICIAL_REPOS:
+            logger.debug(f"✓ URL in registry: {url}")
+            return True
+
+        # Also check service-to-repo mapping for service names
+        if repo_name in self.choreo_registry.SERVICE_TO_REPO:
+            logger.debug(f"✓ Service name in registry: {url}")
+            return True
+
+        # Check aliases
+        if repo_name in self.choreo_registry.ALIASES:
+            logger.debug(f"✓ Alias in registry: {url}")
+            return True
+
+        logger.warning(f"❌ URL NOT in registry (likely wrong/hallucinated): {url}")
+        return False
+
     async def validate_github_repo(self, url: str, session: ClientSession) -> bool:
         """
         Validate if a GitHub repository exists and is accessible.
         Uses GitHub API for better reliability than HTTP HEAD requests.
+
+        CRITICAL: For wso2-enterprise URLs, ALWAYS validates against the registry first
+        to ensure only real repos are provided to users.
 
         Args:
             url: GitHub repository URL
@@ -273,11 +343,15 @@ class URLValidator:
             return False
 
         owner, repo = match.groups()
+        repo = repo.lower().rstrip('/')
 
-        # SPECIAL HANDLING: Trust all wso2-enterprise repositories
-        # These are private repos used by Choreo developers internally
+        # CRITICAL: For wso2-enterprise URLs, ALWAYS check the registry first
+        # This prevents LLM-hallucinated URLs from being provided to users
         if owner.lower() == 'wso2-enterprise':
-            logger.info(f"✓ Trusting wso2-enterprise repository (internal): {owner}/{repo}")
+            if not self.is_url_in_registry(url):
+                logger.warning(f"❌ Rejecting wso2-enterprise URL NOT in registry: {owner}/{repo}")
+                return False
+            logger.info(f"✓ wso2-enterprise URL validated against registry: {owner}/{repo}")
             return True
 
         # Use GitHub API to check if repo exists
@@ -826,7 +900,7 @@ class URLValidator:
         if not urls:
             return {}
 
-        # Pre-validate: Automatically approve Choreo docs and wso2-enterprise URLs
+        # Pre-validate: Automatically approve Choreo docs and REGISTRY-VERIFIED wso2-enterprise URLs
         validation_results = {}
         urls_to_validate = []
 
@@ -839,10 +913,15 @@ class URLValidator:
             elif 'wso2.com/choreo/docs' in url or 'docs.choreo.dev' in url:
                 validation_results[url] = True
                 logger.info(f"✅ Auto-approved Choreo docs URL (trusted): {url}")
-            # ALWAYS approve wso2-enterprise repository URLs
+            # For wso2-enterprise URLs, VALIDATE AGAINST REGISTRY (CRITICAL!)
             elif 'github.com/wso2-enterprise' in url:
-                validation_results[url] = True
-                logger.info(f"✅ Auto-approved wso2-enterprise repo URL (trusted): {url}")
+                # Check if this URL is actually in our registry
+                if self.is_url_in_registry(url):
+                    validation_results[url] = True
+                    logger.info(f"✅ Auto-approved wso2-enterprise repo URL (verified in registry): {url}")
+                else:
+                    validation_results[url] = False
+                    logger.warning(f"❌ Rejected wso2-enterprise URL NOT in registry (hallucinated): {url}")
             # ALWAYS approve docs-choreo-dev repo
             elif 'github.com/wso2/docs-choreo-dev' in url:
                 validation_results[url] = True
