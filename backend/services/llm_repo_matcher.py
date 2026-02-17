@@ -31,8 +31,16 @@ class LLMRepoMatcher:
     def _get_registry(self):
         """Lazy load the choreo registry."""
         if self._registry is None:
-            from services.choreo_repo_registry import get_choreo_registry
-            self._registry = get_choreo_registry()
+            try:
+                from services.choreo_repo_registry import get_choreo_registry
+                self._registry = get_choreo_registry()
+            except ImportError:
+                try:
+                    from backend.services.choreo_repo_registry import get_choreo_registry
+                    self._registry = get_choreo_registry()
+                except ImportError:
+                    logger.warning("Could not import choreo_repo_registry - registry features disabled")
+                    return None
         return self._registry
 
     def extract_repo_urls_from_context(self, context: str) -> List[str]:
@@ -113,33 +121,115 @@ class LLMRepoMatcher:
     def create_repository_context_for_llm(
         self,
         context_urls: List[str],
-        source_urls: List[str]
+        source_urls: List[str],
+        include_registry: bool = True
     ) -> str:
         """
         Create a formatted list of available repositories for the LLM prompt.
 
+        CRITICAL: Always includes the complete Choreo repository registry to ensure
+        the LLM has access to ALL correct URLs and never generates wrong ones.
+
         Args:
             context_urls: URLs extracted from RAG context
             source_urls: URLs extracted from source metadata
+            include_registry: Whether to include the full registry (default True)
 
         Returns:
             Formatted string with available repository URLs
         """
-        # Combine and deduplicate
-        all_urls = sorted(set(context_urls + source_urls))
+        # Combine and deduplicate context URLs
+        context_all_urls = sorted(set(context_urls + source_urls))
 
-        if not all_urls:
-            return "No repository URLs found in the current context."
+        # Get the full registry for CORRECT URLs
+        registry = self._get_registry()
 
-        # Format for LLM
-        repo_list = "\n".join(f"  • {url}" for url in all_urls)
+        # Build comprehensive URL guidance
+        output = """🔴 CRITICAL: CHOREO REPOSITORY URL RULES 🔴
 
-        return f"""AVAILABLE REPOSITORY URLs (from knowledge base):
-{repo_list}
+⚠️ ALL Choreo repositories are in the PRIVATE wso2-enterprise organization
+⚠️ NEVER use github.com/wso2/choreo-* URLs - they are WRONG (404 errors)
+⚠️ ALWAYS use github.com/wso2-enterprise/{repo-name} format
 
-These are the ONLY repository URLs you can reference. If the user asks about
-a repository not in this list, say it's not available in the current context.
 """
+
+        # Add context-specific URLs if found
+        if context_all_urls:
+            output += f"""📌 URLs FROM CURRENT CONTEXT (highest priority):
+"""
+            for url in context_all_urls:
+                output += f"  ✓ {url}\n"
+            output += "\n"
+
+        # Include the COMPLETE registry to prevent wrong URL generation
+        if include_registry and registry:
+            output += """📚 COMPLETE CHOREO REPOSITORY REGISTRY (use ONLY these URLs):
+
+"""
+            # Get all repos from registry
+            repos = registry._get_hardcoded_repos_as_list()
+
+            # Group by category for clarity
+            choreo_core = []
+            choreo_ai = []
+            choreo_apim = []
+            choreo_dp = []
+            choreo_other = []
+
+            for repo in repos:
+                name = repo.get('name', '').lower()
+                url = repo.get('url', '')
+                desc = repo.get('description', '')[:60]
+
+                if 'choreo-ai' in name:
+                    choreo_ai.append((name, url, desc))
+                elif 'choreo-apim' in name or 'apim' in name:
+                    choreo_apim.append((name, url, desc))
+                elif 'choreodp' in name or 'choreo-dp' in name or 'dataplane' in name:
+                    choreo_dp.append((name, url, desc))
+                elif 'choreo' in name:
+                    choreo_core.append((name, url, desc))
+                else:
+                    choreo_other.append((name, url, desc))
+
+            if choreo_core:
+                output += "CORE CHOREO REPOSITORIES:\n"
+                for name, url, desc in sorted(choreo_core)[:30]:
+                    output += f"  • {name}: {url}\n"
+                output += "\n"
+
+            if choreo_ai:
+                output += "AI SERVICE REPOSITORIES:\n"
+                for name, url, desc in sorted(choreo_ai):
+                    output += f"  • {name}: {url}\n"
+                output += "\n"
+
+            if choreo_apim:
+                output += "API MANAGEMENT REPOSITORIES:\n"
+                for name, url, desc in sorted(choreo_apim):
+                    output += f"  • {name}: {url}\n"
+                output += "\n"
+
+            if choreo_dp:
+                output += "DATA PLANE REPOSITORIES:\n"
+                for name, url, desc in sorted(choreo_dp):
+                    output += f"  • {name}: {url}\n"
+                output += "\n"
+
+        output += """
+🚫 DO NOT:
+- Generate URLs that are not in the registry above
+- Use github.com/wso2/ for Choreo repos (WRONG organization)
+- Make up repository names or guess URLs
+- Provide URLs that will result in 404 errors
+
+✅ DO:
+- Use ONLY URLs from the registry above
+- Use wso2-enterprise organization for ALL Choreo repos
+- If a repo is not listed, say it's not in the knowledge base
+"""
+
+        return output
 
     def generate_enhanced_system_prompt(
         self,
