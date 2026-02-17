@@ -302,28 +302,21 @@ class ChoreoRepoRegistry:
         "wso2-baremetal-kube-cluster-provisioner": ("wso2-enterprise", "wso2-baremetal-kube-cluster-provisioner", "Baremetal kubernetes cluster provisioning scripts for choreo"),
         "ballerina-registry-control-plane": ("wso2-enterprise", "ballerina-registry-control-plane", "Ballerina registry control plane"),
 
-        # Data Plane Components (from Important links.docx)
-        "choreodp-auth-module": ("wso2-enterprise", "choreodp-auth-module", "Choreo dataplane authentication module"),
-        "choreodp-cicd": ("wso2-enterprise", "choreodp-cicd", "Choreo dataplane CI/CD components and Argo workflows"),
-        "choreodp-secret-manager": ("wso2-enterprise", "choreodp-secret-manager", "Choreo dataplane secret manager"),
-        "choreodp-mizzen": ("wso2-enterprise", "choreodp-mizzen", "Choreo dataplane mizzen and mizzen-agent"),
-        "choreodp-project-manager": ("wso2-enterprise", "choreodp-project-manager", "Choreo dataplane project manager"),
-        "choreodp-cloud-manager": ("wso2-enterprise", "choreodp-cloud-manager", "Choreo dataplane cloud manager"),
-        "choreodp-garbage-collector": ("wso2-enterprise", "choreodp-garbage-collector", "Choreo dataplane garbage collector"),
-        "choreodp-kv-resolver": ("wso2-enterprise", "choreodp-kv-resolver", "Choreo dataplane key-value resolver"),
-        "choreodp-git-runners": ("wso2-enterprise", "choreodp-git-runners", "Choreo dataplane GitHub runners"),
-
-        # Microgateway
-        "product-microgateway": ("wso2-enterprise", "product-microgateway", "WSO2 Microgateway used by Choreo"),
-
-        # Alert Configuration
-        "choreo-alert-configuration-service": ("wso2-enterprise", "choreo-alert-configuration-service", "Service for configuring alerts in Choreo"),
+        # NOTE: The following repos DO NOT EXIST (404 errors) - removed from registry:
+        # - choreodp-auth-module
+        # - choreodp-cicd
+        # - choreodp-secret-manager
+        # - choreodp-mizzen
+        # - choreodp-project-manager
+        # - choreodp-cloud-manager
+        # - choreodp-garbage-collector
+        # - choreodp-kv-resolver
+        # - choreodp-git-runners
+        # - product-microgateway
+        # - growth-hacking
 
         # Metered Usage
         "choreo-metered-usage-handler": ("wso2-enterprise", "choreo-metered-usage-handler", "Service for handling metered usage in Choreo"),
-
-        # Growth Hacking
-        "growth-hacking": ("wso2-enterprise", "growth-hacking", "Growth hacking tools including BigQuery data pipeline"),
     }
 
     # Known aliases for components
@@ -380,9 +373,7 @@ class ChoreoRepoRegistry:
 
         # APIM Services
         "choreo-apim-service": "choreo-apim",
-        "choreo-mgw-adapter": "product-microgateway",
-        "choreo-mgw-enforcer": "product-microgateway",
-        "choreo-mgw-router": "product-microgateway",
+        # NOTE: choreo-mgw-* mappings removed - product-microgateway repo does not exist
         "choreo-apk-adapter": "choreo-product-apim",
         "choreo-apk-common-controller": "choreo-product-apim",
         "choreo-apk-enforcer": "choreo-product-apim",
@@ -394,7 +385,7 @@ class ChoreoRepoRegistry:
         # Email and Notifications
         "email-service": "choreo-email",
         "alert-notification-service": "choreo-alert-notification-service",
-        "alert-configuration-service": "choreo-alert-configuration-service",
+        # NOTE: alert-configuration-service mapping removed - repo does not exist
 
         # Language Server
         "lang-server": "choreo-lang-server",
@@ -406,32 +397,13 @@ class ChoreoRepoRegistry:
         "choreo-sys-obsapi-dp": "choreo-sys-obsapi",
         "choreo-alerting-api": "choreo-alerting",
 
-        # Data Plane Services
-        "dp-auth-module": "choreodp-auth-module",
-        "dp-cicd": "choreodp-cicd",
-        "dp-cicd-runners-cleaner": "choreodp-cicd",
-        "dp-cicd-build-status-cleaner": "choreodp-cicd",
-        "argo-base-image": "choreodp-cicd",
-        "argo-checkov-scan": "choreodp-cicd",
-        "argo-environment-cleanup": "choreodp-cicd",
-        "argo-environment-setup": "choreodp-cicd",
-        "argo-validations": "choreodp-cicd",
-        "argo-buildpack-build": "choreodp-cicd",
-        "argo-docker-build": "choreodp-cicd",
-        "argo-image-push": "choreodp-cicd",
-        "argo-trivy-scan": "choreodp-cicd",
+        # NOTE: Data Plane service mappings removed - these repos do not exist:
+        # - choreodp-auth-module, choreodp-cicd, choreodp-secret-manager
+        # - choreodp-mizzen, choreodp-project-manager, choreodp-cloud-manager
+        # - choreodp-garbage-collector, choreodp-kv-resolver, choreodp-git-runners
         "dp-rudder": "choreodp-rudder",
         "dp-rudder-migration-service": "choreodp-rudder",
         "dp-rudder-cilium": "choreodp-rudder",
-        "dp-secret-manager": "choreodp-secret-manager",
-        "dp-mizzen": "choreodp-mizzen",
-        "dp-mizzen-agent": "choreodp-mizzen",
-        "dp-project-manager": "choreodp-project-manager",
-        "dp-cloud-manager": "choreodp-cloud-manager",
-        "dp-garbage-collector": "choreodp-garbage-collector",
-        "dp-kv-resolver": "choreodp-kv-resolver",
-        "kube-rbac-proxy": "choreodp-kv-resolver",
-        "gh-runner": "choreodp-git-runners",
 
         # Console
         "choreo-console-next": "choreo-console",
@@ -540,8 +512,7 @@ class ChoreoRepoRegistry:
         # CLI
         "choreo-mcp-server-main": "choreo-cli",
 
-        # Growth Hacking
-        "choreo-bq-data-pipeline": "growth-hacking",
+        # NOTE: growth-hacking mapping removed - repo does not exist
     }
 
     # Base GitHub URL
