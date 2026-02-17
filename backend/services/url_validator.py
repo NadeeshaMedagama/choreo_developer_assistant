@@ -97,6 +97,12 @@ class URLValidator:
         # Other invalid repos - 404 errors
         'github.com/wso2-enterprise/product-microgateway',
         'github.com/wso2-enterprise/growth-hacking',
+        # Invalid AI repos - 404 errors
+        'github.com/wso2-enterprise/choreo-ai-performance-analyzer',
+        'github.com/wso2-enterprise/choreo-ai-program-analyzer',
+        'github.com/wso2-enterprise/choreo-ai-deployment-optimizer',
+        'github.com/wso2-enterprise/choreo-ai-data-mapper-vscode-plugin',
+        'github.com/wso2-enterprise/choreo-ai-data-mapper',
     ]
 
     # Complete URL patterns that are known to be completely wrong
@@ -157,6 +163,12 @@ class URLValidator:
         # Other invalid repos - do not exist (404 errors)
         'https://github.com/wso2-enterprise/product-microgateway',
         'https://github.com/wso2-enterprise/growth-hacking',
+        # Invalid AI repos - do not exist (404 errors)
+        'https://github.com/wso2-enterprise/choreo-ai-performance-analyzer',
+        'https://github.com/wso2-enterprise/choreo-ai-program-analyzer',
+        'https://github.com/wso2-enterprise/choreo-ai-deployment-optimizer',
+        'https://github.com/wso2-enterprise/choreo-ai-data-mapper-vscode-plugin',
+        'https://github.com/wso2-enterprise/choreo-ai-data-mapper',
     ]
 
     # URL Correction Mapping: Maps invalid URL patterns to correct internal documentation URLs
