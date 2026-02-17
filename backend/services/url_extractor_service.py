@@ -81,6 +81,12 @@ class URLExtractorService:
         # Other invalid repos - 404 errors
         "https://github.com/wso2-enterprise/product-microgateway",
         "https://github.com/wso2-enterprise/growth-hacking",
+        # Invalid AI repos - 404 errors
+        "https://github.com/wso2-enterprise/choreo-ai-performance-analyzer",
+        "https://github.com/wso2-enterprise/choreo-ai-program-analyzer",
+        "https://github.com/wso2-enterprise/choreo-ai-deployment-optimizer",
+        "https://github.com/wso2-enterprise/choreo-ai-data-mapper-vscode-plugin",
+        "https://github.com/wso2-enterprise/choreo-ai-data-mapper",
     }
 
     # Patterns for invalid/hallucinated repo names
@@ -104,6 +110,12 @@ class URLExtractorService:
         # Other invalid repos
         r'product-microgateway',
         r'growth-hacking',
+        # Invalid AI repos
+        r'choreo-ai-performance-analyzer',
+        r'choreo-ai-program-analyzer',
+        r'choreo-ai-deployment-optimizer',
+        r'choreo-ai-data-mapper-vscode-plugin',
+        r'choreo-ai-data-mapper',
     ]
 
     # URL patterns for different categories
