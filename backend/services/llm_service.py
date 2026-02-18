@@ -16,17 +16,21 @@ logger = get_logger(__name__)
 def get_mermaid_instructions() -> str:
     """Get Mermaid diagram generation instructions for the system prompt."""
     return """
-MERMAID DIAGRAM GENERATION - PROFESSIONAL QUALITY REQUIRED:
+🚨 MERMAID DIAGRAM GENERATION - PROFESSIONAL QUALITY ON FIRST ATTEMPT 🚨
+
+⚡ FIRST ATTEMPT POLICY: Generate COMPLETE, PROFESSIONAL diagrams immediately - not simple placeholders.
+
 When users ask about architecture, workflows, sequences, data flows, component interactions, or system design:
 - **ALWAYS generate COMPREHENSIVE Mermaid diagrams** to visualize the concepts
-- Use the knowledge base context to create accurate, DETAILED diagrams with 8-15+ nodes
+- Use the knowledge base context to create accurate, DETAILED diagrams with 10-20 nodes
 - Place diagrams in markdown code blocks with ```mermaid syntax
 - Provide both textual explanation AND visual diagram
+- This is your ONLY chance - create the FULL diagram now, not a simple version
 
-📋 DIAGRAM QUALITY REQUIREMENTS:
-- Generate COMPLETE diagrams with 8-15 nodes minimum (NOT simple 3-node diagrams)
+📋 MANDATORY DIAGRAM QUALITY REQUIREMENTS (ENFORCED):
+- Generate COMPLETE diagrams with 10-20 nodes minimum (NEVER simple 3-5 node diagrams)
 - Use SUBGRAPHS to organize related components logically
-- Include ACTUAL component names from the context (not generic "Start/Process/End")
+- Include ACTUAL component names from the context (NEVER generic "Start/Process/End")
 - Show REAL relationships and data flows between components
 - Add meaningful LABELS on connections to explain what data/actions flow between nodes
 - Use appropriate node shapes: [rectangles], (rounded), {diamonds}, [(cylinders for databases)]
