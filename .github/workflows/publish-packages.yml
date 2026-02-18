@@ -42,6 +42,7 @@ permissions:
   contents: read
   packages: write
   id-token: write
+  attestations: write
 
 jobs:
   # ============================================
@@ -130,11 +131,24 @@ jobs:
             VERSION=${{ steps.meta.outputs.version }}
 
       - name: Generate artifact attestation
+        # This step is optional - it may fail on private repos or if attestations are not enabled
+        # See: https://docs.github.com/en/actions/security-guides/using-artifact-attestations
+        continue-on-error: true
+        id: attestation
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build-push.outputs.digest }}
           push-to-registry: true
+
+      - name: Attestation status
+        run: |
+          if [ "${{ steps.attestation.outcome }}" == "success" ]; then
+            echo "✅ Build attestation created successfully"
+          else
+            echo "⚠️ Build attestation skipped (may require additional setup for private repositories)"
+            echo "See: https://docs.github.com/en/actions/security-guides/using-artifact-attestations"
+          fi
 
       - name: Output image details
         run: |
