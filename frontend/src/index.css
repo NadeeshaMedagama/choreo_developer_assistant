@@ -48,17 +48,73 @@ html, body, #root {
   font-size: 0.9375rem; /* Slightly smaller than body text */
 }
 
-/* Mermaid diagram styling */
+/* Mermaid diagram styling - prevent text clipping */
 .mermaid-diagram {
   max-width: 100%;
   overflow-x: auto;
+  overflow-y: visible;
 }
 
 .mermaid-diagram svg {
-  max-width: 100%;
+  /* Remove max-width to prevent text clipping */
+  max-width: none !important;
+  min-width: fit-content;
   height: auto;
   display: block;
   margin: 0 auto;
+  overflow: visible;
+}
+
+/* Ensure text nodes are fully visible */
+.mermaid-diagram .nodeLabel,
+.mermaid-diagram .label,
+.mermaid-diagram .edgeLabel,
+.mermaid-diagram text,
+.mermaid-diagram foreignObject {
+  overflow: visible !important;
+}
+
+/* Ensure node containers don't clip content */
+.mermaid-diagram .node,
+.mermaid-diagram .cluster,
+.mermaid-diagram g.node,
+.mermaid-diagram g.cluster {
+  overflow: visible !important;
+}
+
+/* Fix foreignObject (used for HTML labels) */
+.mermaid-diagram foreignObject {
+  overflow: visible !important;
+}
+
+.mermaid-diagram foreignObject div {
+  overflow: visible !important;
+  white-space: nowrap;
+}
+
+/* Ensure node labels show full text without truncation */
+.mermaid-diagram .nodeLabel {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+/* Fix label containers to expand with content */
+.mermaid-diagram .label {
+  overflow: visible !important;
+  max-width: none !important;
+}
+
+/* Ensure spans inside labels don't truncate */
+.mermaid-diagram .nodeLabel span,
+.mermaid-diagram .label span,
+.mermaid-diagram .edgeLabel span {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  display: inline !important;
 }
 
 /* Make Mermaid diagrams responsive */
