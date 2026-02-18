@@ -270,64 +270,79 @@ stateDiagram-v2
         example = examples.get(mermaid_syntax, examples['flowchart TD'])
 
         return f"""
-🎨 PROFESSIONAL DIAGRAM GENERATION REQUIRED 🎨
+🚨🚨🚨 HIGHEST PRIORITY - DIAGRAM GENERATION REQUIRED 🚨🚨🚨
 
-The user is asking for a visual explanation. You MUST generate a COMPREHENSIVE, DETAILED {mermaid_syntax} Mermaid diagram.
+⚡ THIS IS YOUR FIRST AND ONLY ATTEMPT - GET IT RIGHT NOW ⚡
+You MUST generate a PROFESSIONAL, COMPREHENSIVE Mermaid diagram on this FIRST response.
+Do NOT create a simple placeholder diagram - create the COMPLETE, DETAILED diagram immediately.
 
-📋 DIAGRAM QUALITY REQUIREMENTS:
-- Generate COMPLETE diagrams with 8-15 nodes minimum (not simple 3-node diagrams)
-- Use SUBGRAPHS to organize related components logically
-- Include ACTUAL component names from the context (not generic "Start/Process/End")
-- Show REAL relationships and data flows between components
-- Add meaningful LABELS on connections to explain what data/actions flow between nodes
-- Use appropriate node shapes: [rectangles], (rounded), {"{"}diamonds{"}"}, [(cylinders for databases)]
+🎯 USER REQUEST TYPE: {mermaid_syntax} diagram
+The user is asking for a visual explanation and expects a PROFESSIONAL-GRADE diagram.
 
-⚠️ CRITICAL SYNTAX RULES - VIOLATIONS WILL CAUSE RENDERING FAILURE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 MANDATORY DIAGRAM QUALITY REQUIREMENTS (NON-NEGOTIABLE):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. First line inside code block MUST be ONLY: {mermaid_syntax}
-   - NO descriptions, NO comments on the first line
-   
-2. NO text inside the mermaid code block except valid Mermaid syntax
+1. 📊 COMPLEXITY: Generate diagrams with 10-20 nodes (NEVER just 3-5 nodes)
+2. 📦 ORGANIZATION: ALWAYS use SUBGRAPHS to group related components
+3. 🏷️ NAMING: Use ACTUAL component names from context (never "Start", "Process", "End")
+4. 🔗 CONNECTIONS: Add meaningful LABELS on arrows explaining data/action flow
+5. 🎨 SHAPES: Use appropriate shapes: [rectangles], (rounded), {"{"}diamonds{"}"}, [(databases)]
+6. 📝 DETAIL: Include ALL relevant steps, not a high-level summary
 
-3. Node IDs: Use only letters, numbers, underscores (A, B1, UserService)
-   - ❌ WRONG: user-service, api.call, "my node"
-   - ✅ CORRECT: UserService, API_Call, MyNode
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CRITICAL MERMAID SYNTAX RULES (MUST FOLLOW EXACTLY):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-4. Labels in brackets without quotes:
-   - ❌ WRONG: A["User Service"]
-   - ✅ CORRECT: A[User Service]
+1. FIRST LINE must be ONLY: {mermaid_syntax}
+   ❌ WRONG: flowchart TD - Architecture diagram
+   ✅ CORRECT: flowchart TD
 
-5. Arrows must be exact:
-   - ✅ --> (solid), -.-> (dotted), -->|label| (with label), ==> (thick)
-   - ❌ -> (wrong), -- > (spaces wrong)
+2. NO text inside mermaid code block except valid Mermaid syntax
 
-6. Use subgraphs to group related components:
-   - ✅ subgraph GroupName
-           A --> B
-       end
+3. Node IDs: alphanumeric + underscores only
+   ❌ user-service, api.call
+   ✅ UserService, API_Call
 
-📊 PROFESSIONAL EXAMPLE (Follow this level of detail):
+4. Labels WITHOUT quotes:
+   ❌ A["User Service"]
+   ✅ A[User Service]
+
+5. Arrow syntax:
+   ✅ --> (solid), -.-> (dotted), ==> (thick), -->|label|
+
+6. Subgraph syntax:
+   subgraph GroupName
+       A --> B
+   end
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 FOLLOW THIS PROFESSIONAL EXAMPLE (This is the MINIMUM quality expected):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {example}
 
-❌ WRONG - DO NOT generate simple diagrams like this:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❌ ABSOLUTELY FORBIDDEN - NEVER GENERATE SIMPLE DIAGRAMS LIKE THIS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```mermaid
 flowchart TD
     A[Start] --> B[Process]
     B --> C[End]
 ```
+This is UNACCEPTABLE. Such simple diagrams will be REJECTED.
 
-✅ CORRECT - Generate detailed diagrams showing actual architecture:
-- Include ALL relevant components from the context
-- Show the COMPLETE flow/architecture, not just a summary
-- Use descriptive labels that explain each component's role
-- Group related components using subgraphs
-- Show error paths, alternative flows where applicable
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 CONTEXT-AWARE GENERATION CHECKLIST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Before generating, verify your diagram includes:
+✓ ALL service/component names from the retrieved context
+✓ REAL Choreo components (Console, API Gateway, Build Service, STS, IAM, etc.)
+✓ REALISTIC data flows based on documentation
+✓ Authentication/authorization steps if applicable
+✓ Error handling paths where relevant
+✓ Multiple subgraphs for logical organization
 
-🎯 CONTEXT-AWARE GENERATION:
-- Extract ACTUAL service names, component names, and technologies from the retrieved context
-- Use REAL Choreo component names (e.g., "Choreo Console", "API Gateway", "Build Service", "STS", "IAM")
-- Show REALISTIC data flows based on the documentation
-- Include relevant details like authentication, data transformation, error handling
+REMEMBER: This is the FIRST and ONLY attempt. Create the COMPLETE diagram NOW.
 
 Generate the diagram based on ACTUAL information from the retrieved context. Make it professional, complete, and informative.
 """
@@ -385,6 +400,43 @@ Generate the diagram based on ACTUAL information from the retrieved context. Mak
             "should_have_diagram": term_count >= 3 and not has_diagram,
             "suggestion": "Consider adding a diagram to visualize this" if term_count >= 3 and not has_diagram else None
         }
+
+    def enhance_user_question_for_diagram(self, question: str, diagram_type: Optional[str] = None) -> str:
+        """
+        Enhance the user's question to explicitly request a professional diagram.
+        This reinforces the diagram quality requirements at the user message level.
+
+        Args:
+            question: Original user question
+            diagram_type: Detected diagram type
+
+        Returns:
+            Enhanced question with explicit diagram requirements
+        """
+        if not diagram_type:
+            diagram_type = self.detect_diagram_type(question) or "flowchart"
+
+        # Map to human-readable diagram type
+        type_descriptions = {
+            'flowchart': 'flowchart diagram',
+            'sequence': 'sequence diagram',
+            'graph': 'architecture diagram',
+            'state': 'state diagram'
+        }
+
+        diagram_desc = type_descriptions.get(diagram_type, 'diagram')
+
+        # Add explicit requirements to the question
+        enhanced_question = f"""{question}
+
+[IMPORTANT: Generate a COMPLETE, PROFESSIONAL {diagram_desc} with:
+- 10-20 nodes showing ALL relevant components
+- Subgraphs to organize related components
+- Real component names from the context (not generic names)
+- Labeled connections showing data/action flow
+- This is my FIRST request - provide the FULL detailed diagram immediately, not a simple placeholder]"""
+
+        return enhanced_question
 
 
 # Singleton instance
