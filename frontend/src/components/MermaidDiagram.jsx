@@ -13,9 +13,29 @@ mermaid.initialize({
     fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif'
   },
   flowchart: {
-    useMaxWidth: true,
+    useMaxWidth: false, // IMPORTANT: Disable to prevent text clipping
     htmlLabels: true,
-    curve: 'basis'
+    curve: 'basis',
+    padding: 20, // Add padding around nodes
+    nodeSpacing: 50, // Space between nodes
+    rankSpacing: 50, // Space between ranks
+    diagramPadding: 20, // Padding around the diagram
+    wrappingWidth: 400 // Increase width before wrapping to prevent truncation
+  },
+  sequence: {
+    useMaxWidth: false,
+    diagramMarginX: 20,
+    diagramMarginY: 20,
+    boxMargin: 10,
+    boxTextMargin: 10,
+    noteMargin: 10,
+    messageMargin: 35,
+    width: 200, // Increase minimum width for boxes
+    wrap: false // Disable text wrapping to show full text
+  },
+  state: {
+    useMaxWidth: false,
+    padding: 8
   }
 })
 
@@ -321,6 +341,77 @@ async function renderWithTimeout(id, code, timeoutMs = 5000) {
   ])
 }
 
+// Post-process SVG to fix truncated text and remove unwanted prefixes
+function postProcessSvg(svgString) {
+  if (!svgString) return svgString
+
+  let processed = svgString
+
+  // Fix 1: Remove shape type prefixes like "rect:", "circle:", "ellipse:", etc.
+  // These appear when Mermaid truncates labels and shows the shape type
+  const shapeTypePrefixes = [
+    'rect:', 'circle:', 'ellipse:', 'polygon:', 'diamond:', 'hexagon:',
+    'stadium:', 'subroutine:', 'cylinder:', 'round:', 'lean_right:',
+    'lean_left:', 'trapezoid:', 'inv_trapezoid:', 'odd:', 'rhombus:'
+  ]
+
+  for (const prefix of shapeTypePrefixes) {
+    // Match the prefix in text content (case insensitive)
+    const regex = new RegExp(`>${prefix}\\s*`, 'gi')
+    processed = processed.replace(regex, '>')
+
+    // Also check for prefixes within spans or other elements
+    const spanRegex = new RegExp(`(>\\s*)${prefix}\\s*`, 'gi')
+    processed = processed.replace(spanRegex, '$1')
+  }
+
+  // Fix 2: Remove viewBox constraints that may cause clipping
+  // Make the SVG expand to fit its content
+  processed = processed.replace(
+    /(<svg[^>]*)\s+viewBox="([^"]*)"([^>]*>)/gi,
+    (match, before, viewBox, after) => {
+      // Keep the viewBox but ensure overflow is visible
+      return `${before} viewBox="${viewBox}" style="overflow: visible;"${after}`
+    }
+  )
+
+  // Fix 3: Ensure text elements have overflow visible
+  processed = processed.replace(
+    /<text([^>]*)>/gi,
+    '<text$1 style="overflow: visible;">'
+  )
+
+  // Fix 4: Ensure foreignObject elements (used for HTML labels) don't clip
+  processed = processed.replace(
+    /<foreignObject([^>]*)>/gi,
+    (match, attrs) => {
+      // Add or update overflow style
+      if (attrs.includes('style=')) {
+        return match.replace(/style="([^"]*)"/, 'style="$1; overflow: visible;"')
+      }
+      return `<foreignObject${attrs} style="overflow: visible;">`
+    }
+  )
+
+  // Fix 5: Expand any fixed width/height constraints on text containers
+  processed = processed.replace(
+    /<div([^>]*class="[^"]*nodeLabel[^"]*"[^>]*)>/gi,
+    (match, attrs) => {
+      if (attrs.includes('style=')) {
+        return match.replace(/style="([^"]*)"/, 'style="$1; white-space: nowrap; overflow: visible;"')
+      }
+      return `<div${attrs} style="white-space: nowrap; overflow: visible;">`
+    }
+  )
+
+  // Fix 6: Remove truncation ellipsis and restore full text
+  processed = processed.replace(/…<\/span>/g, '</span>')
+  processed = processed.replace(/…<\/text>/g, '</text>')
+  processed = processed.replace(/…<\/div>/g, '</div>')
+
+  return processed
+}
+
 // Try to create a simpler fallback diagram if the original fails
 function createFallbackDiagram(originalCode) {
   // Extract just the first line to get diagram type
@@ -492,7 +583,7 @@ export default function MermaidDiagram({ chart, isDark }) {
           }
         }
 
-        // Update theme based on dark mode - also suppress errors
+        // Update theme based on dark mode - also suppress errors and prevent text clipping
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',
@@ -504,9 +595,29 @@ export default function MermaidDiagram({ chart, isDark }) {
             fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
           },
           flowchart: {
-            useMaxWidth: true,
+            useMaxWidth: false, // IMPORTANT: Disable to prevent text clipping
             htmlLabels: true,
-            curve: 'basis'
+            curve: 'basis',
+            padding: 20,
+            nodeSpacing: 50,
+            rankSpacing: 50,
+            diagramPadding: 20,
+            wrappingWidth: 400 // Increase width before wrapping to prevent truncation
+          },
+          sequence: {
+            useMaxWidth: false,
+            diagramMarginX: 20,
+            diagramMarginY: 20,
+            boxMargin: 10,
+            boxTextMargin: 10,
+            noteMargin: 10,
+            messageMargin: 35,
+            width: 200, // Increase minimum width for boxes
+            wrap: false // Disable text wrapping to show full text
+          },
+          state: {
+            useMaxWidth: false,
+            padding: 8
           }
         })
 
@@ -536,7 +647,9 @@ export default function MermaidDiagram({ chart, isDark }) {
         }
 
         if (result && result.svg) {
-          setSvg(result.svg)
+          // Post-process SVG to fix truncated text and remove unwanted prefixes
+          const processedSvg = postProcessSvg(result.svg)
+          setSvg(processedSvg)
           setIsRendering(false)
         } else {
           throw new Error('Mermaid returned empty result')
@@ -602,12 +715,19 @@ export default function MermaidDiagram({ chart, isDark }) {
     return null
   }
 
+  // Progressive zoom increments - larger steps at higher zoom levels
+  const getZoomIncrement = (currentZoom) => {
+    if (currentZoom >= 5) return 1.0    // 100% increments above 500%
+    if (currentZoom >= 2) return 0.5    // 50% increments above 200%
+    return 0.25                          // 25% increments below 200%
+  }
+
   const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.25, 3))
+    setZoomLevel(prev => Math.min(prev + getZoomIncrement(prev), 10))
   }
 
   const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.25, 0.5))
+    setZoomLevel(prev => Math.max(prev - getZoomIncrement(prev - getZoomIncrement(prev)), 0.25))
   }
 
   const handleResetZoom = () => {
@@ -633,7 +753,7 @@ export default function MermaidDiagram({ chart, isDark }) {
     <div className={`flex items-center gap-1 ${inFullscreen ? 'mb-4' : 'mb-2'}`}>
       <button
         onClick={handleZoomOut}
-        disabled={zoomLevel <= 0.5}
+        disabled={zoomLevel <= 0.25}
         className={`p-1.5 rounded transition-colors ${
           isDark
             ? 'hover:bg-gray-700 disabled:opacity-30 text-gray-300'
@@ -650,7 +770,7 @@ export default function MermaidDiagram({ chart, isDark }) {
       </span>
       <button
         onClick={handleZoomIn}
-        disabled={zoomLevel >= 3}
+        disabled={zoomLevel >= 10}
         className={`p-1.5 rounded transition-colors ${
           isDark
             ? 'hover:bg-gray-700 disabled:opacity-30 text-gray-300'
@@ -713,29 +833,36 @@ export default function MermaidDiagram({ chart, isDark }) {
         </div>
       </div>
 
-      {/* Fullscreen modal */}
+      {/* Fullscreen modal - nearly full screen */}
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-auto"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-4"
           style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.98)' }}
           onClick={(e) => {
             if (e.target === e.currentTarget) toggleFullscreen()
           }}
         >
-          <div className={`w-full max-w-6xl mx-4 my-8 p-6 rounded-xl shadow-2xl ${
-            isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-          }`}>
-            <div className="flex items-center justify-between mb-4">
+          <div
+            className={`w-full rounded-xl shadow-2xl flex flex-col ${
+              isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+            }`}
+            style={{
+              maxWidth: 'calc(100vw - 32px)',
+              maxHeight: 'calc(100vh - 32px)',
+              minHeight: 'calc(100vh - 32px)'
+            }}
+          >
+            <div className="flex items-center justify-between p-4 border-b flex-shrink-0" style={{ borderColor: isDark ? '#374151' : '#e5e7eb' }}>
               <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                📊 Diagram View
+                📊 Diagram View (Full Screen)
               </h3>
               <Controls inFullscreen />
             </div>
-            <div className="overflow-auto max-h-[80vh] flex items-center justify-center">
+            <div className="flex-1 overflow-auto p-6 flex items-start justify-center">
               <DiagramContent inFullscreen />
             </div>
-            <div className={`mt-4 text-center text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-              Press <kbd className={`px-1.5 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>Esc</kbd> or click outside to close
+            <div className={`p-3 text-center text-xs border-t flex-shrink-0 ${isDark ? 'text-gray-500 border-gray-700' : 'text-gray-400 border-gray-200'}`}>
+              Press <kbd className={`px-1.5 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>Esc</kbd> or click outside to close • Use zoom controls to enlarge (up to 1000%)
             </div>
           </div>
         </div>
