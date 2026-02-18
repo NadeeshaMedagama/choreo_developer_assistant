@@ -585,19 +585,26 @@ async def ask_ai(request: AskRequest):
         )
 
         # Add diagram generation enhancement if this is a diagram query
+        # IMPORTANT: Prepend at the BEGINNING of the prompt for higher priority
         if is_diagram_query:
             diagram_enhancement = diagram_service.generate_diagram_prompt_enhancement(
                 question, diagram_type
             )
-            system_prompt += f"\n\n{diagram_enhancement}"
+            # Prepend diagram instructions at the START of the prompt for maximum attention
+            system_prompt = f"{diagram_enhancement}\n\n{system_prompt}"
             monitoring.log_info(
-                "Added diagram generation instructions to system prompt",
+                "Added diagram generation instructions to system prompt (prepended for priority)",
                 logger_type='ai',
                 diagram_type=diagram_type or "general"
             )
 
+        # Enhance the user question for diagram queries to reinforce quality requirements
+        final_question = question
+        if is_diagram_query:
+            final_question = diagram_service.enhance_user_question_for_diagram(question, diagram_type)
+
         messages = conversation_memory_manager.build_llm_messages(
-            question=question,
+            question=final_question,
             context=context_text,
             recent_messages=recent_messages,
             summary=summary,
@@ -606,10 +613,12 @@ async def ask_ai(request: AskRequest):
 
         # 5. Get LLM response
         # Use the messages directly with client
+        # Increase max_tokens for diagram queries to allow detailed diagrams
+        response_max_tokens = 2000 if is_diagram_query else 1000
         response = llm_service.client.chat.completions.create(
             model=llm_service.deployment,
             messages=messages,
-            max_tokens=1000,
+            max_tokens=response_max_tokens,
             temperature=0.7
         )
         answer = response.choices[0].message.content
@@ -1056,20 +1065,26 @@ async def ask_ai_stream(request: AskRequest):
         )
 
         # Add diagram generation enhancement if this is a diagram query
+        # IMPORTANT: Prepend at the BEGINNING of the prompt for higher priority
         if is_diagram_query:
             diagram_enhancement = diagram_service.generate_diagram_prompt_enhancement(
                 question, diagram_type
             )
-            system_prompt += f"\n\n{diagram_enhancement}"
+            # Prepend diagram instructions at the START of the prompt for maximum attention
+            system_prompt = f"{diagram_enhancement}\n\n{system_prompt}"
             monitoring.log_info(
-                "Added diagram generation instructions to system prompt (streaming)",
+                "Added diagram generation instructions to system prompt (streaming, prepended for priority)",
                 logger_type='ai',
                 diagram_type=diagram_type or "general"
             )
 
+        # Enhance the user question for diagram queries to reinforce quality requirements
+        final_question = question
+        if is_diagram_query:
+            final_question = diagram_service.enhance_user_question_for_diagram(question, diagram_type)
 
         messages = conversation_memory_manager.build_llm_messages(
-            question=question,
+            question=final_question,
             context=context_text,
             recent_messages=recent_messages,
             summary=summary,
