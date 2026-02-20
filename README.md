@@ -1292,5 +1292,11 @@ Backend will be available on http://localhost:8000.
 
 ---
 
+## 🔗 Related
+
+- [DevChoreo Architecture Diagram](https://dev-choreo-architecture.netlify.app/) — Interactive architecture diagram for DevChoreo
+
+---
+
 ## License
 Internal/example use. Add your preferred license if publishing.
