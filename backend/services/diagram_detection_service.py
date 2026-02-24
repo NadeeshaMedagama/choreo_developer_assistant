@@ -8,16 +8,14 @@ from typing import List, Dict, Optional, Tuple
 class DiagramDetectionService:
     """Detects when users ask about diagrams and enhances the query with diagram-specific context."""
     
-    # Keywords that indicate diagram-related queries
+    # Keywords that indicate diagram-related queries - ONLY explicit diagram requests
     DIAGRAM_KEYWORDS = [
-        'diagram', 'diagrams', 'architecture', 'flow', 'workflow', 'flowchart',
-        'sequence', 'interaction', 'component', 'system design', 'data flow',
-        'process flow', 'deployment flow', 'ci/cd flow', 'pipeline flow',
-        'visualization', 'visualize', 'illustrate', 'show me', 'draw',
-        'how does', 'how do', 'explain the flow', 'explain the process',
-        'what happens when', 'step by step', 'lifecycle', 'state',
-        'entity relationship', 'er diagram', 'class diagram', 'uml',
-        'architecture overview', 'system overview', 'high level', 'components involved'
+        'diagram', 'diagrams', 'flowchart', 'sequence diagram',
+        'visualization', 'visualize', 'illustrate', 'draw',
+        'show me a diagram', 'create a diagram', 'generate a diagram',
+        'show me a flowchart', 'architecture diagram',
+        'er diagram', 'class diagram', 'uml',
+        'draw me', 'draw a', 'visual representation'
     ]
     
     # Diagram type mappings (using only reliable Mermaid types)
@@ -33,39 +31,33 @@ class DiagramDetectionService:
     
     def is_diagram_query(self, query: str) -> bool:
         """
-        Detect if the query is asking for a diagram or visualization.
-        
+        Detect if the query is EXPLICITLY asking for a diagram or visualization.
+        Only returns True when the user clearly wants a diagram, not for general questions.
+
         Args:
             query: User's question
             
         Returns:
-            True if query is diagram-related
+            True if query explicitly requests a diagram
         """
         query_lower = query.lower()
         
-        # Check for diagram keywords
+        # Check for explicit diagram keywords
         for keyword in self.DIAGRAM_KEYWORDS:
             if keyword in query_lower:
                 return True
         
-        # Check for question patterns that often need diagrams
-        diagram_patterns = [
-            r'how (does|do|can|should)',
-            r'what (happens|is the|are the)',
-            r'explain (the|how)',
-            r'show (me|the)',
-            r'illustrate',
-            r'visualize',
-            r'step-by-step',
-            r'walk (me )?through'
+        # Check for explicit "show me" + diagram-related patterns ONLY
+        explicit_diagram_patterns = [
+            r'show\s+(?:me\s+)?(?:a\s+|the\s+)?(?:diagram|flowchart|chart|graph|visualization|visual)',
+            r'(?:create|generate|make|draw)\s+(?:a\s+|the\s+)?(?:diagram|flowchart|chart|graph|visualization|visual)',
+            r'(?:can you|could you|please)\s+(?:draw|create|generate|make|visualize|illustrate)',
         ]
         
-        for pattern in diagram_patterns:
+        for pattern in explicit_diagram_patterns:
             if re.search(pattern, query_lower):
-                # If followed by certain keywords, it's likely a diagram query
-                if any(word in query_lower for word in ['process', 'flow', 'architecture', 'system', 'component', 'interaction', 'work']):
-                    return True
-        
+                return True
+
         return False
     
     def detect_diagram_type(self, query: str) -> Optional[str]:
@@ -270,81 +262,52 @@ stateDiagram-v2
         example = examples.get(mermaid_syntax, examples['flowchart TD'])
 
         return f"""
-🚨🚨🚨 HIGHEST PRIORITY - DIAGRAM GENERATION REQUIRED 🚨🚨🚨
-
-⚡ THIS IS YOUR FIRST AND ONLY ATTEMPT - GET IT RIGHT NOW ⚡
-You MUST generate a PROFESSIONAL, COMPREHENSIVE Mermaid diagram on this FIRST response.
-Do NOT create a simple placeholder diagram - create the COMPLETE, DETAILED diagram immediately.
+📊 DIAGRAM GENERATION REQUESTED - Generate a relevant, accurate diagram.
 
 🎯 USER REQUEST TYPE: {mermaid_syntax} diagram
-The user is asking for a visual explanation and expects a PROFESSIONAL-GRADE diagram.
+The user is explicitly asking for a visual explanation. Generate a PROFESSIONAL-GRADE diagram that is:
+- RELEVANT and SPECIFIC to the user's question (not generic)
+- ACCURATE based on actual Choreo architecture from the retrieved context
+- Well-organized with subgraphs and meaningful labels
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 MANDATORY DIAGRAM QUALITY REQUIREMENTS (NON-NEGOTIABLE):
+📋 DIAGRAM QUALITY REQUIREMENTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-1. 📊 COMPLEXITY: Generate diagrams with 10-20 nodes (NEVER just 3-5 nodes)
-2. 📦 ORGANIZATION: ALWAYS use SUBGRAPHS to group related components
+1. 📊 COMPLEXITY: Generate diagrams with 8-20 nodes as needed
+2. 📦 ORGANIZATION: Use SUBGRAPHS to group related components
 3. 🏷️ NAMING: Use ACTUAL component names from context (never "Start", "Process", "End")
 4. 🔗 CONNECTIONS: Add meaningful LABELS on arrows explaining data/action flow
 5. 🎨 SHAPES: Use appropriate shapes: [rectangles], (rounded), {"{"}diamonds{"}"}, [(databases)]
-6. 📝 DETAIL: Include ALL relevant steps, not a high-level summary
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️ CRITICAL MERMAID SYNTAX RULES (MUST FOLLOW EXACTLY):
+⚠️ CRITICAL MERMAID SYNTAX RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1. FIRST LINE must be ONLY: {mermaid_syntax}
-   ❌ WRONG: flowchart TD - Architecture diagram
-   ✅ CORRECT: flowchart TD
-
 2. NO text inside mermaid code block except valid Mermaid syntax
-
 3. Node IDs: alphanumeric + underscores only
-   ❌ user-service, api.call
-   ✅ UserService, API_Call
-
-4. Labels WITHOUT quotes:
-   ❌ A["User Service"]
-   ✅ A[User Service]
-
-5. Arrow syntax:
-   ✅ --> (solid), -.-> (dotted), ==> (thick), -->|label|
-
-6. Subgraph syntax:
-   subgraph GroupName
-       A --> B
-   end
+4. Labels WITHOUT quotes: A[User Service] not A["User Service"]
+5. NEVER use parentheses inside square brackets: ❌ A[Console (UI)] ✅ A[Console - UI]
+6. Arrow syntax: --> (solid), -.-> (dotted), ==> (thick), -->|label|
+7. Subgraph syntax: subgraph GroupName ... end
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 FOLLOW THIS PROFESSIONAL EXAMPLE (This is the MINIMUM quality expected):
+📊 EXAMPLE (for reference - create one specific to the question):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {example}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-❌ ABSOLUTELY FORBIDDEN - NEVER GENERATE SIMPLE DIAGRAMS LIKE THIS:
+❌ DO NOT generate generic/placeholder diagrams like:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```mermaid
 flowchart TD
     A[Start] --> B[Process]
     B --> C[End]
 ```
-This is UNACCEPTABLE. Such simple diagrams will be REJECTED.
+Such generic diagrams are unhelpful and should not be generated.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 CONTEXT-AWARE GENERATION CHECKLIST:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Before generating, verify your diagram includes:
-✓ ALL service/component names from the retrieved context
-✓ REAL Choreo components (Console, API Gateway, Build Service, STS, IAM, etc.)
-✓ REALISTIC data flows based on documentation
-✓ Authentication/authorization steps if applicable
-✓ Error handling paths where relevant
-✓ Multiple subgraphs for logical organization
-
-REMEMBER: This is the FIRST and ONLY attempt. Create the COMPLETE diagram NOW.
-
-Generate the diagram based on ACTUAL information from the retrieved context. Make it professional, complete, and informative.
+Generate the diagram based on ACTUAL information from the retrieved context. Make it specific, accurate, and relevant to the user's question.
 """
     
     def extract_diagram_keywords_from_context(self, context: str) -> List[str]:
@@ -429,12 +392,7 @@ Generate the diagram based on ACTUAL information from the retrieved context. Mak
         # Add explicit requirements to the question
         enhanced_question = f"""{question}
 
-[IMPORTANT: Generate a COMPLETE, PROFESSIONAL {diagram_desc} with:
-- 10-20 nodes showing ALL relevant components
-- Subgraphs to organize related components
-- Real component names from the context (not generic names)
-- Labeled connections showing data/action flow
-- This is my FIRST request - provide the FULL detailed diagram immediately, not a simple placeholder]"""
+[Please generate a relevant, accurate {diagram_desc} specific to this question, using real component names from the context. Use subgraphs to organize related components. Do not create a generic placeholder diagram.]"""
 
         return enhanced_question
 
