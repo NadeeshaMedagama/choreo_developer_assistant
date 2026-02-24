@@ -16,34 +16,37 @@ logger = get_logger(__name__)
 def get_mermaid_instructions() -> str:
     """Get Mermaid diagram generation instructions for the system prompt."""
     return """
-🚨 MERMAID DIAGRAM GENERATION - PROFESSIONAL QUALITY ON FIRST ATTEMPT 🚨
+📊 MERMAID DIAGRAM GENERATION GUIDELINES:
 
-⚡ FIRST ATTEMPT POLICY: Generate COMPLETE, PROFESSIONAL diagrams immediately - not simple placeholders.
+⚠️ IMPORTANT: Do NOT generate diagrams for every response. Only include a Mermaid diagram when:
+1. The user EXPLICITLY asks for a diagram, visualization, flowchart, or visual representation
+2. The question specifically requires a visual explanation that text alone cannot convey well
+3. You are highly confident the diagram will be accurate and relevant to the specific question
 
-When users ask about architecture, workflows, sequences, data flows, component interactions, or system design:
-- **ALWAYS generate COMPREHENSIVE Mermaid diagrams** to visualize the concepts
-- Use the knowledge base context to create accurate, DETAILED diagrams with 10-20 nodes
-- Place diagrams in markdown code blocks with ```mermaid syntax
-- Provide both textual explanation AND visual diagram
-- This is your ONLY chance - create the FULL diagram now, not a simple version
+🚫 Do NOT generate diagrams when:
+- The user asks a simple factual question
+- The user asks for documentation, code examples, or troubleshooting help
+- The diagram would be generic/placeholder rather than specific to the question
+- You don't have enough context to create an accurate, relevant diagram
 
-📋 MANDATORY DIAGRAM QUALITY REQUIREMENTS (ENFORCED):
-- Generate COMPLETE diagrams with 10-20 nodes minimum (NEVER simple 3-5 node diagrams)
+When you DO generate a diagram, follow these rules:
+
+📋 DIAGRAM QUALITY REQUIREMENTS:
+- Generate COMPLETE diagrams relevant to the SPECIFIC question asked
+- Use ACTUAL component names from the context (NEVER generic "Start/Process/End")
+- Show REAL relationships and data flows based on actual Choreo architecture
 - Use SUBGRAPHS to organize related components logically
-- Include ACTUAL component names from the context (NEVER generic "Start/Process/End")
-- Show REAL relationships and data flows between components
-- Add meaningful LABELS on connections to explain what data/actions flow between nodes
-- Use appropriate node shapes: [rectangles], (rounded), {diamonds}, [(cylinders for databases)]
+- Add meaningful LABELS on connections
 
-**CRITICAL: Use ONLY these diagram types (tested and working):**
-1. **flowchart TD** (or LR/RL/BT) - Use for: processes, workflows, decision trees, CI/CD pipelines, data flows
-2. **sequenceDiagram** - Use for: API interactions, service communications, authentication flows
-3. **graph TD** (or LR/RL/BT) - Use for: architecture, component relationships, system design
-4. **stateDiagram-v2** - Use for: component lifecycles, deployment states, status transitions
+**Use ONLY these diagram types:**
+1. **flowchart TD** (or LR/RL/BT) - processes, workflows, decision trees, CI/CD pipelines
+2. **sequenceDiagram** - API interactions, service communications, authentication flows
+3. **graph TD** (or LR/RL/BT) - architecture, component relationships, system design
+4. **stateDiagram-v2** - component lifecycles, deployment states, status transitions
 
-**DO NOT USE:** erDiagram, gitGraph, gantt, pie, journey, classDiagram (these cause rendering issues)
+**DO NOT USE:** erDiagram, gitGraph, gantt, pie, journey, classDiagram
 
-**⚠️ CRITICAL SYNTAX RULES - MUST FOLLOW EXACTLY:**
+**⚠️ CRITICAL SYNTAX RULES:**
 
 1. **First line MUST be diagram type + direction only:**
    ✅ `flowchart TD`
@@ -74,6 +77,8 @@ When users ask about architecture, workflows, sequences, data flows, component i
    ✅ `B(Process Request)`
    ✅ `C{Is Valid?}`
    ❌ `A["User Service"]` (no quotes inside brackets)
+   ❌ `A[Choreo Console (UI)]` (no parentheses inside square brackets - causes parse error)
+   ✅ `A[Choreo Console - UI]` (use dashes instead of parentheses inside brackets)
 
 5. **Arrow syntax must be exact:**
    ✅ `-->` (solid arrow)
@@ -204,25 +209,23 @@ stateDiagram-v2
     Active --> [*]: Terminated
 ```
 
-❌ WRONG - DO NOT generate simple diagrams like this:
+❌ WRONG - Do NOT generate simple/generic placeholder diagrams like this:
 ```mermaid
 flowchart TD
     A[Start] --> B[Process]
     B --> C[End]
 ```
 
-✅ ALWAYS generate detailed diagrams showing:
-- ALL relevant components from the context
-- COMPLETE flow/architecture, not just a summary
-- DESCRIPTIVE labels explaining each component's role
-- SUBGRAPHS to group related components
-- ERROR paths and alternative flows where applicable
+When you DO include a diagram, ensure it is:
+- SPECIFIC to the question asked (not generic)
+- ACCURATE based on actual Choreo architecture from the context
+- Using REAL component names, not placeholders
+- Worth including (adds value over text-only explanation)
 
-🎯 CONTEXT-AWARE GENERATION:
+🎯 CONTEXT-AWARE GENERATION (only when diagram is appropriate):
 - Extract ACTUAL service names from the retrieved context
 - Use REAL Choreo component names (Choreo Console, API Gateway, Build Service, STS, IAM, etc.)
 - Show REALISTIC data flows based on the documentation
-- Include authentication, data transformation, error handling details
 """
 
 
