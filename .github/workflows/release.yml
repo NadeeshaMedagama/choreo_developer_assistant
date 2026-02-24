@@ -13,11 +13,97 @@ on:
 
 jobs:
   # ============================================
+  # Validate action.yml for Marketplace
+  # ============================================
+  validate-action:
+    name: Validate GitHub Action Metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate action.yml exists
+        run: |
+          if [ ! -f "action.yml" ]; then
+            echo "❌ action.yml not found in repository root!"
+            echo "This file is required for GitHub Marketplace publishing."
+            exit 1
+          fi
+          echo "✅ action.yml found"
+
+      - name: Validate action.yml structure
+        run: |
+          python3 -c "
+          import yaml, sys
+
+          with open('action.yml', 'r') as f:
+              action = yaml.safe_load(f)
+
+          required_fields = ['name', 'description', 'inputs', 'runs']
+          marketplace_fields = ['branding']
+          
+          errors = []
+          warnings = []
+
+          for field in required_fields:
+              if field not in action:
+                  errors.append(f'Missing required field: {field}')
+
+          for field in marketplace_fields:
+              if field not in action:
+                  warnings.append(f'Missing recommended field for Marketplace: {field}')
+
+          # Validate branding for Marketplace
+          if 'branding' in action:
+              branding = action['branding']
+              if 'icon' not in branding:
+                  errors.append('branding.icon is required for Marketplace')
+              if 'color' not in branding:
+                  errors.append('branding.color is required for Marketplace')
+              
+              valid_colors = ['white', 'yellow', 'blue', 'green', 'orange', 'red', 'purple', 'gray-dark']
+              if branding.get('color') not in valid_colors:
+                  errors.append(f'branding.color must be one of: {valid_colors}')
+
+          # Validate runs configuration
+          if 'runs' in action:
+              runs = action['runs']
+              if 'using' not in runs:
+                  errors.append('runs.using is required')
+              elif runs['using'] not in ['composite', 'node12', 'node16', 'node20', 'docker']:
+                  errors.append(f'runs.using value \"{runs[\"using\"]}\" is not valid')
+
+          # Validate description length (max 125 chars for Marketplace listing)
+          desc = action.get('description', '')
+          if len(desc) > 500:
+              warnings.append(f'Description is {len(desc)} chars. Consider keeping it concise.')
+
+          if errors:
+              print('❌ Validation FAILED:')
+              for e in errors:
+                  print(f'  - {e}')
+              sys.exit(1)
+
+          if warnings:
+              print('⚠️  Warnings:')
+              for w in warnings:
+                  print(f'  - {w}')
+
+          print('✅ action.yml validation passed!')
+          print(f'   Name: {action[\"name\"]}')
+          print(f'   Inputs: {len(action.get(\"inputs\", {}))} defined')
+          print(f'   Outputs: {len(action.get(\"outputs\", {}))} defined')
+          "
+
+  # ============================================
   # Create Release
   # ============================================
   create-release:
     name: Create Release
     runs-on: ubuntu-latest
+    needs: validate-action
     timeout-minutes: 30
     permissions:
       contents: write
@@ -215,7 +301,7 @@ jobs:
   notify:
     name: Notify Release
     runs-on: ubuntu-latest
-    needs: [create-release, docker-release]
+    needs: [validate-action, create-release, docker-release]
     if: always()
     
     steps:
@@ -230,4 +316,9 @@ jobs:
           echo "- Python package (wheel & source)" >> $GITHUB_STEP_SUMMARY
           echo "- Frontend build artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- Docker images (amd64 & arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏪 GitHub Marketplace:" >> $GITHUB_STEP_SUMMARY
+          echo "- Action metadata validated: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- This release is available on the GitHub Marketplace" >> $GITHUB_STEP_SUMMARY
+          echo "- Use: \`uses: ${{ github.repository }}@${{ needs.create-release.outputs.version || github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
 
