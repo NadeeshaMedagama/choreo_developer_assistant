@@ -1,8 +1,6 @@
 name: 'Choreo AI Assistant'
 description: >
-  AI-powered RAG assistant for WSO2 Choreo platform. Ingests GitHub repositories
-  into a vector database and provides intelligent answers using Azure OpenAI with
-  conversation memory, streaming responses, diagram generation, and URL validation.
+  Choreo Developer Assistant with Milvus vector database
 author: 'DevChoreo'
 
 branding:
