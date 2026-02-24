@@ -39,7 +39,7 @@ That's it! Open http://localhost:5173 to use the application.
 - Frontend: React, Vite, Tailwind CSS, Mermaid.js (diagrams)
 - Monitoring: Prometheus, Grafana, Alertmanager, Structured Logging
 - Deployment: Docker, Choreo Platform
-- Advanced Features: Conversation Memory with Smart Summarization, Progressive Streaming Responses, Context-Aware Retrieval, Automatic Diagram Generation
+- Advanced Features: Conversation Memory with Smart Summarization, Progressive Streaming Responses, Context-Aware Retrieval, Intelligent Diagram Generation with Fullscreen View, Scroll Navigation
 
 ## ✨ Key Features
 
@@ -75,17 +75,18 @@ That's it! Open http://localhost:5173 to use the application.
 - **Configurable**: Enable/disable validation and adjust timeout settings
 
 ### 🎨 Mermaid Diagram Generation
-- **Automatic Diagram Detection**: AI detects when users ask about architecture, flows, or processes
+- **Intelligent Diagram Detection**: AI only generates diagrams when the user explicitly requests one or when a visual explanation is truly needed — avoids unnecessary/generic diagrams
 - **Supported Diagram Types**:
   - `flowchart TD/LR` - Workflows, CI/CD pipelines, data flows, decision trees
   - `sequenceDiagram` - API interactions, authentication flows, service communications
   - `graph TD/LR` - Architecture diagrams, component relationships, system design
   - `stateDiagram-v2` - Component lifecycles, deployment states, status transitions
-- **Interactive Zoom Controls**: Zoom in/out (50%-300%), reset, and fullscreen view
-- **Fullscreen Mode**: Click expand button to view diagrams in a large modal overlay
-- **Context-Aware**: Generates diagrams based on actual knowledge base content
+- **Interactive Zoom Controls**: Compact zoom in/out (25%-1000%), reset, and fullscreen view with properly sized control buttons
+- **Fullscreen Mode**: Portal-based fullscreen overlay that renders diagrams over the entire screen with header, zoom controls, and ESC-to-close support
+- **Stable Rendering**: Layout containment (`contain: layout style`, `isolation: isolate`) and `willChange: transform` prevent screen shaking/layout thrashing when diagrams are rendered or zoomed
+- **Context-Aware**: Generates diagrams based on actual knowledge base content — uses real component names and relationships, never generic placeholders
 - **Theme Support**: Beautiful diagrams with automatic dark/light mode adaptation
-- **Error Recovery**: Automatic syntax fixing and fallback mechanisms for robustness
+- **Error Recovery**: 21+ automatic syntax fixes, MutationObserver-based error element cleanup, and graceful fallback mechanisms for robustness
 - **Resources**: [Mermaid Docs](https://mermaid.js.org/) | [Live Editor](https://mermaid.live/)
 
 ### 📊 Production Monitoring
@@ -107,6 +108,9 @@ That's it! Open http://localhost:5173 to use the application.
 - **Persistent History**: Conversations saved in localStorage
 - **Source Citations**: View document sources with relevance scores
 - **Edit & Copy**: Edit questions and copy responses easily
+- **Scroll Navigation**: Scroll-to-bottom and scroll-to-top buttons for easy navigation through long conversations
+- **Stable Layout**: CSS containment and isolation prevent screen shaking when rendering diagrams or large content
+- **Dark/Light Theme**: Toggle between themes with persistent preference
 
 ## Quick Start
 
@@ -121,8 +125,9 @@ That's it! Open http://localhost:5173 to use the application.
 - ⚡ **Progressive Streaming**: Answers appear word-by-word in real-time
 - 🔍 **Context-Aware Retrieval**: Uses conversation history to improve search results
 - 🚫 **Content Filtering**: Automatically excludes OpenChoreo content
-- 🎨 **Mermaid Diagrams**: Automatically generates visual diagrams for architecture and flows
+- 🎨 **Mermaid Diagrams**: Intelligently generates visual diagrams only when requested or truly needed — with fullscreen view, zoom controls, and stable rendering
 - 📊 **Memory Stats**: See token usage and summarization status
+- 🔼 **Scroll Navigation**: Scroll-to-top and scroll-to-bottom buttons for easy chat navigation
 
 **Using the API:**
 ```bash
@@ -614,8 +619,13 @@ choreo-ai-assistant/
 │       └── ingest/            # Data ingestion
 ├── frontend/                  # React frontend
 │   ├── src/                   # Source code
-│   │   ├── App.jsx            # Main app with streaming support
+│   │   ├── App.jsx            # Main app with streaming, scroll navigation, theme toggle
 │   │   └── components/        # UI components
+│   │       ├── Message.jsx    # Message rendering with Markdown, sources, actions
+│   │       ├── MermaidDiagram.jsx  # ⭐ Diagram rendering with fullscreen, zoom, error recovery
+│   │       ├── ChatInput.jsx  # Chat input component
+│   │       ├── Sidebar.jsx    # Multi-conversation management
+│   │       └── MonitoringButton.jsx  # Monitoring dashboard button
 │   └── public/                # Static assets
 ├── data/                      # Data files
 ├── docs/                      # Documentation
@@ -1105,6 +1115,26 @@ vector_search_duration_seconds
 **Q: What's the maximum conversation length?**
 - A: Practically unlimited due to automatic summarization. Very long conversations are compressed efficiently.
 
+### Diagrams & UI
+
+**Q: Why don't I see a diagram in every response anymore?**
+- A: Diagrams are now generated intelligently — only when you explicitly request one or when a visual explanation is truly needed. This avoids irrelevant/generic diagrams.
+
+**Q: How do I view a diagram in fullscreen?**
+- A: Click the fullscreen (expand) button in the diagram controls. The diagram opens in a portal-based overlay covering the entire screen. Press `Esc` to close.
+
+**Q: The screen was shaking when diagrams were rendered — is this fixed?**
+- A: Yes. CSS containment (`contain: layout style`, `isolation: isolate`) and `willChange: transform` on zoom transforms prevent layout thrashing and screen shaking.
+
+**Q: How do I navigate long conversations quickly?**
+- A: Use the scroll-to-top button (appears at the top-right when you scroll down) and the scroll-to-bottom button (appears at the bottom-right when you scroll up).
+
+**Q: What zoom range do diagrams support?**
+- A: Diagrams can be zoomed from 25% to 1000% with adaptive zoom increments. The reset button returns to 100%.
+
+**Q: What happens if a diagram has a syntax error?**
+- A: The system applies 21+ automatic fixes (parentheses in labels, arrow syntax, empty nodes, etc.) and uses a MutationObserver to remove any error elements Mermaid injects into the DOM.
+
 ### Private Repository Information
 
 **Q: Why does the assistant refuse to share internal/private details?**
@@ -1127,11 +1157,42 @@ vector_search_duration_seconds
 
 ---
 
-**Last Updated:** December 2, 2025  
-**Version:** 2.0.0  
+**Last Updated:** February 24, 2026  
+**Version:** 2.1.0  
 **Status:** Production Ready ✅
 
-## 📋 Recent Updates (v2.0.0)
+## 📋 Recent Updates (v2.1.0)
+
+### February 2026
+
+**🎨 Mermaid Diagram Improvements**
+- ✅ Fixed screen shaking/layout thrashing when diagrams are rendered in chat
+- ✅ CSS containment (`contain: layout style`, `isolation: isolate`) on diagram containers
+- ✅ `willChange: transform` on zoom transforms to prevent layout shifts
+- ✅ MutationObserver-based cleanup of Mermaid error elements from the DOM
+- ✅ Compact zoom control buttons (properly sized `16px` icons with `p-1.5` padding)
+- ✅ 21+ automatic syntax fixes including parentheses escaping in node labels (Fix 21)
+
+**🖥️ Fullscreen Diagram View**
+- ✅ Portal-based fullscreen overlay (`ReactDOM.createPortal`) renders over entire viewport
+- ✅ Header bar with title, zoom controls, and close button
+- ✅ ESC key to close, body scroll lock when fullscreen is active
+- ✅ Zoom range extended to 25%–1000% with adaptive increments
+- ✅ Centered diagram display with scrollable content area
+
+**🔼 Scroll Navigation**
+- ✅ Scroll-to-top button appears when user scrolls down past the top of the chat
+- ✅ Scroll-to-bottom button appears when user scrolls up from the bottom
+- ✅ Both buttons use matching design (rounded, shadow, theme-aware)
+- ✅ Scroll-to-top positioned at top-right, scroll-to-bottom at bottom-right
+
+**🧠 Intelligent Diagram Generation**
+- ✅ Diagrams only generated when user explicitly requests or visual explanation is essential
+- ✅ Simple factual questions, docs, code examples, and troubleshooting no longer trigger diagrams
+- ✅ Diagrams use actual component names and relationships from the knowledge base
+- ✅ Restricted to proven diagram types: flowchart, sequenceDiagram, graph, stateDiagram-v2
+
+## 📋 Previous Updates (v2.0.0)
 
 ### November-December 2025
 
