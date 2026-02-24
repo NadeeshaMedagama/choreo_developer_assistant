@@ -91,7 +91,7 @@ export default function Message({ message, isDark, onRegenerate, onEdit }) {
           : isDark ? 'bg-gray-900' : 'bg-white'
       }`}
     >
-      <div className="max-w-3xl mx-auto flex gap-4 overflow-hidden">
+      <div className="max-w-3xl mx-auto flex gap-4 overflow-hidden" style={{ contain: 'inline-size' }}>
         {isAssistant ? (
           <div className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0 overflow-hidden bg-white">
             <img src="/choreo-logo.png" alt="Choreo" className="w-8 h-8 object-contain" />
@@ -176,7 +176,11 @@ export default function Message({ message, isDark, onRegenerate, onEdit }) {
                             </div>
                           )
                         }
-                        return <MermaidDiagram chart={code} isDark={isDark} />
+                        return (
+                          <div className="not-prose my-4" style={{ contain: 'layout', isolation: 'isolate' }}>
+                            <MermaidDiagram chart={code} isDark={isDark} />
+                          </div>
+                        )
                       }
 
                       // Regular code blocks
