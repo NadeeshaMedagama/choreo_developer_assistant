@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, Moon, Sun, ArrowDown, Search } from 'lucide-react'
+import { Send, Plus, MessageSquare, Trash2, Edit2, Check, X, Menu, Moon, Sun, ArrowDown, ArrowUp, Search } from 'lucide-react'
 import Message from './components/Message'
 import MonitoringButton from './components/MonitoringButton.jsx'
 import { getApiUrl } from './config'
@@ -82,6 +82,7 @@ export default function App() {
   const [editTitle, setEditTitle] = useState('')
   const [theme, setTheme] = useState(loadTheme)
   const [showScrollButton, setShowScrollButton] = useState(false)
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const listRef = useRef(null)
@@ -141,18 +142,20 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'instant' })
   }, [current?.messages?.length])
 
-  // Handle scroll detection to show/hide scroll-to-bottom button
+  // Handle scroll detection to show/hide scroll buttons
   useEffect(() => {
     const handleScroll = () => {
       if (!listRef.current) return
 
       const { scrollTop, scrollHeight, clientHeight } = listRef.current
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100
+      const isNearTop = scrollTop < 300
 
       setShowScrollButton(!isNearBottom)
+      setShowScrollTopButton(!isNearTop)
     }
 
     const listElement = listRef.current
@@ -166,6 +169,15 @@ export default function App() {
     if (listRef.current) {
       listRef.current.scrollTo({
         top: listRef.current.scrollHeight,
+        behavior: 'smooth'
+      })
+    }
+  }
+
+  const scrollToTop = () => {
+    if (listRef.current) {
+      listRef.current.scrollTo({
+        top: 0,
         behavior: 'smooth'
       })
     }
@@ -881,7 +893,26 @@ export default function App() {
         <div
           ref={listRef}
           className={`flex-1 overflow-y-auto overflow-x-hidden ${isDark ? 'bg-gray-900' : 'bg-white'} relative`}
+          style={{ overscrollBehaviorY: 'contain' }}
         >
+          {/* Scroll to Top Button - fixed position near the top right */}
+          {showScrollTopButton && (
+            <div className="sticky top-3 z-10 flex justify-end pr-4 pointer-events-none" style={{ marginBottom: '-40px' }}>
+              <button
+                onClick={scrollToTop}
+                className={`pointer-events-auto shadow-lg ${
+                  isDark
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white border border-gray-600'
+                    : 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-300'
+                } rounded-full p-2 transition-all duration-200 hover:scale-105`}
+                aria-label="Scroll to top"
+                title="Scroll to top"
+              >
+                <ArrowUp className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
           <div className="max-w-4xl mx-auto px-1">
             {(current?.messages || []).map((msg, index, array) => {
               // Only show regenerate button for assistant messages that are the last message or last assistant message
@@ -901,9 +932,9 @@ export default function App() {
             })}
           </div>
 
-          {/* Scroll to Bottom Button */}
+          {/* Scroll to Bottom Button - fixed position near the bottom right */}
           {showScrollButton && (
-            <div className="sticky bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+            <div className="sticky bottom-3 z-10 flex justify-end pr-4 pointer-events-none">
               <button
                 onClick={scrollToBottom}
                 className={`pointer-events-auto shadow-lg ${
