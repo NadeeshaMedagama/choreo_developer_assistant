@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import ReactDOM from 'react-dom'
 import mermaid from 'mermaid'
 
 // Initialize mermaid once with configuration - suppress error display
@@ -6,35 +7,35 @@ mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
   securityLevel: 'loose',
-  logLevel: 'fatal', // Changed to fatal to suppress error messages
-  suppressErrorRendering: true, // Suppress the error diagram
+  logLevel: 'fatal',
+  suppressErrorRendering: true,
   themeVariables: {
     fontSize: '14px',
     fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif'
   },
   flowchart: {
-    useMaxWidth: false, // IMPORTANT: Disable to prevent text clipping
+    useMaxWidth: true, // Use max width to prevent overflow and layout shifts
     htmlLabels: true,
     curve: 'basis',
-    padding: 20, // Add padding around nodes
-    nodeSpacing: 50, // Space between nodes
-    rankSpacing: 50, // Space between ranks
-    diagramPadding: 20, // Padding around the diagram
-    wrappingWidth: 400 // Increase width before wrapping to prevent truncation
+    padding: 20,
+    nodeSpacing: 50,
+    rankSpacing: 50,
+    diagramPadding: 20,
+    wrappingWidth: 400
   },
   sequence: {
-    useMaxWidth: false,
+    useMaxWidth: true,
     diagramMarginX: 20,
     diagramMarginY: 20,
     boxMargin: 10,
     boxTextMargin: 10,
     noteMargin: 10,
     messageMargin: 35,
-    width: 200, // Increase minimum width for boxes
-    wrap: false // Disable text wrapping to show full text
+    width: 200,
+    wrap: false
   },
   state: {
-    useMaxWidth: false,
+    useMaxWidth: true,
     padding: 8
   }
 })
@@ -75,14 +76,15 @@ if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
     }
   })
 
-  // Start observing when DOM is ready
+  // Start observing when DOM is ready - only observe direct children of body
+  // to avoid firing on every React DOM update in the app tree
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      observer.observe(document.body, { childList: true, subtree: true })
+      observer.observe(document.body, { childList: true, subtree: false })
       globalCleanupMermaidErrors()
     })
   } else {
-    observer.observe(document.body, { childList: true, subtree: true })
+    observer.observe(document.body, { childList: true, subtree: false })
     globalCleanupMermaidErrors()
   }
 }
@@ -286,6 +288,39 @@ function fixCommonMermaidErrors(chart) {
   }
   fixed = result.join('\n')
 
+  // Fix 21: Escape parentheses inside square bracket labels [...]
+  // Mermaid interprets ( inside [...] as a shape start delimiter, causing parse errors
+  // e.g. [Choreo Console (UI & Dashboards)] fails because ( starts a rounded node
+  // Convert parenthesized text to use dashes: [Choreo Console - UI & Dashboards]
+  fixed = fixed.replace(/\[([^\]]*)\]/g, (match, label) => {
+    if (label.includes('(') && label.includes(')')) {
+      const fixedLabel = label.replace(/\(/g, '- ').replace(/\)/g, '')
+      return '[' + fixedLabel.replace(/\s+/g, ' ').trim() + ']'
+    }
+    return match
+  })
+
+  // Fix 22: Escape parentheses inside curly brace labels {...}
+  fixed = fixed.replace(/\{([^}]*)\}/g, (match, label) => {
+    if (label.includes('(') && label.includes(')')) {
+      const fixedLabel = label.replace(/\(/g, '- ').replace(/\)/g, '')
+      return '{' + fixedLabel.replace(/\s+/g, ' ').trim() + '}'
+    }
+    return match
+  })
+
+  // Fix 23: Fix & in labels that aren't in subgraphs (can cause issues in some contexts)
+  // Replace & with 'and' in node labels but not in subgraph connections like F & G & H --> L
+  fixed = fixed.split('\n').map(line => {
+    const trimmed = line.trim()
+    // Don't modify lines that use & for parallel connections (e.g. A & B --> C)
+    if (/^\s*\w+\s*&\s*\w+/.test(trimmed)) return line
+    // Fix & inside bracket labels
+    return line.replace(/\[([^\]]*?)&([^\]]*?)\]/g, '[$1and$2]')
+      .replace(/\(([^)]*?)&([^)]*?)\)/g, '($1and$2)')
+      .replace(/\{([^}]*?)&([^}]*?)\}/g, '{$1and$2}')
+  }).join('\n')
+
   return fixed.trim()
 }
 
@@ -365,44 +400,30 @@ function postProcessSvg(svgString) {
     processed = processed.replace(spanRegex, '$1')
   }
 
-  // Fix 2: Remove viewBox constraints that may cause clipping
-  // Make the SVG expand to fit its content
+  // Fix 2: Ensure SVG has proper dimensions and stays within container
+  // Use overflow:hidden to prevent diagram from causing layout reflow
   processed = processed.replace(
-    /(<svg[^>]*)\s+viewBox="([^"]*)"([^>]*>)/gi,
-    (match, before, viewBox, after) => {
-      // Keep the viewBox but ensure overflow is visible
-      return `${before} viewBox="${viewBox}" style="overflow: visible;"${after}`
+    /(<svg[^>]*)\s+style="[^"]*"([^>]*>)/i,
+    (match, before, after) => {
+      return `${before} style="max-width: 100%; width: 100%; height: auto; display: block; overflow: hidden;"${after}`
     }
   )
+  // If no style attribute exists on the SVG, add one
+  if (!/<svg[^>]*style="/i.test(processed)) {
+    processed = processed.replace(
+      /(<svg\s)/i,
+      '$1style="max-width: 100%; width: 100%; height: auto; display: block; overflow: hidden;" '
+    )
+  }
 
-  // Fix 3: Ensure text elements have overflow visible
-  processed = processed.replace(
-    /<text([^>]*)>/gi,
-    '<text$1 style="overflow: visible;">'
-  )
+  // Fix 3: Ensure text elements render properly without overflowing
+  // Do NOT add overflow:visible - it causes layout reflow issues
 
-  // Fix 4: Ensure foreignObject elements (used for HTML labels) don't clip
-  processed = processed.replace(
-    /<foreignObject([^>]*)>/gi,
-    (match, attrs) => {
-      // Add or update overflow style
-      if (attrs.includes('style=')) {
-        return match.replace(/style="([^"]*)"/, 'style="$1; overflow: visible;"')
-      }
-      return `<foreignObject${attrs} style="overflow: visible;">`
-    }
-  )
+  // Fix 4: Ensure foreignObject elements (used for HTML labels) have proper sizing
+  // Do NOT add overflow:visible - it causes layout reflow/shaking
 
-  // Fix 5: Expand any fixed width/height constraints on text containers
-  processed = processed.replace(
-    /<div([^>]*class="[^"]*nodeLabel[^"]*"[^>]*)>/gi,
-    (match, attrs) => {
-      if (attrs.includes('style=')) {
-        return match.replace(/style="([^"]*)"/, 'style="$1; white-space: nowrap; overflow: visible;"')
-      }
-      return `<div${attrs} style="white-space: nowrap; overflow: visible;">`
-    }
-  )
+  // Fix 5: Handle text containers - do NOT add white-space:nowrap or overflow:visible
+  // as they cause the diagram to expand beyond its container and trigger layout reflow
 
   // Fix 6: Remove truncation ellipsis and restore full text
   processed = processed.replace(/…<\/span>/g, '</span>')
@@ -412,52 +433,9 @@ function postProcessSvg(svgString) {
   return processed
 }
 
-// Try to create a simpler fallback diagram if the original fails
+// Fallback diagrams are disabled - do not generate generic placeholder diagrams
+// If the original diagram has syntax errors, show the error instead of an irrelevant diagram
 function createFallbackDiagram(originalCode) {
-  // Extract just the first line to get diagram type
-  const firstLine = originalCode.trim().split('\n')[0]
-
-  if (firstLine.startsWith('flowchart') || firstLine.startsWith('graph')) {
-    return `${firstLine}
-    subgraph Diagram
-        A[Component 1] --> B[Component 2]
-        B --> C{Decision}
-        C -->|Option 1| D[Action A]
-        C -->|Option 2| E[Action B]
-        D --> F[Result]
-        E --> F
-    end
-
-    %% Note: Original diagram had syntax errors - this is a simplified version`
-  }
-
-  if (firstLine.startsWith('sequenceDiagram')) {
-    return `sequenceDiagram
-    autonumber
-    participant Client
-    participant Service
-    participant Database
-
-    Client->>Service: Request
-    Service->>Database: Query
-    Database-->>Service: Data
-    Service-->>Client: Response
-
-    %% Note: Original diagram had syntax errors - this is a simplified version`
-  }
-
-  if (firstLine.startsWith('stateDiagram')) {
-    return `stateDiagram-v2
-    [*] --> Initial
-    Initial --> Processing
-    Processing --> Complete: Success
-    Processing --> Error: Failure
-    Complete --> [*]
-    Error --> Initial: Retry
-
-    %% Note: Original diagram had syntax errors - this is a simplified version`
-  }
-
   return null
 }
 
@@ -470,15 +448,12 @@ export default function MermaidDiagram({ chart, isDark }) {
   const [zoomLevel, setZoomLevel] = useState(1)
   const renderAttempted = useRef(false)
 
-  // Clean up any Mermaid error elements from the DOM
+  // Clean up any Mermaid error elements from the DOM - only on mount/unmount
   useEffect(() => {
     const cleanupMermaidErrors = () => {
-      // Remove SVGs with error role
       document.querySelectorAll('svg[aria-roledescription="error"]').forEach(el => {
         el.remove()
       })
-
-      // Remove any orphaned Mermaid error displays
       const errorSelectors = [
         '[id^="dmermaid"]',
         '.mermaid-error',
@@ -491,16 +466,12 @@ export default function MermaidDiagram({ chart, isDark }) {
       document.querySelectorAll(errorSelectors.join(', ')).forEach(el => {
         el.remove()
       })
-
-      // Remove any element containing "Syntax error in text" or "mermaid version"
       document.querySelectorAll('body > div, body > svg').forEach(el => {
         const text = el.textContent || ''
         if (text.includes('Syntax error') || text.includes('mermaid version')) {
           el.remove()
         }
       })
-
-      // Remove any fixed position elements that contain mermaid errors
       document.querySelectorAll('body > div').forEach(el => {
         const style = window.getComputedStyle(el)
         if (style.position === 'fixed' || style.position === 'absolute') {
@@ -511,18 +482,11 @@ export default function MermaidDiagram({ chart, isDark }) {
         }
       })
     }
-
-    // Run cleanup on mount and periodically
     cleanupMermaidErrors()
-    const interval = setInterval(cleanupMermaidErrors, 500)
-
-    return () => {
-      clearInterval(interval)
-      cleanupMermaidErrors()
-    }
+    return () => { cleanupMermaidErrors() }
   }, [])
 
-  // Close fullscreen on Escape key - must be before any early returns
+  // Close fullscreen on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape' && isFullscreen) {
@@ -532,6 +496,16 @@ export default function MermaidDiagram({ chart, isDark }) {
     }
     window.addEventListener('keydown', handleEscape)
     return () => window.removeEventListener('keydown', handleEscape)
+  }, [isFullscreen])
+
+  // Lock body scroll when fullscreen is open
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
   }, [isFullscreen])
 
   useEffect(() => {
@@ -583,7 +557,7 @@ export default function MermaidDiagram({ chart, isDark }) {
           }
         }
 
-        // Update theme based on dark mode - also suppress errors and prevent text clipping
+        // Update theme based on dark mode - also suppress errors and prevent layout shifts
         mermaid.initialize({
           startOnLoad: false,
           theme: isDark ? 'dark' : 'default',
@@ -595,28 +569,28 @@ export default function MermaidDiagram({ chart, isDark }) {
             fontFamily: 'ui-sans-serif, system-ui, -apple-system, sans-serif',
           },
           flowchart: {
-            useMaxWidth: false, // IMPORTANT: Disable to prevent text clipping
+            useMaxWidth: true,
             htmlLabels: true,
             curve: 'basis',
             padding: 20,
             nodeSpacing: 50,
             rankSpacing: 50,
             diagramPadding: 20,
-            wrappingWidth: 400 // Increase width before wrapping to prevent truncation
+            wrappingWidth: 400
           },
           sequence: {
-            useMaxWidth: false,
+            useMaxWidth: true,
             diagramMarginX: 20,
             diagramMarginY: 20,
             boxMargin: 10,
             boxTextMargin: 10,
             noteMargin: 10,
             messageMargin: 35,
-            width: 200, // Increase minimum width for boxes
-            wrap: false // Disable text wrapping to show full text
+            width: 200,
+            wrap: false
           },
           state: {
-            useMaxWidth: false,
+            useMaxWidth: true,
             padding: 8
           }
         })
@@ -739,18 +713,22 @@ export default function MermaidDiagram({ chart, isDark }) {
     setZoomLevel(1) // Reset zoom when toggling fullscreen
   }
 
-  // Diagram content component
+  // Diagram content component - uses willChange to prevent layout thrashing
   const DiagramContent = ({ inFullscreen = false }) => (
     <div
-      className={`transition-transform duration-200 ${inFullscreen ? 'p-8' : ''}`}
-      style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center top' }}
+      className={inFullscreen ? 'p-8' : ''}
+      style={{
+        transform: `scale(${zoomLevel})`,
+        transformOrigin: 'top left',
+        willChange: 'transform',
+      }}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   )
 
   // Control buttons component
   const Controls = ({ inFullscreen = false }) => (
-    <div className={`flex items-center gap-1 ${inFullscreen ? 'mb-4' : 'mb-2'}`}>
+    <div className={`flex items-center gap-1 ${inFullscreen ? '' : 'mb-2'}`}>
       <button
         onClick={handleZoomOut}
         disabled={zoomLevel <= 0.25}
@@ -761,7 +739,7 @@ export default function MermaidDiagram({ chart, isDark }) {
         }`}
         title="Zoom out"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
         </svg>
       </button>
@@ -778,7 +756,7 @@ export default function MermaidDiagram({ chart, isDark }) {
         }`}
         title="Zoom in"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
       </button>
@@ -791,7 +769,7 @@ export default function MermaidDiagram({ chart, isDark }) {
         }`}
         title="Reset zoom"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
       </button>
@@ -806,17 +784,86 @@ export default function MermaidDiagram({ chart, isDark }) {
         title={inFullscreen ? "Exit fullscreen" : "View fullscreen"}
       >
         {inFullscreen ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
           </svg>
         )}
       </button>
     </div>
   )
+
+  // Fullscreen overlay rendered via React Portal to take over the whole screen
+  const fullscreenOverlay = isFullscreen ? ReactDOM.createPortal(
+    <div
+      id="mermaid-fullscreen-overlay"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 99999,
+        backgroundColor: isDark ? '#111827' : '#ffffff',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* Header bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          borderBottom: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
+          backgroundColor: isDark ? '#1f2937' : '#f9fafb',
+          flexShrink: 0,
+        }}
+      >
+        <h3 style={{ fontSize: '18px', fontWeight: 600, color: isDark ? '#ffffff' : '#111827', margin: 0 }}>
+          📊 Diagram View
+        </h3>
+        <Controls inFullscreen />
+      </div>
+
+      {/* Diagram area - fills the rest of the screen */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '24px',
+          minHeight: 0,
+        }}
+      >
+        <DiagramContent inFullscreen />
+      </div>
+
+      {/* Footer */}
+      <div
+        style={{
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '12px',
+          borderTop: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
+          backgroundColor: isDark ? '#1f2937' : '#f9fafb',
+          color: isDark ? '#6b7280' : '#9ca3af',
+          flexShrink: 0,
+        }}
+      >
+        Press <kbd style={{ padding: '2px 6px', borderRadius: '4px', backgroundColor: isDark ? '#374151' : '#f3f4f6' }}>Esc</kbd> to close • Use zoom controls to enlarge (up to 1000%)
+      </div>
+    </div>,
+    document.body
+  ) : null
 
   return (
     <>
@@ -826,47 +873,19 @@ export default function MermaidDiagram({ chart, isDark }) {
         className={`mermaid-diagram p-4 rounded-lg border ${
           isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300'
         }`}
+        style={{
+          contain: 'layout style',
+          isolation: 'isolate',
+        }}
       >
         <Controls />
-        <div className="overflow-auto max-h-[500px]">
+        <div className="overflow-auto max-h-[500px]" style={{ contain: 'layout' }}>
           <DiagramContent />
         </div>
       </div>
 
-      {/* Fullscreen modal - nearly full screen */}
-      {isFullscreen && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-auto p-4"
-          style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.95)' : 'rgba(255,255,255,0.98)' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) toggleFullscreen()
-          }}
-        >
-          <div
-            className={`w-full rounded-xl shadow-2xl flex flex-col ${
-              isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-            }`}
-            style={{
-              maxWidth: 'calc(100vw - 32px)',
-              maxHeight: 'calc(100vh - 32px)',
-              minHeight: 'calc(100vh - 32px)'
-            }}
-          >
-            <div className="flex items-center justify-between p-4 border-b flex-shrink-0" style={{ borderColor: isDark ? '#374151' : '#e5e7eb' }}>
-              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                📊 Diagram View (Full Screen)
-              </h3>
-              <Controls inFullscreen />
-            </div>
-            <div className="flex-1 overflow-auto p-6 flex items-start justify-center">
-              <DiagramContent inFullscreen />
-            </div>
-            <div className={`p-3 text-center text-xs border-t flex-shrink-0 ${isDark ? 'text-gray-500 border-gray-700' : 'text-gray-400 border-gray-200'}`}>
-              Press <kbd className={`px-1.5 py-0.5 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>Esc</kbd> or click outside to close • Use zoom controls to enlarge (up to 1000%)
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Fullscreen via portal */}
+      {fullscreenOverlay}
     </>
   )
 }
