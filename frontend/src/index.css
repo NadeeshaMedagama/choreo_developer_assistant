@@ -48,73 +48,32 @@ html, body, #root {
   font-size: 0.9375rem; /* Slightly smaller than body text */
 }
 
-/* Mermaid diagram styling - prevent text clipping */
+/* Mermaid diagram styling - stable layout to prevent screen shaking */
 .mermaid-diagram {
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: hidden;
+  position: relative;
+  contain: layout style;
+  isolation: isolate;
 }
 
-.mermaid-diagram svg {
-  /* Remove max-width to prevent text clipping */
-  max-width: none !important;
-  min-width: fit-content;
-  height: auto;
+/* Only target the actual Mermaid-rendered SVG, not button icon SVGs */
+.mermaid-diagram > .overflow-auto svg,
+.mermaid-diagram > div:last-of-type svg:not(.w-4):not(.w-5) {
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important;
   display: block;
   margin: 0 auto;
-  overflow: visible;
+  overflow: hidden !important;
 }
 
-/* Ensure text nodes are fully visible */
-.mermaid-diagram .nodeLabel,
-.mermaid-diagram .label,
-.mermaid-diagram .edgeLabel,
-.mermaid-diagram text,
-.mermaid-diagram foreignObject {
-  overflow: visible !important;
-}
-
-/* Ensure node containers don't clip content */
-.mermaid-diagram .node,
-.mermaid-diagram .cluster,
-.mermaid-diagram g.node,
-.mermaid-diagram g.cluster {
-  overflow: visible !important;
-}
-
-/* Fix foreignObject (used for HTML labels) */
-.mermaid-diagram foreignObject {
-  overflow: visible !important;
-}
-
-.mermaid-diagram foreignObject div {
-  overflow: visible !important;
-  white-space: nowrap;
-}
-
-/* Ensure node labels show full text without truncation */
-.mermaid-diagram .nodeLabel {
-  overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: nowrap !important;
-  max-width: none !important;
-  width: auto !important;
-}
-
-/* Fix label containers to expand with content */
-.mermaid-diagram .label {
-  overflow: visible !important;
-  max-width: none !important;
-}
-
-/* Ensure spans inside labels don't truncate */
-.mermaid-diagram .nodeLabel span,
-.mermaid-diagram .label span,
-.mermaid-diagram .edgeLabel span {
-  overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: nowrap !important;
-  display: inline !important;
+/* Ensure control button icons stay their normal size */
+.mermaid-diagram button svg {
+  width: 1rem !important;
+  height: 1rem !important;
+  max-width: 1rem !important;
+  display: inline-block !important;
 }
 
 /* Make Mermaid diagrams responsive */
@@ -312,8 +271,8 @@ body > div:not([id]):not([class]):has(> svg[id^="mermaid"]) {
 
 /* Hide the mermaid error toast/overlay at the bottom of the page */
 body > div[style*="bottom"]:not([id]):not([class]),
-body > div[style*="fixed"]:not([id]):not([class]),
-body > div[style*="position: fixed"]:not([id]):not([class]) {
+body > div[style*="fixed"]:not([id]):not([class]):not(#mermaid-fullscreen-overlay),
+body > div[style*="position: fixed"]:not([id]):not([class]):not(#mermaid-fullscreen-overlay) {
   display: none !important;
 }
 
